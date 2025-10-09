@@ -5,7 +5,7 @@
 window.USE_RAILWAY = true; // Set to true when your Railway server is deployed
 
 // Your Railway server URL (update after deployment)
-window.RAILWAY_SERVER_URL = 'https://curriculumrender-production.up.railway.app'; // Change to your Railway URL like 'https://your-app.up.railway.app'
+window.RAILWAY_SERVER_URL = 'https://code-production-2468.up.railway.app'; // Change to your Railway URL like 'https://your-app.up.railway.app'
 
 // This configuration allows you to easily switch between:
 // - Direct Supabase connection (USE_RAILWAY = false)
