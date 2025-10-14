@@ -14,6 +14,8 @@
     <script src="supabase_config.js"></script>
     <script src="railway_config.js"></script>
     <script src="js/charts.js"></script>
+    <script src="js/frq_feedback.js"></script>
+    <script src="js/graph_builder.js"></script>
     <script src="docs/sync_diagnostics.js"></script>
     <script src="railway_client.js"></script>
 
@@ -51,6 +53,10 @@
             <button class="fab-item sync-button" onclick="showSyncModal()" title="Sync & Export Data">
                 <span class="fab-item-icon">💾</span>
                 <span class="fab-item-label">Sync</span>
+            </button>
+            <button class="fab-item graph-sandbox-button" onclick="openGraphSandbox()" title="Graphing Sandbox">
+                <span class="fab-item-icon">📈</span>
+                <span class="fab-item-label">Graph</span>
             </button>
             <button class="fab-item theme-toggle" onclick="toggleTheme()" title="Toggle theme">
                 <span class="fab-item-icon">🌙</span>
@@ -175,6 +181,74 @@
         </div>
     </div>
 
+
+    <!-- Graphing Sandbox Modal -->
+    <div id="graphSandboxModal" class="modal graph-sandbox-modal" style="display: none;">
+        <div class="modal-content graph-sandbox-content">
+            <span class="close-modal" onclick="closeGraphSandbox()">&times;</span>
+            <h2>📈 Graphing Sandbox</h2>
+            <p class="graph-sandbox-intro">
+                Paste or type your own data to explore different Chart.js visualizations. Adjust the options below and use
+                <strong>Copy Chart JSON</strong> to reuse the configuration in new curriculum questions.
+            </p>
+            <div class="graph-sandbox-body">
+                <form class="graph-sandbox-form" onsubmit="return false;">
+                    <div class="sandbox-field">
+                        <label for="graphSandboxType">Chart type</label>
+                        <select id="graphSandboxType">
+                            <option value="histogram">Histogram</option>
+                            <option value="dotplot">Dot Plot</option>
+                            <option value="boxplot">Box Plot</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="scatter">Scatter Plot</option>
+                        </select>
+                    </div>
+                    <div class="sandbox-field">
+                        <label for="graphSandboxPrimaryInput">Data values</label>
+                        <textarea id="graphSandboxPrimaryInput" placeholder="Example: 4, 5, 5, 6, 9"></textarea>
+                        <small id="graphSandboxPrimaryHint" class="sandbox-hint">Separate numbers with commas, spaces, or new lines.</small>
+                    </div>
+                    <div class="sandbox-field" id="graphSandboxSecondaryGroup" hidden>
+                        <label for="graphSandboxSecondaryInput" id="graphSandboxSecondaryLabel">Secondary values</label>
+                        <textarea id="graphSandboxSecondaryInput" placeholder="Example (scatter): 10, 12, 18"></textarea>
+                        <small id="graphSandboxSecondaryHint" class="sandbox-hint">Provide the same number of entries as the first list.</small>
+                    </div>
+                    <div class="sandbox-field" id="graphSandboxCategoriesGroup" hidden>
+                        <label for="graphSandboxCategoriesInput">Categories / labels</label>
+                        <textarea id="graphSandboxCategoriesInput" placeholder="Example: Freshmen, Sophomores, Juniors"></textarea>
+                        <small class="sandbox-hint">Provide one label per value when building a bar chart.</small>
+                    </div>
+                    <div class="sandbox-field" id="graphSandboxHistogramOptions" hidden>
+                        <label for="graphSandboxBinWidth">Bin width</label>
+                        <input type="number" id="graphSandboxBinWidth" min="0.1" step="0.1" value="1">
+                        <small class="sandbox-hint">Adjust to widen or narrow histogram bins.</small>
+                    </div>
+                    <div class="sandbox-grid">
+                        <div class="sandbox-field">
+                            <label for="graphSandboxTitle">Chart title</label>
+                            <input type="text" id="graphSandboxTitle" placeholder="Optional title">
+                        </div>
+                        <div class="sandbox-field">
+                            <label for="graphSandboxXAxis">X-axis label</label>
+                            <input type="text" id="graphSandboxXAxis" placeholder="Optional x-axis label">
+                        </div>
+                        <div class="sandbox-field">
+                            <label for="graphSandboxYAxis">Y-axis label</label>
+                            <input type="text" id="graphSandboxYAxis" placeholder="Optional y-axis label">
+                        </div>
+                    </div>
+                    <div class="sandbox-toolbar">
+                        <button type="button" class="sandbox-btn primary" onclick="updateGraphSandboxPreview()">Update Preview</button>
+                        <button type="button" class="sandbox-btn" onclick="copyGraphSandboxJson()">Copy Chart JSON</button>
+                    </div>
+                    <div id="graphSandboxMessage" class="sandbox-message" aria-live="polite"></div>
+                </form>
+                <div class="graph-sandbox-preview" id="graphSandboxPreview">
+                    <div class="graph-sandbox-placeholder">Enter data to see the chart preview.</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script src="data/curriculum.js"></script>
     <script src="data/units.js"></script>
@@ -2781,17 +2855,26 @@ function renderLessonSelector(unitInfo) {
             if (question.type === 'free-response') {
                 const savedAnswer = classData.users[currentUsername]?.answers?.[question.id];
                 const isDisabled = isAnswered && !canRetryQuestion;
-                html += `
-                    <div class="answer-section">
-                        <textarea
-                            id="frq-${question.id}"
-                            class="frq-textarea"
-                            placeholder="Enter your complete response here..."
-                            ${isDisabled ? 'disabled' : ''}
-                            style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd;"
-                        >${savedAnswer?.value || savedAnswer || ''}</textarea>
-                    </div>
-                `;
+                if (typeof renderFRQQuestion === 'function') {
+                    html += renderFRQQuestion(question, {
+                        savedAnswer,
+                        isDisabled,
+                        attempts,
+                        canRetryQuestion
+                    });
+                } else {
+                    html += `
+                        <div class="answer-section">
+                            <textarea
+                                id="frq-${question.id}"
+                                class="frq-textarea"
+                                placeholder="Enter your complete response here..."
+                                ${isDisabled ? 'disabled' : ''}
+                                style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd;"
+                            >${savedAnswer?.value || savedAnswer || ''}</textarea>
+                        </div>
+                    `;
+                }
             }
 
             // Add reasoning section in main column

@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -12,6 +13,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const geminiClient = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+const geminiModel = geminiClient ? geminiClient.getGenerativeModel({ model: GEMINI_MODEL }) : null;
 
 // Middleware
 app.use(cors());
@@ -38,6 +43,92 @@ const wsClients = new Set();
 const presence = new Map(); // username -> { lastSeen: number, connections: Set<WebSocket> }
 const wsToUser = new Map(); // ws -> username
 const PRESENCE_TTL_MS = parseInt(process.env.PRESENCE_TTL_MS || '45000', 10);
+
+// ============================
+// Gemini helpers
+// ============================
+
+function buildGeminiPrompt({ questionId, prompt, exemplarResponse, rubric, studentResponse }) {
+  const rubricSummary = rubric ? JSON.stringify(rubric, null, 2) : 'No rubric provided.';
+
+  return `You are an AP Statistics teacher. Evaluate the student's free-response answer using the provided exemplar and rubric.
+
+Return valid JSON with the following shape:
+{
+  "score": number (0-5),
+  "summary": string,
+  "strengths": string[],
+  "areasForImprovement": string[],
+  "rubricAlignment": [
+    { "criterion": string, "status": "met" | "partially met" | "not met", "notes": string }
+  ]
+}
+
+Question ID: ${questionId}
+Prompt: ${prompt}
+
+Exemplar response:
+${exemplarResponse || 'No exemplar provided.'}
+
+Rubric:
+${rubricSummary}
+
+Student response:
+${studentResponse}`;
+}
+
+async function requestGeminiFeedback(payload) {
+  if (!geminiModel) {
+    throw new Error('Gemini API key is not configured on the server.');
+  }
+
+  const response = await geminiModel.generateContent({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: buildGeminiPrompt(payload)
+          }
+        ]
+      }
+    ],
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE'
+      }
+    ]
+  });
+
+  const raw = response?.response;
+  const candidate = raw?.candidates?.[0];
+  const text = candidate?.content?.parts?.map(part => part.text).join('').trim();
+
+  if (!text) {
+    throw new Error('Gemini response did not include feedback text.');
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    return {
+      parsed,
+      raw
+    };
+  } catch (error) {
+    console.warn('Failed to parse Gemini response as JSON. Returning raw text.');
+    return {
+      parsed: {
+        score: null,
+        summary: text,
+        strengths: [],
+        areasForImprovement: [],
+        rubricAlignment: []
+      },
+      raw
+    };
+  }
+}
 
 // Helper to check cache validity
 function isCacheValid(lastUpdate, ttl = cache.TTL) {
@@ -188,6 +279,46 @@ app.get('/api/question-stats/:questionId', async (req, res) => {
   } catch (error) {
     console.error('Error calculating stats:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Grade FRQ via Gemini proxy
+app.post('/api/grade-frq', async (req, res) => {
+  try {
+    const {
+      questionId,
+      prompt,
+      studentResponse,
+      exemplarResponse,
+      rubric,
+      username
+    } = req.body || {};
+
+    if (!questionId || !prompt || !studentResponse) {
+      return res.status(400).json({
+        error: 'questionId, prompt, and studentResponse are required.'
+      });
+    }
+
+    const { parsed, raw } = await requestGeminiFeedback({
+      questionId,
+      prompt,
+      exemplarResponse,
+      rubric,
+      studentResponse
+    });
+
+    res.json({
+      questionId,
+      username: username || null,
+      feedback: parsed,
+      providerResponse: raw
+    });
+  } catch (error) {
+    console.error('Error grading FRQ:', error);
+    res.status(500).json({
+      error: error.message || 'Failed to request FRQ feedback.'
+    });
   }
 });
 
