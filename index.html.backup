@@ -2619,24 +2619,11 @@ function renderLessonSelector(unitInfo) {
             
             // Render all questions for the lesson with a small delay for animation
             setTimeout(() => {
-                // Collect all chart tasks for batch rendering
-                const allChartTasks = [];
-
                 currentQuestions.forEach((question, index) => {
-                    const { html: questionHtml, chartTasks } = renderQuestion(question, index);
+                    const questionHtml = renderQuestion(question, index);
                     questionsList.insertAdjacentHTML('beforeend', questionHtml);
-                    allChartTasks.push(...(chartTasks || []));
                 });
-
-                // Phase 2: Render all charts after DOM is updated
-                if (allChartTasks.length > 0 && typeof window.charts?.renderChartNow === 'function') {
-                    requestAnimationFrame(() => {
-                        allChartTasks.forEach(({ canvasId, chartData }) => {
-                            window.charts.renderChartNow(chartData, canvasId);
-                        });
-                    });
-                }
-
+                
                 document.getElementById('loading-msg').style.display = 'none';
 
                 // Load saved progress
@@ -2653,9 +2640,9 @@ function renderLessonSelector(unitInfo) {
                 if (window.MathJax) {
                     MathJax.typesetPromise().catch(e => console.log('MathJax error:', e));
                 }
-
-                // Charts will be rendered by individual renderQuestion calls
-                // (removed legacy renderVisibleCharts call)
+                
+                // Render charts for visible questions
+                setTimeout(renderVisibleCharts, 100);
 
                 // TASK 3.3: Set up activity tracking for question interactions
                 setTimeout(setupQuestionActivityTracking, 150);
@@ -2753,9 +2740,6 @@ function renderLessonSelector(unitInfo) {
             const attempts = getAttemptCount(question.id);
             const canRetryQuestion = canRetry(question.id);
 
-            // Track chart tasks for two-phase rendering
-            const chartTasks = [];
-
             // Check if answer is correct (for styling)
             let isCorrect = false;
             if (isAnswered) {
@@ -2781,9 +2765,7 @@ function renderLessonSelector(unitInfo) {
 
             // Render question attachments (charts, tables, images) in main column
             if (question.attachments) {
-                const { html: attachHtml, chartTasks: tasks } = renderAttachments(question.attachments, question.id);
-                html += attachHtml;
-                chartTasks.push(...(tasks || []));
+                html += renderAttachments(question.attachments, question.id);
             }
 
             // Handle MCQ in main column
@@ -2993,7 +2975,7 @@ function renderLessonSelector(unitInfo) {
                 }
             }, 100);
 
-            return { html, chartTasks };
+            return html;
         }
 
         // Populate peer reasoning section with peer response cards
@@ -3179,31 +3161,10 @@ function renderLessonSelector(unitInfo) {
         // Render attachments (charts, tables, images)
         function renderAttachments(attachments, questionId) {
             let html = '';
-            const chartTasks = [];
 
-            // Handle charts - use two-phase rendering
+            // Handle charts
             if (attachments.chartType) {
-                const canvasId = `chart-${questionId}`;
-                if (typeof window.charts?.getChartHtml === 'function') {
-                    html += window.charts.getChartHtml(attachments, canvasId);
-                    chartTasks.push({ canvasId, chartData: attachments });
-                } else {
-                    // Fallback to old API
-                    html += renderChart(attachments, questionId);
-                }
-            }
-
-            // Handle multiple charts in attachments.charts array
-            if (attachments.charts && Array.isArray(attachments.charts)) {
-                attachments.charts.forEach((chart, idx) => {
-                    const canvasId = `chart-${questionId}-${idx}`;
-                    if (typeof window.charts?.getChartHtml === 'function') {
-                        html += window.charts.getChartHtml(chart, canvasId);
-                        chartTasks.push({ canvasId, chartData: chart });
-                    } else {
-                        html += renderChart(chart, `${questionId}-${idx}`);
-                    }
-                });
+                html += renderChart(attachments, questionId);
             }
 
             // Handle tables
@@ -3220,28 +3181,19 @@ function renderLessonSelector(unitInfo) {
                 `;
             }
 
-            return { html, chartTasks };
+            return html;
         }
 
         // Render attachments for sidebar (with modified sizing)
         function renderAttachmentsForSidebar(attachments, questionId) {
             let html = '';
-            const chartTasks = [];
 
-            // Handle charts in sidebar - use two-phase rendering
+            // Handle charts in sidebar
             if (attachments.chartType) {
-                const canvasId = `sidebar-chart-${questionId}`;
-                let chartHtml = '';
-                if (typeof window.charts?.getChartHtml === 'function') {
-                    chartHtml = window.charts.getChartHtml(attachments, canvasId);
-                    chartTasks.push({ canvasId, chartData: attachments });
-                } else {
-                    chartHtml = renderChart(attachments, questionId + '-sidebar');
-                }
                 html += `
                     <div class="sidebar-chart-container">
                         <h5>📊 Data Visualization</h5>
-                        ${chartHtml}
+                        ${renderChart(attachments, questionId + '-sidebar')}
                     </div>
                 `;
             }
@@ -3266,7 +3218,7 @@ function renderLessonSelector(unitInfo) {
                 `;
             }
 
-            return { html, chartTasks };
+            return html;
         }
         
         // Render chart placeholder (actual rendering happens later)
@@ -3328,8 +3280,413 @@ function renderLessonSelector(unitInfo) {
 
               return tableHtml;
           }
+// Complete chart rendering function
+function renderChartNow(chartId) {
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
 
+    // FIX: Check if chart already exists and destroy it
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+        delete chartInstances[chartId];
+    }
 
+    const chartData = window.pendingCharts[chartId];
+    if (!chartData) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // FIX: Set canvas parent height to prevent infinite expansion
+    canvas.parentElement.style.height = '400px';
+    canvas.parentElement.style.position = 'relative';
+
+    const config = chartData.chartConfig || {};
+    
+    // Bar/Histogram charts
+    if (chartData.chartType === 'bar' || chartData.chartType === 'histogram') {
+        const colorPalette = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+        const datasets = chartData.series.map((series, index) => ({
+            label: series.name,
+            data: series.values,
+            backgroundColor: colorPalette[index % colorPalette.length],
+            borderColor: colorPalette[index % colorPalette.length],
+            borderWidth: 1
+        }));
+        
+        const isHistogram = chartData.chartType === 'histogram';
+        
+        chartInstances[chartId] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.xLabels || [],
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: datasets.length > 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: config.yAxis?.min,
+                        max: config.yAxis?.max,
+                        title: {
+                            display: true,
+                            text: config.yAxis?.title || chartData.yLabel || 'Value'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: config.xAxis?.title || chartData.xLabel || 'Category'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Pie chart
+    else if (chartData.chartType === 'pie') {
+        const seriesData = chartData.series[0].values;
+        const labels = seriesData.map(item => item.name);
+        const values = seriesData.map(item => item.value);
+        
+        chartInstances[chartId] = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Scatter plot
+    else if (chartData.chartType === 'scatter') {
+        chartInstances[chartId] = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Data Points',
+                    data: chartData.points,
+                    backgroundColor: '#36A2EB',
+                    borderColor: '#36A2EB',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        min: config.xAxis?.min,
+                        max: config.xAxis?.max,
+                        title: {
+                            display: true,
+                            text: config.xAxis?.title || chartData.xLabel || 'X Variable'
+                        }
+                    },
+                    y: {
+                        min: config.yAxis?.min,
+                        max: config.yAxis?.max,
+                        title: {
+                            display: true,
+                            text: config.yAxis?.title || chartData.yLabel || 'Y Variable'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Dotplot
+    else if (chartData.chartType === 'dotplot') {
+        const valueFrequency = {};
+        chartData.values.forEach(value => {
+            valueFrequency[value] = (valueFrequency[value] || 0) + 1;
+        });
+        
+        const dotplotData = [];
+        for (const [value, frequency] of Object.entries(valueFrequency)) {
+            for (let i = 1; i <= frequency; i++) {
+                dotplotData.push({
+                    x: parseFloat(value),
+                    y: i
+                });
+            }
+        }
+        
+        chartInstances[chartId] = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Data Points',
+                    data: dotplotData,
+                    backgroundColor: '#36A2EB',
+                    borderColor: '#36A2EB',
+                    pointRadius: 4,
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        min: config.xAxis?.min,
+                        max: config.xAxis?.max,
+                        title: {
+                            display: true,
+                            text: config.xAxis?.title || 'Value'
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: Math.max(...Object.values(valueFrequency)) + 1,
+                        display: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Boxplot
+    else if (chartData.chartType === 'boxplot') {
+        const boxplotData = config.boxplotData || {};
+        const { Q1, Q3, median, min, max } = boxplotData;
+        
+        // Create a simple representation using bar chart
+        chartInstances[chartId] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Min', 'Q1', 'Median', 'Q3', 'Max'],
+                datasets: [{
+                    label: 'Five Number Summary',
+                    data: [min, Q1, median, Q3, max],
+                    backgroundColor: '#36A2EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: config.xAxis?.title || 'Value'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Complete table rendering
+function renderTable(table) {
+    if (!table) return '';
+    
+    let html = '<div class="table-container"><table>';
+    
+    // Handle object format with headers and rows
+    if (table.headers && table.rows) {
+        html += '<thead><tr>';
+        table.headers.forEach(header => {
+            html += `<th>${header}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        
+        table.rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td>${cell}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody>';
+    }
+    // Handle array format (legacy)
+    else if (Array.isArray(table) && table.length > 0) {
+        const headers = table[0];
+        const rows = table.slice(1);
+        
+        html += '<thead><tr>';
+        headers.forEach(header => {
+            html += `<th>${header}</th>`;
+        });
+        html += '</tr></thead>';
+        
+        if (rows.length > 0) {
+            html += '<tbody>';
+            rows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td>${cell}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+        }
+    }
+    
+    html += '</table></div>';
+    return html;
+}
+
+// Updated renderAttachments to handle multiple charts
+function renderAttachments(attachments, questionId) {
+    let html = '';
+    
+    // Handle multiple charts
+    if (attachments.charts && Array.isArray(attachments.charts)) {
+        attachments.charts.forEach((chart, idx) => {
+            html += renderChart(chart, `${questionId}-chart-${idx}`);
+        });
+    }
+    // Handle single chart
+    else if (attachments.chartType) {
+        html += renderChart(attachments, `${questionId}-chart`);
+    }
+    
+    // Handle tables
+    if (attachments.table) {
+        html += renderTable(attachments.table);
+    }
+    
+    // Handle images
+    if (attachments.image) {
+        const imageAlt = attachments.imageAlt || 'Question image';
+        const imageCaption = attachments.imageCaption || '';
+        html += `
+            <div class="image-container">
+                <img src="${attachments.image}" alt="${imageAlt}" style="max-width: 100%; height: auto;">
+                ${imageCaption ? `<div style="text-align: center; font-style: italic; color: #666; margin-top: 5px;">${imageCaption}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    // Handle multiple images
+    if (attachments.images && Array.isArray(attachments.images)) {
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">';
+        attachments.images.forEach(img => {
+            html += `
+                <div style="flex: 1; min-width: 200px; max-width: 400px;">
+                    <img src="${img.url || img}" alt="${img.alt || 'Image'}" style="width: 100%; height: auto;">
+                    ${img.caption ? `<div style="text-align: center; font-style: italic; color: #666; margin-top: 5px;">${img.caption}</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+    
+    return html;
+}
+
+        // Render visible charts
+        function renderVisibleCharts() {
+            const chartContainers = document.querySelectorAll('[data-chart-id]');
+            chartContainers.forEach(container => {
+                const chartId = container.dataset.chartId;
+                if (window.pendingCharts && window.pendingCharts[chartId]) {
+                    renderChartNow(chartId);
+                    delete window.pendingCharts[chartId];
+                }
+            });
+        }
+
+        // Actually render a chart
+        function renderChartNow(chartId) {
+            const canvas = document.getElementById(chartId);
+            if (!canvas) return;
+
+            // FIX: Check if chart already exists and destroy it
+            if (chartInstances[chartId]) {
+                chartInstances[chartId].destroy();
+                delete chartInstances[chartId];
+            }
+
+            const chartData = window.pendingCharts[chartId];
+            if (!chartData) return;
+
+            const ctx = canvas.getContext('2d');
+
+            // FIX: Set canvas parent height to prevent infinite expansion
+            canvas.parentElement.style.height = '400px';
+            canvas.parentElement.style.position = 'relative';
+
+            const config = chartData.chartConfig || {};
+            
+            // Simple bar/histogram chart
+            if (chartData.chartType === 'bar' || chartData.chartType === 'histogram') {
+                const datasets = chartData.series.map(series => ({
+                    label: series.name,
+                    data: series.values,
+                    backgroundColor: '#36A2EB',
+                    borderColor: '#36A2EB',
+                    borderWidth: 1
+                }));
+                
+                chartInstances[chartId] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.xLabels || [],
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: config.yAxis?.title || 'Value'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: config.xAxis?.title || 'Category'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            // Add other chart types as needed
+        }
 
         // Submit answer
         window.submitAnswer = function(questionId, questionType) {
@@ -3622,11 +3979,6 @@ function renderLessonSelector(unitInfo) {
 
                 // Populate peer reasoning after chart rendering
                 populatePeerResponses(questionId, questionType);
-
-                // Ensure FRQ official solution is displayed immediately after submission
-                if (questionType === 'free-response') {
-                    displayFRQSolution(questionId);
-                }
             }, 50);
 
             // Trigger answer key display logic
@@ -3997,25 +4349,16 @@ if (chartInstances[`dotplot-${questionId}`]) {
                     try {
                         const parsed = JSON.parse(peer.response);
                         if (parsed.chartType) {
-                            // It's a chart - use two-phase rendering
-                            const canvasId = `peer-${questionId}-${peer.username.replace(/\s+/g, '-')}`;
-                            if (typeof window.charts?.getChartHtml === 'function') {
-                                // NEW: Two-phase rendering
-                                answerHtml = `<div class="peer-chart-container">${window.charts.getChartHtml(parsed, canvasId)}</div>`;
-                                // Schedule Phase 2 (drawing) after DOM injection
-                                requestAnimationFrame(() => {
-                                    window.charts.renderChartNow(parsed, canvasId);
-                                });
-                            } else {
-                                // FALLBACK: Old approach
-                                answerHtml = `<div id="chart-container-${canvasId}" class="peer-chart-container"></div>`;
-                                setTimeout(() => {
-                                    const container = document.querySelector(`#chart-container-${canvasId}`);
-                                    if (container && typeof renderChart === 'function') {
-                                        container.innerHTML = renderChart(parsed, canvasId);
-                                    }
-                                }, 100);
-                            }
+                            // It's a chart - render it
+                            const chartId = `peer-${questionId}-${peer.username.replace(/\s+/g, '-')}`;
+                            answerHtml = `<div id="chart-container-${chartId}" class="peer-chart-container"></div>`;
+                            // Defer chart rendering
+                            setTimeout(() => {
+                                const container = document.querySelector(`#chart-container-${chartId}`);
+                                if (container && typeof renderChart === 'function') {
+                                    container.innerHTML = renderChart(parsed, chartId);
+                                }
+                            }, 100);
                         } else {
                             // JSON but not a chart
                             answerHtml = peer.response;
@@ -4545,8 +4888,9 @@ if (chartInstances[`dotplot-${questionId}`]) {
                 });
             }
 
-            // Trigger MathJax rendering
-            // (Chart rendering handled by Phase 2 code above)
+            // Trigger chart rendering and MathJax
+            if (typeof observeChartContainers === 'function') observeChartContainers();
+            else if (typeof renderVisibleCharts === 'function') renderVisibleCharts();
             if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
         }
 
@@ -5115,7 +5459,31 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         });
 
-        // Lazy loading charts removed - using immediate two-phase rendering instead
+        // Intersection Observer for lazy loading charts (optional enhancement)
+        if ('IntersectionObserver' in window) {
+            const chartObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const container = entry.target;
+                        const chartId = container.dataset.chartId;
+                        if (chartId && window.pendingCharts && window.pendingCharts[chartId]) {
+                            renderChartNow(chartId);
+                            delete window.pendingCharts[chartId];
+                            chartObserver.unobserve(container);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '100px'
+            });
+            
+            // Observe chart containers when they're created
+            window.observeChartContainers = function() {
+                document.querySelectorAll('[data-chart-id]').forEach(container => {
+                    chartObserver.observe(container);
+                });
+            }
+        }
 
         // Helper function to check if an answer is correct
         function checkIfAnswerCorrect(questionId, peerAnswerValue) {
@@ -5554,39 +5922,19 @@ if (chartInstances[`dotplot-${questionId}`]) {
             document.getElementById('loading-msg').style.display = 'block';
 
             setTimeout(() => {
-                // Collect all chart tasks for batch rendering
-                const allChartTasks = [];
-
                 currentQuestions.forEach((question, index) => {
-                    const { html: questionHtml, chartTasks } = renderQuestion(question, index);
+                    const questionHtml = renderQuestion(question, index);
                     questionsList.insertAdjacentHTML('beforeend', questionHtml);
-                    allChartTasks.push(...(chartTasks || []));
                 });
-
-                // Phase 2: Render all charts after DOM is updated
-                if (allChartTasks.length > 0 && typeof window.charts?.renderChartNow === 'function') {
-                    requestAnimationFrame(() => {
-                        allChartTasks.forEach(({ canvasId, chartData }) => {
-                            window.charts.renderChartNow(chartData, canvasId);
-                        });
-                    });
-                }
 
                 document.getElementById('loading-msg').style.display = 'none';
                 loadProgress();
 
-                // Auto-display FRQ solutions for already answered questions
-                if (Array.isArray(currentQuestions)) {
-                    currentQuestions.forEach(q => {
-                        if (q && q.type === 'free-response' && isQuestionAnswered(q.id)) {
-                            displayFRQSolution(q.id);
-                        }
-                    });
-                }
-
                 if (window.MathJax) {
                     MathJax.typesetPromise().catch(e => console.log('MathJax error:', e));
                 }
+
+                setTimeout(renderVisibleCharts, 100);
             }, 100);
         }
 

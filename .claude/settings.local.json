@@ -7,7 +7,8 @@
       "Bash(cat:*)",
       "Bash(done)",
       "Bash(chmod:*)",
-      "Bash(./create-all-materials.sh:*)"
+      "Bash(./create-all-materials.sh:*)",
+      "Read(///**)"
     ],
     "deny": [],
     "ask": []
