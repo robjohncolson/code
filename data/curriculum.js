@@ -4233,6 +4233,11 @@ const EMBEDDED_CURRICULUM = [
       }
     },
     {
+      "id": "U2-L1-Q01",
+      "type": "resource",
+      "prompt": "This lesson contains instructional resources. Please review the videos and games listed above before proceeding to the next lesson."
+    },
+    {
       "id": "U2-L2-Q01",
       "type": "multiple-choice",
       "prompt": "The following segmented bar chart shows the number of flights that were either on time or delayed at three different airports on one day. Which of the following statements is supported by the bar chart?",
