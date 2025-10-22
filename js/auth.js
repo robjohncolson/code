@@ -69,14 +69,14 @@ function generateRandomUsername() {
  * Main entry point for username workflow
  * Checks for saved username or shows prompt
  */
-function promptUsername() {
+async function promptUsername() {
     const savedUsername = localStorage.getItem('consensusUsername');
     if (savedUsername) {
         currentUsername = savedUsername;
         initClassData();
         initializeProgressTracking(); // Initialize progress tracking for returning user
         showUsernameWelcome();
-        initializeFromEmbeddedData(); // Initialize from embedded data
+        await loadCurriculumData(); // Load curriculum (async or sync based on feature flag)
         updateCurrentUsernameDisplay();
     } else {
         showUsernamePrompt();
@@ -333,7 +333,7 @@ window.rerollUsername = function() {
  * Exposed to window for onclick handlers
  * @param {string} name - The username to accept
  */
-window.acceptUsername = function(name) {
+window.acceptUsername = async function(name) {
     currentUsername = name;
     localStorage.setItem('consensusUsername', currentUsername);
 
@@ -349,7 +349,7 @@ window.acceptUsername = function(name) {
     initClassData();
     initializeProgressTracking(); // Initialize progress tracking for new session
     showUsernameWelcome();
-    initializeFromEmbeddedData();
+    await loadCurriculumData(); // Load curriculum (async or sync based on feature flag)
     updateCurrentUsernameDisplay();
 
     // Initialize multiplayer pig system

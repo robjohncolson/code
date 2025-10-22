@@ -116,6 +116,119 @@ function initializeProgressTracking() {
     }
 }
 
+// ========================================
+// CURRICULUM LOADING (Priority 1)
+// ========================================
+
+/**
+ * Initialize curriculum loader (async or sync based on feature flag)
+ */
+async function initializeCurriculumLoader() {
+    // Check feature flag
+    if (window.USE_LAZY_CURRICULUM && typeof CurriculumLoader !== 'undefined') {
+        console.log('[DataManager] Using async curriculum loader');
+
+        // Create loader instance
+        if (!window.curriculumLoader) {
+            window.curriculumLoader = new CurriculumLoader({
+                curriculumUrl: 'data/curriculum.js',
+                cacheTTL: 30 * 60 * 1000, // 30 minutes
+                maxMemoryUnits: 5,
+                enableIndexedDB: true
+            });
+        }
+
+        // Initialize loader
+        const success = await window.curriculumLoader.init();
+
+        if (success) {
+            console.log('[DataManager] Curriculum loader initialized successfully');
+            return true;
+        } else {
+            console.warn('[DataManager] Curriculum loader failed, falling back to sync');
+            return false;
+        }
+    } else {
+        console.log('[DataManager] Using synchronous curriculum loading');
+        return false;
+    }
+}
+
+/**
+ * Load curriculum data (async or sync based on availability)
+ */
+async function loadCurriculumData() {
+    performance.mark('curriculum-data-load-start');
+
+    try {
+        // Try async loader first
+        if (window.USE_LAZY_CURRICULUM && window.curriculumLoader) {
+            await initializeFromAsyncLoader();
+        } else {
+            // Fall back to synchronous embedded data
+            initializeFromEmbeddedData();
+        }
+
+        performance.mark('curriculum-data-load-end');
+        performance.measure(
+            'curriculum-data-load',
+            'curriculum-data-load-start',
+            'curriculum-data-load-end'
+        );
+
+        const measure = performance.getEntriesByName('curriculum-data-load')[0];
+        console.log(`[DataManager] Curriculum loaded in ${measure.duration.toFixed(2)}ms`);
+
+    } catch (error) {
+        console.error('[DataManager] Failed to load curriculum:', error);
+        // Try fallback
+        if (typeof EMBEDDED_CURRICULUM !== 'undefined') {
+            console.warn('[DataManager] Using fallback to EMBEDDED_CURRICULUM');
+            initializeFromEmbeddedData();
+        } else {
+            throw new Error('Curriculum data unavailable');
+        }
+    }
+}
+
+/**
+ * Initialize from async curriculum loader
+ */
+async function initializeFromAsyncLoader() {
+    console.log('[DataManager] Loading curriculum via async loader...');
+
+    allCurriculumData = {};
+
+    // Load all units (1-9)
+    const unitPromises = [];
+    for (let unitNum = 1; unitNum <= 9; unitNum++) {
+        unitPromises.push(
+            window.curriculumLoader.loadUnit(unitNum)
+                .then(unitData => {
+                    if (unitData) {
+                        const unitInfo = detectUnitAndLessons(unitData.questions);
+                        allCurriculumData[unitNum] = {
+                            questions: unitData.questions,
+                            unitInfo: unitInfo,
+                            fileName: `Unit ${unitNum}`
+                        };
+                    }
+                })
+                .catch(error => {
+                    console.error(`[DataManager] Failed to load unit ${unitNum}:`, error);
+                })
+        );
+    }
+
+    // Load all units in parallel
+    await Promise.all(unitPromises);
+
+    console.log('[DataManager] Loaded units:', Object.keys(allCurriculumData));
+
+    // Render unit menu
+    renderUnitMenu();
+}
+
 /**
  * Initializes curriculum data from embedded EMBEDDED_CURRICULUM
  * Parses and groups questions by unit, then renders unit menu
@@ -154,6 +267,10 @@ function initializeFromEmbeddedData() {
     // Go straight to unit menu
     renderUnitMenu();
 }
+
+// Expose functions for global use
+window.initializeCurriculumLoader = initializeCurriculumLoader;
+window.loadCurriculumData = loadCurriculumData;
 
 // ========================================
 // DATA EXPORT FUNCTIONS (Priority 2)

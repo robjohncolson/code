@@ -1,0 +1,706 @@
+/**
+ * auth_styles.css - Authentication UI Styles
+ * Part of AP Statistics Consensus Quiz
+ *
+ * Styles for auth modals, toasts, loading states, and accessibility features.
+ */
+
+/* ============================================
+   Screen Reader Only
+   ============================================ */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   App Header with Auth
+   ============================================ */
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: var(--primary-color, #4a90e2);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* ============================================
+   Auth Header Content
+   ============================================ */
+
+.auth-header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.user-avatar {
+    font-size: 1.2rem;
+}
+
+.username-display {
+    font-weight: 500;
+}
+
+.teacher-badge,
+.offline-badge {
+    font-size: 1rem;
+    margin-left: 0.25rem;
+}
+
+.btn-login,
+.btn-logout {
+    padding: 0.5rem 1.5rem;
+    background: white;
+    color: var(--primary-color, #4a90e2);
+    border: none;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-login:hover,
+.btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-logout {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+}
+
+.btn-logout:hover {
+    background: white;
+    color: var(--primary-color, #4a90e2);
+}
+
+/* ============================================
+   Auth Modal Overlay
+   ============================================ */
+
+.auth-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   Auth Modal
+   ============================================ */
+
+.auth-modal {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.auth-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+}
+
+.auth-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    flex: 1;
+    text-align: center;
+}
+
+.modal-back {
+    position: absolute;
+    left: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: var(--primary-color, #4a90e2);
+    transition: transform 0.2s ease;
+}
+
+.modal-back:hover {
+    transform: translateX(-4px);
+}
+
+.modal-close {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0.5rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.modal-close:hover {
+    transform: rotate(90deg);
+    color: #333;
+}
+
+.auth-modal-body {
+    padding: 2rem;
+}
+
+.modal-intro {
+    text-align: center;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: #666;
+}
+
+/* ============================================
+   Auth Options
+   ============================================ */
+
+.auth-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.auth-option-btn:hover {
+    border-color: var(--primary-color, #4a90e2);
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-option-btn.primary {
+    border-color: var(--primary-color, #4a90e2);
+    background: rgba(74, 144, 226, 0.05);
+}
+
+.option-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.option-content {
+    flex: 1;
+}
+
+.option-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.option-description {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* ============================================
+   Username Generator
+   ============================================ */
+
+.username-generator {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.username-generator p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.generated-username {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color, #4a90e2);
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 1rem 0;
+    transition: opacity 0.15s ease;
+}
+
+.btn-regenerate {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid var(--primary-color, #4a90e2);
+    color: var(--primary-color, #4a90e2);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-regenerate:hover {
+    background: var(--primary-color, #4a90e2);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color, #4a90e2);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.class-code-input {
+    margin: 1.5rem 0;
+}
+
+/* ============================================
+   Auth Actions
+   ============================================ */
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-primary {
+    background: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #3a7bc8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-large {
+    padding: 1.25rem 2.5rem;
+    font-size: 1.1rem;
+}
+
+.auth-note {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: all;
+    position: relative;
+    overflow: hidden;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast-show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast-hide {
+    transform: translateX(400px);
+    opacity: 0;
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+/* Toast Types */
+
+.toast-success {
+    border-left: 4px solid #28a745;
+}
+
+.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast-info {
+    border-left: 4px solid #17a2b8;
+}
+
+/* Toast Progress Bar */
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.2);
+    animation: toastProgress linear;
+}
+
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+/* Loading Spinner */
+
+.toast-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color, #4a90e2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Loading States
+   ============================================ */
+
+.auth-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.auth-loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color, #4a90e2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   Mobile Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .app-header h1 {
+        font-size: 1.2rem;
+    }
+
+    .auth-modal {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .auth-modal-body {
+        padding: 1.5rem;
+    }
+
+    .generated-username {
+        font-size: 1.5rem;
+        padding: 1rem;
+    }
+
+    .toast-container {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .auth-options {
+        gap: 0.75rem;
+    }
+
+    .auth-option-btn {
+        padding: 1rem;
+    }
+
+    .option-title {
+        font-size: 1rem;
+    }
+
+    .user-info {
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================
+   Accessibility - Focus States
+   ============================================ */
+
+button:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--primary-color, #4a90e2);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+
+@media (prefers-contrast: high) {
+    .auth-modal {
+        border: 2px solid #000;
+    }
+
+    .auth-option-btn:hover {
+        border-width: 3px;
+    }
+}
+
+/* Reduced Motion */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   Dark Mode Support (if needed)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .auth-modal {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+
+    .auth-modal-header {
+        border-bottom-color: #444;
+    }
+
+    .modal-close {
+        color: #aaa;
+    }
+
+    .modal-close:hover {
+        color: #fff;
+    }
+
+    .auth-option-btn {
+        background: #333;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+
+    .auth-option-btn:hover {
+        background: #3a3a3a;
+        border-color: var(--primary-color, #4a90e2);
+    }
+
+    .generated-username {
+        background: #333;
+        color: #4a90e2;
+    }
+
+    .form-group input {
+        background: #333;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+
+    .toast {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+}
