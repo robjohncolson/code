@@ -11,6 +11,13 @@ import dotenv from 'dotenv';
 // Import middleware
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import rateLimiter from './middleware/rateLimit.js';
+import { requestLogging, errorLogging } from './middleware/logging.js';
+
+// Import logger
+import logger from './lib/logger.js';
+
+// Import health checker
+import healthChecker, { databaseCheck, cacheCheck } from './lib/health.js';
 
 // Import routes
 import apiRoutes from './routes/api.js';
@@ -40,17 +47,8 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Request logging (development only)
-if (process.env.NODE_ENV === 'development') {
-    app.use((req, res, next) => {
-        const start = Date.now();
-        res.on('finish', () => {
-            const duration = Date.now() - start;
-            console.log(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
-        });
-        next();
-    });
-}
+// P11: Structured request logging with PII redaction
+app.use(requestLogging);
 
 // Initialize Supabase client
 export const supabase = createClient(
@@ -75,14 +73,38 @@ app.use((req, res, next) => {
 // Routes
 // ============================================
 
-// Health check (no rate limiting)
-app.get('/health', (req, res) => {
+// P11: Comprehensive health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        // Register health checks
+        healthChecker.registerCheck('database', () => databaseCheck(supabase), 1000);
+        healthChecker.registerCheck('cache', () => Promise.resolve(cacheCheck(cache)), 100);
+
+        // Run all checks
+        const health = await healthChecker.runChecks();
+
+        // Return appropriate status code
+        const statusCode = health.status === 'unhealthy' ? 503 : 200;
+
+        res.status(statusCode).json(health);
+    } catch (error) {
+        logger.error('Health check failed', { error });
+        res.status(503).json({
+            status: 'unhealthy',
+            timestamp: new Date().toISOString(),
+            error: 'Health check failed'
+        });
+    }
+});
+
+// Metrics endpoint (similar to Prometheus format)
+app.get('/metrics', (req, res) => {
+    const metrics = healthChecker.getMetrics();
+
     res.json({
-        status: 'healthy',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        version: process.env.npm_package_version || '2.0.0'
+        uptime: Math.floor(process.uptime()),
+        ...metrics
     });
 });
 
@@ -324,6 +346,9 @@ app.get('/api/stats', rateLimiter.general, async (req, res, next) => {
 
 // 404 handler for unknown routes
 app.use(notFoundHandler);
+
+// P11: Error logging middleware
+app.use(errorLogging);
 
 // Global error handler
 app.use(errorHandler);

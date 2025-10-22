@@ -1,0 +1,358 @@
+/**
+ * error_boundary.css - Error Boundary UI Styles
+ * Styles for graceful error handling and recovery
+ */
+
+/* ============================
+   ERROR CONTAINER
+   ============================ */
+
+.error-container {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 500px;
+    pointer-events: none;
+}
+
+.error-container > * {
+    pointer-events: auto;
+}
+
+/* ============================
+   ERROR BOUNDARY
+   ============================ */
+
+.error-boundary {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    border: 2px solid #ff6b6b;
+    border-left: 6px solid #ff6b6b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.error-boundary-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.error-boundary-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.error-boundary-message {
+    flex: 1;
+}
+
+.error-boundary-message h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #c92a2a;
+}
+
+.error-boundary-message p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.error-boundary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.error-boundary-actions .btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+/* ============================
+   OFFLINE BANNER
+   ============================ */
+
+.offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #ffe066 0%, #ffd43b 100%);
+    color: #000;
+    padding: 12px 20px;
+    z-index: 10001;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.offline-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.offline-icon {
+    font-size: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ============================
+   CHART ERROR PLACEHOLDER
+   ============================ */
+
+.chart-error-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    color: #6c757d;
+    min-height: 200px;
+}
+
+.chart-error-icon {
+    font-size: 48px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
+
+.chart-error-placeholder p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.chart-error-placeholder .btn {
+    font-size: 13px;
+}
+
+/* ============================
+   CRITICAL ERROR (FULL SCREEN)
+   ============================ */
+
+.critical-error {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10002;
+    text-align: center;
+    padding: 20px;
+}
+
+.critical-error-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.critical-error h1 {
+    font-size: 32px;
+    margin: 0 0 16px 0;
+    font-weight: 700;
+}
+
+.critical-error p {
+    font-size: 18px;
+    margin: 0 0 32px 0;
+    max-width: 600px;
+    opacity: 0.9;
+}
+
+.critical-error .btn {
+    background: white;
+    color: #c92a2a;
+    font-size: 16px;
+    padding: 12px 32px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.critical-error .btn:hover {
+    transform: scale(1.05);
+}
+
+/* ============================
+   DEGRADED MODE INDICATOR
+   ============================ */
+
+.degraded-mode-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #fff3bf;
+    border: 2px solid #ffd43b;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+}
+
+.degraded-mode-indicator::before {
+    content: '⚙️';
+    font-size: 16px;
+}
+
+/* ============================
+   MOBILE RESPONSIVENESS
+   ============================ */
+
+@media (max-width: 768px) {
+    .error-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .error-boundary {
+        padding: 12px;
+    }
+
+    .error-boundary-content {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .error-boundary-actions {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .error-boundary-actions .btn {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .offline-banner {
+        padding: 10px 15px;
+    }
+
+    .offline-banner-content {
+        font-size: 13px;
+    }
+
+    .critical-error h1 {
+        font-size: 24px;
+    }
+
+    .critical-error p {
+        font-size: 16px;
+    }
+}
+
+/* ============================
+   DARK MODE SUPPORT
+   ============================ */
+
+@media (prefers-color-scheme: dark) {
+    .error-boundary {
+        background: linear-gradient(135deg, #3d1f1f 0%, #2c1a1a 100%);
+        border-color: #c92a2a;
+    }
+
+    .error-boundary-message p {
+        color: #ccc;
+    }
+
+    .chart-error-placeholder {
+        background: #2c2c2c;
+        border-color: #495057;
+        color: #adb5bd;
+    }
+
+    .degraded-mode-indicator {
+        background: #3d3311;
+        border-color: #856404;
+        color: #ffd43b;
+    }
+}
+
+/* ============================
+   ACCESSIBILITY
+   ============================ */
+
+.error-boundary:focus-within {
+    outline: 2px solid #ff6b6b;
+    outline-offset: 2px;
+}
+
+.offline-banner[role="alert"] {
+    /* Screen reader announcement */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .error-boundary,
+    .offline-banner,
+    .critical-error-icon {
+        animation: none;
+    }
+}

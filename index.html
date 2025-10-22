@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/auth_styles.css">
     <link rel="stylesheet" href="css/progress_styles.css">
     <link rel="stylesheet" href="css/progress_dashboard.css">
+    <link rel="stylesheet" href="css/error_boundary.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -20,6 +21,15 @@
 
     <!-- Performance monitoring (load first to capture all metrics) -->
     <script src="js/perf_monitor.js"></script>
+
+    <!-- P11: Structured logging with PII redaction -->
+    <script src="js/logger.js"></script>
+
+    <!-- P11: Client-side metrics collection -->
+    <script src="js/client_metrics.js"></script>
+
+    <!-- P11: Error boundary and recovery system -->
+    <script src="js/error_boundary.js"></script>
 
     <!-- Auth system (load early for non-blocking init) -->
     <script src="js/auth_session.js"></script>
