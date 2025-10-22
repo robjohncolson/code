@@ -1,0 +1,71 @@
+{
+  "repo": {
+    "framework": "Vanilla JavaScript (static site)",
+    "bundler": "None (CDN scripts)",
+    "packageManager": "None on frontend",
+    "nodeEngines": "N/A for frontend; optional Node proxy if present"
+  },
+  "tooling": { "lint": [], "test": [], "e2e": [] },
+  "ui": {
+    "modalPrimitive": { "exists": true, "notes": "ESC close; add focus trap + ARIA" },
+    "sidePanelPrimitive": { "exists": false, "notes": "Easy to add; nice on desktop" },
+    "launchPoints": ["Near FRQ/graph prompts", "Global menu/FAB"]
+  },
+  "dataModel": {
+    "answerStorage": "localStorage under classData.users[username].answers",
+    "graphAnswerShape": { "value": "object|string", "timestamp": "number", "type": "string" },
+    "sifProposal": {
+      "type": "histogram",
+      "version": "0.1",
+      "xLabel": "string",
+      "yLabel": "string",
+      "binning": { "mode": "explicit", "bins": [{"start":0,"end":10,"frequency":3}] },
+      "sketch": { "dataUri": null, "width": 600, "height": 300 },
+      "renderOptions": { "showDatalabels": true, "barGap": 0, "theme": "auto" },
+      "meta": { "created": 0, "modified": 0, "source": "chart-wizard" }
+    }
+  },
+  "charting": {
+    "library": { "name": "Chart.js", "version": "3.x (CDN)" },
+    "plugins": [{ "name": "chartjs-plugin-datalabels", "version": "2.x" }],
+    "coverage": ["bar/histogram", "pie", "scatter", "dotplot", "custom boxplot"],
+    "gaps": ["mosaic", "violin", "zoom/annotation plugins (optional later)"]
+  },
+  "a11yQa": {
+    "currentPractices": ["ESC closes modals; keyboard shortcuts present"],
+    "acceptanceCriteria": [
+      "Keyboard-only flow",
+      "Focus trap + ARIA on dialog",
+      "Screen reader announcements for preview updates",
+      "WCAG AA contrast"
+    ]
+  },
+  "perf": {
+    "budgetKb": null,
+    "lazyLoadPlan": "Dynamically load wizard bundle; reuse global Chart.js"
+  },
+  "security": {
+    "sanitization": "Escape labels (no innerHTML); consider DOMPurify if needed",
+    "csp": "Add CSP; allow data: for sketch thumbnails",
+    "piiNotes": "Anonymous usernames; no PII by default"
+  },
+  "curriculum": {
+    "unitsMap": "Unit 1 topics 1-5/1-6/1-7/1-8 align to histogram & summary graphics",
+    "source": "ALL_UNITS_DATA (repo file)"
+  },
+  "stagingPlan": [
+    { "epic": "Chart Wizard Foundation", "stories": ["Modal + focus trap", "SIF v0.1 + storage", "Histogram form"] },
+    { "epic": "Data & Sketch", "stories": ["SIF→Chart.js preview", "Sketch canvas + save", "Export PNG"] },
+    { "epic": "Production Polish", "stories": ["ARIA/labels/announcements", "Dark mode polish", "Light adapter boundary"] }
+  ],
+  "risks": [
+    { "risk": "Sketch size > quota", "likelihood": "med", "impact": "med", "mitigation": "compress + cap" },
+    { "risk": "Pointer events on tablets", "likelihood": "med", "impact": "med", "mitigation": "Pointer Events + smoothing" },
+    { "risk": "Chart.js upgrade drift", "likelihood": "low", "impact": "med", "mitigation": "pin + smoke tests" }
+  ],
+  "unknowns": [
+    { "question": "Target device list (Chromebooks/iPad)?", "fastUnblocker": "Test on Chrome/Android + iPadOS Safari" },
+    { "question": "Allow extra Chart.js plugins?", "fastUnblocker": "CDN spike, measure footprint" },
+    { "question": "Max acceptable sketch size?", "fastUnblocker": "Start 300KB cap; telemetry later" }
+  ]
+}
