@@ -11,8 +11,11 @@
     "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
-    "lint": "eslint *.js routes/*.js middleware/*.js controllers/*.js",
-    "format": "prettier --write \"**/*.js\""
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "format": "prettier --write \"**/*.js\"",
+    "format:check": "prettier --check \"**/*.js\"",
+    "validate": "npm run format:check && npm run lint && npm test"
   },
   "engines": {
     "node": ">=18.0.0"

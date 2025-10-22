@@ -1,0 +1,25 @@
+# Railway Configuration
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd railway-server && npm ci --production"
+
+[deploy]
+startCommand = "cd railway-server && npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[environments.staging]
+[environments.staging.deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+[environments.production]
+[environments.production.deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+# Manual deploy only for production
+deployOnPush = false

@@ -1,0 +1,84 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:security/recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "plugins": [
+    "security",
+    "no-secrets"
+  ],
+  "rules": {
+    "no-console": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-secrets/no-secrets": "error",
+    "security/detect-object-injection": "off",
+    "security/detect-non-literal-fs-filename": "off",
+
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[A-Z|a-z]{2,}/]",
+        "message": "Email addresses should not be hardcoded in source code. Use configuration or redact them."
+      },
+      {
+        "selector": "Literal[value=/\\b(Apple|Banana|Cherry|Date|Elderberry|Fig|Grape|Honeydew)_(Lion|Tiger|Bear|Eagle|Dolphin|Wolf|Fox|Hawk|Deer|Rabbit|Snake|Owl)\\b/]",
+        "message": "Usernames should be redacted or hashed. Use logger.redactor.hash() or constants."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d{3}[-.]?\\d{3}[-.]?\\d{4}\\b/]",
+        "message": "Phone numbers should not be hardcoded. Use configuration or redact them."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["railway-server/**/*.js"],
+      "env": {
+        "browser": false,
+        "node": true
+      },
+      "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module"
+      }
+    },
+    {
+      "files": ["js/**/*.js"],
+      "env": {
+        "browser": true,
+        "node": false
+      },
+      "globals": {
+        "Chart": "readonly",
+        "MathJax": "readonly"
+      }
+    },
+    {
+      "files": ["test/**/*.js", "**/*.test.js"],
+      "env": {
+        "jest": true,
+        "qunit": true
+      },
+      "globals": {
+        "QUnit": "readonly"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "coverage/",
+    "data/curriculum*.js",
+    "*.min.js"
+  ]
+}

@@ -1,0 +1,122 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  quick-check:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint changed files only
+        run: |
+          # Get list of changed JS files
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.js$' || true)
+
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "Linting changed files:"
+            echo "$CHANGED_FILES"
+            echo "$CHANGED_FILES" | xargs npx eslint
+          else
+            echo "No JavaScript files changed"
+          fi
+
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          # Check if PR title starts with conventional commit type
+          if ! echo "$PR_TITLE" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?:'; then
+            echo "❌ PR title must follow conventional commits format"
+            echo "Examples: feat: add new feature, fix: resolve bug, docs: update README"
+            exit 1
+          fi
+
+          echo "✅ PR title format is valid"
+
+      - name: Check for large files
+        run: |
+          # Check for files larger than 500KB
+          LARGE_FILES=$(find . -type f -size +500k -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./data/curriculum*.js" || true)
+
+          if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️ Warning: Large files detected (>500KB):"
+            echo "$LARGE_FILES"
+          fi
+
+      - name: Check for secrets
+        run: |
+          # Basic secret pattern detection
+          if git diff ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '(password|secret|api_key|apikey|token).*=.*["\047][a-zA-Z0-9]{20,}'; then
+            echo "❌ Potential secrets detected in diff"
+            exit 1
+          fi
+          echo "✅ No obvious secrets detected"
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check curriculum chunks size
+        run: |
+          echo "📊 Curriculum chunk sizes:"
+          if [ -d "data" ]; then
+            ls -lh data/curriculum_u*.js 2>/dev/null || echo "No curriculum chunks found"
+
+            # Check if any chunk exceeds 600KB
+            for file in data/curriculum_u*.js; do
+              if [ -f "$file" ]; then
+                size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+                if [ "$size" -gt 614400 ]; then
+                  echo "⚠️ Warning: $file exceeds 600KB"
+                fi
+              fi
+            done
+          fi
+
+  comment-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: [quick-check, size-check]
+    if: always()
+    steps:
+      - name: Create PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const quickCheck = '${{ needs.quick-check.result }}';
+            const sizeCheck = '${{ needs.size-check.result }}';
+
+            let body = '## PR Check Results\n\n';
+            body += `- Quick Validation: ${quickCheck === 'success' ? '✅' : '❌'}\n`;
+            body += `- Bundle Size Check: ${sizeCheck === 'success' ? '✅' : '❌'}\n`;
+            body += '\n---\n';
+            body += 'Please ensure all checks pass before merging.\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

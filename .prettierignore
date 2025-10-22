@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Data files (large generated files)
+data/curriculum.js
+data/curriculum_u*.js
+data/curriculum_manifest.json
+
+# Minified files
+*.min.js
+
+# Test fixtures
+test/fixtures/
+
+# Generated documentation
+docs/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Railway
+.railway/
+
+# Package lock files
+package-lock.json
+*/package-lock.json
