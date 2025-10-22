@@ -1,0 +1,407 @@
+/**
+ * progress_styles.css - Progress Sync UI Styles
+ * Part of AP Statistics Consensus Quiz
+ *
+ * Visual styles for progress synchronization UI components
+ */
+
+/* Main container */
+.progress-sync-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.progress-sync-container > * {
+    pointer-events: auto;
+}
+
+/* Sync Status Indicator */
+.sync-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.sync-status-indicator:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #bbb;
+}
+
+.sync-status-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sync-icon {
+    fill: currentColor;
+}
+
+.sync-status-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+/* Status colors */
+.status-idle {
+    color: #666;
+}
+
+.status-idle .sync-status-dot {
+    background: #999;
+}
+
+.status-syncing {
+    color: #2196F3;
+}
+
+.status-syncing .sync-status-dot {
+    background: #2196F3;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-synced {
+    color: #4CAF50;
+}
+
+.status-synced .sync-status-dot {
+    background: #4CAF50;
+}
+
+.status-failed {
+    color: #f44336;
+}
+
+.status-failed .sync-status-dot {
+    background: #f44336;
+}
+
+.status-offline {
+    color: #FF9800;
+}
+
+.status-offline .sync-status-dot {
+    background: #FF9800;
+}
+
+/* Spinning animation for sync icon */
+.sync-icon.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Progress Bar */
+.sync-progress-bar {
+    position: relative;
+    width: 200px;
+    height: 24px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s ease;
+}
+
+.sync-progress-bar.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sync-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2196F3, #42A5F5);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.sync-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #333;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Offline Indicator */
+.offline-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #FF9800;
+    color: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.offline-indicator svg {
+    fill: white;
+}
+
+.offline-indicator.hidden {
+    display: none;
+}
+
+/* Manual Sync Button */
+.manual-sync-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.2s ease;
+}
+
+.manual-sync-button:hover:not(:disabled) {
+    background: #1976D2;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.manual-sync-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.manual-sync-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.manual-sync-button.syncing svg {
+    animation: spin 1s linear infinite;
+}
+
+.manual-sync-button svg {
+    fill: white;
+}
+
+/* Toast Notifications */
+.sync-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.sync-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: white;
+    border-left: 4px solid #666;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 250px;
+    max-width: 400px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.sync-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.sync-toast-icon {
+    font-size: 18px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.sync-toast-message {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
+}
+
+/* Toast types */
+.sync-toast-success {
+    border-left-color: #4CAF50;
+}
+
+.sync-toast-success .sync-toast-icon {
+    color: #4CAF50;
+}
+
+.sync-toast-error {
+    border-left-color: #f44336;
+}
+
+.sync-toast-error .sync-toast-icon {
+    color: #f44336;
+}
+
+.sync-toast-warning {
+    border-left-color: #FF9800;
+}
+
+.sync-toast-warning .sync-toast-icon {
+    color: #FF9800;
+}
+
+.sync-toast-info {
+    border-left-color: #2196F3;
+}
+
+.sync-toast-info .sync-toast-icon {
+    color: #2196F3;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .progress-sync-container {
+        top: 5px;
+        right: 5px;
+        gap: 8px;
+    }
+
+    .sync-status-indicator {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .sync-progress-bar {
+        width: 150px;
+        height: 20px;
+    }
+
+    .sync-progress-text {
+        font-size: 10px;
+    }
+
+    .manual-sync-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .sync-toast-container {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+    }
+
+    .sync-toast {
+        min-width: auto;
+        width: 100%;
+    }
+
+    /* Hide sync button text on mobile */
+    .manual-sync-button span {
+        display: none;
+    }
+}
+
+/* Dark mode support (if app has dark mode) */
+@media (prefers-color-scheme: dark) {
+    .sync-status-indicator,
+    .sync-progress-bar,
+    .sync-toast {
+        background: #2d2d2d;
+        border-color: #444;
+        color: #eee;
+    }
+
+    .sync-toast-message {
+        color: #eee;
+    }
+
+    .sync-status-indicator:hover {
+        border-color: #666;
+    }
+
+    .sync-status-dot {
+        border-color: #2d2d2d;
+    }
+
+    .sync-progress-text {
+        color: #eee;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* Accessibility */
+.sync-status-indicator:focus,
+.manual-sync-button:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .sync-icon.spinning,
+    .sync-toast,
+    .sync-status-indicator,
+    .manual-sync-button {
+        animation: none;
+        transition: none;
+    }
+
+    .sync-status-dot {
+        animation: none;
+    }
+}

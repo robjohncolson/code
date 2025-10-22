@@ -7,6 +7,7 @@
 
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/auth_styles.css">
+    <link rel="stylesheet" href="css/progress_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -204,6 +205,9 @@
     <script src="js/curriculum_config.js"></script>
     <script src="js/curriculum_index.js"></script>
     <script src="js/curriculum_loader.js"></script>
+    <script src="js/offline_queue.js"></script>
+    <script src="js/progress_sync.js"></script>
+    <script src="js/progress_ui.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/data_manager.js"></script>
     <script>
@@ -3523,7 +3527,19 @@ function renderLessonSelector(unitInfo) {
             };
             localStorage.setItem(userAnswersKey, JSON.stringify(userAnswers));
 
-            // Sync to Supabase if turbo mode is active
+            // P7: Sync progress via new progress sync system
+            if (window.progressSync && window.progressSync.config.enabled) {
+                const attempt = attempts + 1;
+                window.progressSync.saveProgress(questionId, value, reason, attempt)
+                    .then(() => {
+                        console.log(`✅ Progress sync initiated for ${questionId}`);
+                    })
+                    .catch(error => {
+                        console.log(`⚠️ Progress sync failed: ${error.message}`);
+                    });
+            }
+
+            // Sync to Supabase if turbo mode is active (backward compatibility)
             if (turboModeActive) {
                 // PHASE 2 OPTIMIZATION: Use batching queue instead of immediate sync
                 if (window.submitAnswerViaRailway) {

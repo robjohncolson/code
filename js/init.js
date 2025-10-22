@@ -366,6 +366,26 @@ window.initializeAfterAuth = function() {
         updateCurrentUsernameDisplay();
     }
 
+    // Initialize progress sync if available
+    if (typeof ProgressSync !== 'undefined' && !window.progressSync) {
+        window.progressSync = new ProgressSync();
+        window.progressSync.initialize().then(() => {
+            console.log('[AppInit] Progress sync initialized');
+
+            // Initialize progress UI
+            if (typeof ProgressUI !== 'undefined' && !window.progressUI) {
+                window.progressUI = new ProgressUI(window.progressSync);
+                window.progressUI.initialize();
+                console.log('[AppInit] Progress UI initialized');
+            }
+
+            // Load progress from server
+            window.progressSync.loadAllProgress().then(() => {
+                console.log('[AppInit] Progress loaded from server');
+            });
+        });
+    }
+
     console.log('[AppInit] Post-auth initialization complete');
 };
 

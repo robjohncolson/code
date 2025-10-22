@@ -285,6 +285,237 @@ app.post('/api/batch-submit', async (req, res) => {
   }
 });
 
+// ============================
+// PROGRESS API ENDPOINTS (P7)
+// ============================
+
+// Save progress for a question
+app.post('/api/progress', async (req, res) => {
+  try {
+    // Extract JWT from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No authorization token provided' });
+    }
+
+    const token = authHeader.substring(7);
+
+    // For now, we'll decode the JWT payload without full verification
+    // In production, use a proper JWT library like jsonwebtoken
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const username = payload.username;
+
+    if (!username) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { question_id, answer, reason, attempt, timestamp } = req.body;
+
+    if (!question_id || !answer) {
+      return res.status(400).json({ error: 'Missing required fields: question_id, answer' });
+    }
+
+    // Normalize timestamp
+    const normalizedTimestamp = normalizeTimestamp(timestamp || Date.now());
+
+    // Save to answers table (for backward compatibility)
+    const { data: answerData, error: answerError } = await supabase
+      .from('answers')
+      .upsert([{
+        username,
+        question_id,
+        answer_value: answer,
+        timestamp: normalizedTimestamp
+      }], { onConflict: 'username,question_id' });
+
+    if (answerError) throw answerError;
+
+    // TODO: Add progress table for reasons and attempts if schema exists
+    // For now, we'll just acknowledge the save
+
+    // Invalidate cache
+    cache.lastUpdate = 0;
+    cache.questionStats.delete(question_id);
+
+    // Broadcast to WebSocket clients
+    const update = {
+      type: 'progress_saved',
+      username,
+      question_id,
+      timestamp: normalizedTimestamp
+    };
+
+    broadcastToClients(update);
+
+    res.json({
+      success: true,
+      id: `${username}-${question_id}`,
+      synced_at: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error saving progress:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Load all progress for a user
+app.get('/api/progress', async (req, res) => {
+  try {
+    // Extract JWT from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No authorization token provided' });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Decode JWT payload
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const username = payload.username;
+
+    if (!username) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { since, unit } = req.query;
+
+    // Build query
+    let query = supabase
+      .from('answers')
+      .select('*')
+      .eq('username', username)
+      .order('timestamp', { ascending: false });
+
+    // Filter by timestamp if provided
+    if (since) {
+      const sinceTimestamp = normalizeTimestamp(since);
+      query = query.gt('timestamp', sinceTimestamp);
+    }
+
+    // Filter by unit if provided
+    if (unit) {
+      query = query.like('question_id', `U${unit}-%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Transform to expected format
+    const progress = data.map(item => ({
+      question_id: item.question_id,
+      answer: item.answer_value,
+      reason: null, // TODO: Add when progress table exists
+      attempt: 1,   // TODO: Add when progress table exists
+      timestamp: new Date(item.timestamp).toISOString(),
+      synced_at: new Date(item.timestamp).toISOString()
+    }));
+
+    res.json({
+      success: true,
+      progress,
+      total: progress.length,
+      last_sync: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error loading progress:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Batch save progress
+app.post('/api/progress/batch', async (req, res) => {
+  try {
+    // Extract JWT from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No authorization token provided' });
+    }
+
+    const token = authHeader.substring(7);
+
+    // Decode JWT payload
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    const username = payload.username;
+
+    if (!username) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { operations } = req.body;
+
+    if (!operations || !Array.isArray(operations)) {
+      return res.status(400).json({ error: 'Invalid operations array' });
+    }
+
+    const results = [];
+    const failed = [];
+
+    // Process each operation
+    for (let i = 0; i < operations.length; i++) {
+      const op = operations[i];
+
+      try {
+        if (op.type === 'save' && op.data) {
+          const { question_id, answer, timestamp } = op.data;
+
+          const normalizedTimestamp = normalizeTimestamp(timestamp || Date.now());
+
+          const { error } = await supabase
+            .from('answers')
+            .upsert([{
+              username,
+              question_id,
+              answer_value: answer,
+              timestamp: normalizedTimestamp
+            }], { onConflict: 'username,question_id' });
+
+          if (error) throw error;
+
+          results.push({
+            index: i,
+            success: true,
+            id: `${username}-${question_id}`
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing operation ${i}:`, error);
+        failed.push({
+          index: i,
+          error: error.message
+        });
+      }
+    }
+
+    // Invalidate cache
+    cache.lastUpdate = 0;
+    cache.questionStats.clear();
+
+    // Broadcast batch update
+    const update = {
+      type: 'batch_progress_saved',
+      username,
+      count: results.length,
+      timestamp: Date.now()
+    };
+
+    broadcastToClients(update);
+
+    res.json({
+      success: true,
+      results,
+      failed,
+      synced_at: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error batch saving progress:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get server statistics
 app.get('/api/stats', async (req, res) => {
   try {
