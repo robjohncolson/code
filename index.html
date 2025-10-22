@@ -14,6 +14,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase_config.js"></script>
     <script src="railway_config.js"></script>
+
+    <!-- Auth system (load early for non-blocking init) -->
+    <script src="js/auth_session.js"></script>
+    <script src="js/auth_ui.js"></script>
+    <script src="js/error_toast.js"></script>
+
     <script src="js/charts.js"></script>
     <script src="docs/sync_diagnostics.js"></script>
     <script src="railway_client.js"></script>
@@ -27,9 +33,22 @@
 
 </head>
 <body>
+    <!-- Screen reader announcer for accessibility -->
+    <div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
     <canvas id="spriteCanvas"></canvas>
+
+    <!-- Auth Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <h1>🧮 AP Statistics Consensus Quiz</h1>
+        </div>
+        <div class="header-right">
+            <div id="auth-container"></div>
+        </div>
+    </div>
+
     <div class="container">
-        <h1>🧮 AP Statistics Consensus Quiz</h1>
         <div id="messageArea"></div>
         <div id="questionsContainer"></div>
     </div>

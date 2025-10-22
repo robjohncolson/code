@@ -1,0 +1,1087 @@
+openapi: 3.0.3
+info:
+  title: AP Statistics Consensus Quiz API
+  description: |
+    REST API for the AP Statistics Consensus Quiz application.
+    Supports anonymous student authentication, peer collaboration, and teacher oversight.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@apstats-quiz.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://apstats-quiz.railway.app/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: JWT authentication and session management
+  - name: Profiles
+    description: User profile management
+  - name: Progress
+    description: Learning progress tracking
+  - name: Answers
+    description: Quiz answer submission and retrieval
+  - name: Votes
+    description: Peer voting system
+  - name: Badges
+    description: Achievement and badge system
+  - name: Activity
+    description: Real-time user activity tracking
+  - name: Classes
+    description: Class section management
+
+paths:
+  # ============================================
+  # Authentication Endpoints
+  # ============================================
+
+  /auth/anonymous:
+    post:
+      tags:
+        - Authentication
+      summary: Create anonymous session
+      description: Generate JWT token for anonymous user with Fruit_Animal username
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  pattern: '^[A-Za-z0-9_]+$'
+                  minLength: 3
+                  maxLength: 50
+                  example: Apple_Penguin
+                class_section_code:
+                  type: string
+                  minLength: 4
+                  maxLength: 20
+                  example: STATS2024
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/teacher:
+    post:
+      tags:
+        - Authentication
+      summary: Teacher authentication
+      description: Authenticate as teacher with access code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - access_code
+              properties:
+                access_code:
+                  type: string
+                  description: Teacher access code
+                  example: TEACHER-2024-SECRET
+                username:
+                  type: string
+                  description: Optional custom username
+                  example: Teacher_Demo
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid access code
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Exchange valid token for new token with extended expiration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: New JWT token
+                  expires_in:
+                    type: integer
+                    description: Seconds until expiration
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================
+  # Profile Endpoints
+  # ============================================
+
+  /profiles:
+    post:
+      tags:
+        - Profiles
+      summary: Create user profile
+      description: Create new user profile with anonymous username
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileCreate'
+      responses:
+        '201':
+          description: Profile created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                    description: JWT authentication token
+                  profile:
+                    $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Username already exists
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /profiles/{username}:
+    get:
+      tags:
+        - Profiles
+      summary: Get user profile
+      description: Retrieve profile information by username
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          description: Profile not found
+
+    patch:
+      tags:
+        - Profiles
+      summary: Update user profile
+      description: Update profile information (own profile only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # ============================================
+  # Progress Endpoints
+  # ============================================
+
+  /progress/{username}:
+    get:
+      tags:
+        - Progress
+      summary: Get user progress
+      description: Retrieve all progress records for a user
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Progress'
+        '404':
+          description: User not found
+
+  /progress:
+    post:
+      tags:
+        - Progress
+      summary: Update progress
+      description: Create or update progress record for current lesson
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgressUpdate'
+      responses:
+        '200':
+          description: Progress updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /progress/class/{section_code}:
+    get:
+      tags:
+        - Progress
+      summary: Get class progress
+      description: Retrieve progress summary for all students in a class (teacher only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: section_code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4,20}$'
+      responses:
+        '200':
+          description: Class progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentProgress'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # ============================================
+  # Answer Endpoints
+  # ============================================
+
+  /answers/{question_id}:
+    get:
+      tags:
+        - Answers
+      summary: Get question answers
+      description: Retrieve all peer answers for a question
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+        - name: attempt
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: Answers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Answer'
+
+  /answers:
+    post:
+      tags:
+        - Answers
+      summary: Submit answer
+      description: Submit an answer to a quiz question
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerSubmit'
+      responses:
+        '201':
+          description: Answer submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /answers/{question_id}/stats:
+    get:
+      tags:
+        - Answers
+      summary: Get answer statistics
+      description: Retrieve statistics for question answers
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerStats'
+
+  # ============================================
+  # Vote Endpoints
+  # ============================================
+
+  /votes/{question_id}:
+    get:
+      tags:
+        - Votes
+      summary: Get question votes
+      description: Retrieve all votes for answers to a question
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      responses:
+        '200':
+          description: Votes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vote'
+
+  /votes:
+    post:
+      tags:
+        - Votes
+      summary: Cast vote
+      description: Vote for a peer's answer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteCast'
+      responses:
+        '201':
+          description: Vote cast successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vote'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Cannot vote for own answer
+        '409':
+          description: Already voted
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /votes/{vote_id}:
+    delete:
+      tags:
+        - Votes
+      summary: Remove vote
+      description: Remove a previously cast vote
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vote_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Vote removed successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vote not found
+
+  # ============================================
+  # Badge Endpoints
+  # ============================================
+
+  /badges/{username}:
+    get:
+      tags:
+        - Badges
+      summary: Get user badges
+      description: Retrieve all badges earned by a user
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Badges retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Badge'
+
+  /badges:
+    post:
+      tags:
+        - Badges
+      summary: Award badge
+      description: Award a badge to a student (teacher only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BadgeAward'
+      responses:
+        '201':
+          description: Badge awarded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Badge'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: Badge already awarded
+
+  /badges/leaderboard/{section_code}:
+    get:
+      tags:
+        - Badges
+      summary: Get class leaderboard
+      description: Retrieve badge leaderboard for a class section
+      parameters:
+        - name: section_code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4,20}$'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Leaderboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+
+  # ============================================
+  # Activity Endpoints
+  # ============================================
+
+  /activity/online:
+    get:
+      tags:
+        - Activity
+      summary: Get online users
+      description: Retrieve list of currently online users
+      parameters:
+        - name: class_section_code
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Online users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserActivity'
+
+  /activity:
+    post:
+      tags:
+        - Activity
+      summary: Update activity
+      description: Update user activity status (heartbeat)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityUpdate'
+      responses:
+        '200':
+          description: Activity updated successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /activity/question/{question_id}:
+    get:
+      tags:
+        - Activity
+      summary: Get question activity
+      description: Get users currently viewing/answering a question
+      parameters:
+        - $ref: '#/components/parameters/QuestionId'
+      responses:
+        '200':
+          description: Question activity retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserActivity'
+
+  # ============================================
+  # Health Check
+  # ============================================
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check API health status
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+# ============================================
+# Components
+# ============================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoint
+
+  parameters:
+    Username:
+      name: username
+      in: path
+      required: true
+      description: User's unique username
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_]+$'
+        minLength: 3
+        maxLength: 50
+        example: Apple_Penguin
+
+    QuestionId:
+      name: question_id
+      in: path
+      required: true
+      description: Question identifier
+      schema:
+        type: string
+        maxLength: 50
+        example: U1-L2-Q01
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Authentication required
+            message: No authorization header provided
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Forbidden
+            message: You do not have permission to perform this action
+
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+
+  schemas:
+    # ============================================
+    # Error Schemas
+    # ============================================
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Error code for programmatic handling
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  value:
+                    type: string
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            retryAfter:
+              type: integer
+              description: Seconds until rate limit resets
+
+    # ============================================
+    # Auth Schemas
+    # ============================================
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        token:
+          type: string
+          description: JWT authentication token
+        profile:
+          $ref: '#/components/schemas/Profile'
+        expires_in:
+          type: integer
+          description: Token expiration in seconds
+
+    # ============================================
+    # Domain Schemas
+    # ============================================
+
+    Profile:
+      type: object
+      properties:
+        username:
+          type: string
+        is_teacher:
+          type: boolean
+        class_section_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_unit:
+          type: string
+          nullable: true
+        current_lesson:
+          type: string
+          nullable: true
+        total_questions_answered:
+          type: integer
+        total_votes_received:
+          type: integer
+        badges_earned:
+          type: integer
+        avatar_config:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProfileCreate:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          pattern: '^[A-Za-z0-9_]+$'
+          minLength: 3
+          maxLength: 50
+        class_section_code:
+          type: string
+          minLength: 4
+          maxLength: 20
+
+    ProfileUpdate:
+      type: object
+      properties:
+        current_unit:
+          type: string
+          maxLength: 50
+        current_lesson:
+          type: string
+          maxLength: 50
+        avatar_config:
+          type: object
+
+    Progress:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        unit_id:
+          type: string
+        lesson_id:
+          type: string
+        questions_completed:
+          type: integer
+        questions_total:
+          type: integer
+        completion_percentage:
+          type: number
+          format: float
+        time_spent_seconds:
+          type: integer
+        last_activity:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ProgressUpdate:
+      type: object
+      required:
+        - unit_id
+        - lesson_id
+        - questions_completed
+        - questions_total
+      properties:
+        unit_id:
+          type: string
+          maxLength: 50
+        lesson_id:
+          type: string
+          maxLength: 50
+        questions_completed:
+          type: integer
+          minimum: 0
+        questions_total:
+          type: integer
+          minimum: 1
+        time_spent_seconds:
+          type: integer
+          minimum: 0
+
+    StudentProgress:
+      type: object
+      properties:
+        username:
+          type: string
+        units_started:
+          type: integer
+        avg_completion:
+          type: number
+          format: float
+        total_questions_answered:
+          type: integer
+        last_activity:
+          type: string
+          format: date-time
+
+    Answer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        question_id:
+          type: string
+        answer_value:
+          type: string
+        reasoning:
+          type: string
+          nullable: true
+        chart_data:
+          type: object
+          nullable: true
+        attempt_number:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        vote_count:
+          type: integer
+
+    AnswerSubmit:
+      type: object
+      required:
+        - question_id
+        - answer_value
+      properties:
+        question_id:
+          type: string
+          maxLength: 50
+        answer_value:
+          type: string
+          maxLength: 2000
+        reasoning:
+          type: string
+          maxLength: 2000
+        chart_data:
+          type: object
+        attempt_number:
+          type: integer
+          minimum: 1
+          maximum: 10
+
+    AnswerStats:
+      type: object
+      properties:
+        question_id:
+          type: string
+        total_answers:
+          type: integer
+        unique_students:
+          type: integer
+        answer_distribution:
+          type: object
+          additionalProperties:
+            type: integer
+        most_common_answer:
+          type: string
+        consensus_percentage:
+          type: number
+          format: float
+
+    Vote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_id:
+          type: string
+        voter_username:
+          type: string
+        target_username:
+          type: string
+        vote_type:
+          type: string
+          enum: [helpful, correct, creative]
+        created_at:
+          type: string
+          format: date-time
+
+    VoteCast:
+      type: object
+      required:
+        - question_id
+        - target_username
+        - vote_type
+      properties:
+        question_id:
+          type: string
+          maxLength: 50
+        target_username:
+          type: string
+        vote_type:
+          type: string
+          enum: [helpful, correct, creative]
+
+    Badge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        badge_type:
+          type: string
+        username:
+          type: string
+        earned_date:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          nullable: true
+
+    BadgeAward:
+      type: object
+      required:
+        - badge_type
+        - username
+      properties:
+        badge_type:
+          type: string
+          maxLength: 50
+        username:
+          type: string
+        metadata:
+          type: object
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        username:
+          type: string
+        badge_count:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: string
+
+    UserActivity:
+      type: object
+      properties:
+        username:
+          type: string
+        activity_state:
+          type: string
+          enum: [online, idle, answering, viewing]
+        current_question:
+          type: string
+          nullable: true
+        current_page:
+          type: string
+          nullable: true
+        last_activity:
+          type: string
+          format: date-time
+
+    ActivityUpdate:
+      type: object
+      required:
+        - activity_state
+      properties:
+        activity_state:
+          type: string
+          enum: [online, idle, answering, viewing]
+        current_question:
+          type: string
+          maxLength: 50
+        current_page:
+          type: string
+          maxLength: 100
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        memory:
+          type: object
+          properties:
+            rss:
+              type: integer
+            heapTotal:
+              type: integer
+            heapUsed:
+              type: integer
+            external:
+              type: integer
+        version:
+          type: string

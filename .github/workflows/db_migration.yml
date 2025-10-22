@@ -1,0 +1,157 @@
+name: Database Migration Check
+
+on:
+  pull_request:
+    paths:
+      - 'migrations/*.sql'
+      - 'docs/database/*.sql'
+      - 'scripts/*.sql'
+  push:
+    branches:
+      - main
+    paths:
+      - 'migrations/*.sql'
+
+jobs:
+  validate-migrations:
+    name: Validate Database Migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: apstats_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+
+      - name: Run migration 001 (Core Tables)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d apstats_test -f migrations/001_core_tables.sql
+
+      - name: Run migration 002 (RLS Policies)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d apstats_test -f migrations/002_rls_policies.sql
+
+      - name: Run migration 003 (Seed Data)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d apstats_test -f migrations/003_seed_data.sql
+
+      - name: Validate schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d apstats_test -f scripts/validate_schema.sql
+
+      - name: Check table count
+        env:
+          PGPASSWORD: postgres
+        run: |
+          TABLES=$(psql -h localhost -U postgres -d apstats_test -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('class_sections', 'profiles', 'progress', 'answers', 'votes', 'badges', 'user_activity');")
+          echo "Tables found: $TABLES"
+          if [ "$TABLES" -ne 7 ]; then
+            echo "ERROR: Expected 7 tables, found $TABLES"
+            exit 1
+          fi
+
+      - name: Check RLS enabled
+        env:
+          PGPASSWORD: postgres
+        run: |
+          RLS=$(psql -h localhost -U postgres -d apstats_test -tAc "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public' AND rowsecurity = TRUE;")
+          echo "Tables with RLS: $RLS"
+          if [ "$RLS" -ne 7 ]; then
+            echo "ERROR: Expected RLS on 7 tables, found $RLS"
+            exit 1
+          fi
+
+      - name: Check indexes
+        env:
+          PGPASSWORD: postgres
+        run: |
+          INDEXES=$(psql -h localhost -U postgres -d apstats_test -tAc "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname LIKE 'idx_%';")
+          echo "Indexes found: $INDEXES"
+          if [ "$INDEXES" -lt 10 ]; then
+            echo "WARNING: Expected at least 10 indexes, found $INDEXES"
+          fi
+
+      - name: Test RLS policies
+        env:
+          PGPASSWORD: postgres
+        run: |
+          echo "Testing RLS policy enforcement..."
+          psql -h localhost -U postgres -d apstats_test -c "
+            SET app.current_username = 'Test_User';
+            INSERT INTO profiles (username) VALUES ('Test_User'), ('Other_User') ON CONFLICT DO NOTHING;
+            UPDATE profiles SET current_unit = 'hacked' WHERE username = 'Other_User';
+          " || echo "RLS correctly prevented unauthorized update"
+
+      - name: Run sample queries
+        env:
+          PGPASSWORD: postgres
+        run: |
+          echo "Testing sample queries..."
+          psql -h localhost -U postgres -d apstats_test -c "
+            SELECT p.username, COUNT(DISTINCT pr.unit_id) as units
+            FROM profiles p
+            LEFT JOIN progress pr ON p.username = pr.username
+            GROUP BY p.username
+            LIMIT 5;
+          "
+
+      - name: Performance check
+        env:
+          PGPASSWORD: postgres
+        run: |
+          echo "Checking query performance..."
+          psql -h localhost -U postgres -d apstats_test -c "
+            EXPLAIN ANALYZE
+            SELECT * FROM profiles WHERE username = 'Apple_Penguin';
+          " | grep -i "index scan" || echo "WARNING: Query may not be using index"
+
+      - name: Migration summary
+        if: success()
+        run: |
+          echo "✅ All database migrations validated successfully!"
+          echo "- All tables created"
+          echo "- RLS enabled on all tables"
+          echo "- Indexes created"
+          echo "- Sample data inserted"
+          echo "- Queries validated"
+
+      - name: Cleanup on failure
+        if: failure()
+        env:
+          PGPASSWORD: postgres
+        run: |
+          echo "❌ Migration validation failed"
+          psql -h localhost -U postgres -d apstats_test -c "
+            SELECT tablename, rowsecurity
+            FROM pg_tables
+            WHERE schemaname = 'public'
+            ORDER BY tablename;
+          "

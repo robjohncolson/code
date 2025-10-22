@@ -8,7 +8,8 @@
       "Bash(done)",
       "Bash(chmod:*)",
       "Bash(./create-all-materials.sh:*)",
-      "Read(///**)"
+      "Read(///**)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
