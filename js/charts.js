@@ -1533,6 +1533,462 @@ function renderChart(chartData, questionId) {
     return html;
 }
 
+// ============================================
+// PROGRESS CHARTS - Two-Phase Rendering
+// ============================================
+
+/**
+ * Phase 1: Generate HTML for unit progress bar chart
+ * @param {string} containerId - Container element ID
+ * @param {number} width - Canvas width in pixels
+ * @param {number} height - Canvas height in pixels
+ * @returns {string} HTML string
+ */
+function getUnitProgressChartHtml(containerId, width = 400, height = 250) {
+    const canvasId = `${containerId}-canvas`;
+    return `
+        <div id="${containerId}" class="progress-chart-container">
+            <div class="progress-chart-canvas">
+                <canvas id="${canvasId}" width="${width}" height="${height}"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Phase 2: Render unit progress bar chart
+ * @param {string} canvasId - Canvas element ID
+ * @param {Object} progressData - Data from ProgressChartAdapter.unitCompletionData()
+ */
+function renderUnitProgressChartNow(canvasId, progressData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`Canvas not found: ${canvasId}`);
+        return;
+    }
+
+    // Handle empty data
+    if (progressData.empty) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = getTextColor();
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(progressData.message || 'No data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Destroy existing chart
+    if (window.chartInstances?.[canvasId]) {
+        try {
+            window.chartInstances[canvasId].destroy();
+        } catch (e) {
+            console.warn(`Error destroying chart ${canvasId}:`, e);
+        }
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: progressData,
+        options: {
+            indexAxis: 'y', // Horizontal bars
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Completion %',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: true,
+                        color: getGridColor()
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        callback: (value) => value + '%'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: getTextColor()
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                datalabels: {
+                    display: true,
+                    color: '#fff',
+                    anchor: 'center',
+                    align: 'center',
+                    formatter: (value) => value + '%',
+                    font: {
+                        weight: 'bold'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const unit = context.label;
+                            const percentage = context.parsed.x;
+                            const counts = progressData.counts || {};
+                            const totals = progressData.totals || {};
+                            const unitNum = parseInt(unit.match(/\d+/)[0]);
+                            const answered = counts[unitNum] || 0;
+                            const total = totals[unitNum] || answered;
+                            return `${percentage}% (${answered}/${total} questions)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    window.chartInstances[canvasId] = chart;
+}
+
+/**
+ * Phase 1: Generate HTML for time series line chart
+ * @param {string} containerId - Container element ID
+ * @param {number} width - Canvas width in pixels
+ * @param {number} height - Canvas height in pixels
+ * @returns {string} HTML string
+ */
+function getTimeSeriesChartHtml(containerId, width = 500, height = 300) {
+    const canvasId = `${containerId}-canvas`;
+    return `
+        <div id="${containerId}" class="progress-chart-container">
+            <div class="progress-chart-canvas">
+                <canvas id="${canvasId}" width="${width}" height="${height}"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Phase 2: Render time series line chart
+ * @param {string} canvasId - Canvas element ID
+ * @param {Object} timeData - Data from ProgressChartAdapter.timeSeriesData()
+ */
+function renderTimeSeriesChartNow(canvasId, timeData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`Canvas not found: ${canvasId}`);
+        return;
+    }
+
+    // Handle empty data
+    if (timeData.empty) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = getTextColor();
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(timeData.message || 'No data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Destroy existing chart
+    if (window.chartInstances?.[canvasId]) {
+        try {
+            window.chartInstances[canvasId].destroy();
+        } catch (e) {
+            console.warn(`Error destroying chart ${canvasId}:`, e);
+        }
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: timeData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Questions Answered',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: true,
+                        color: getGridColor()
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        precision: 0
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: getTextColor()
+                    }
+                },
+                datalabels: {
+                    display: false // Too cluttered for line charts
+                }
+            }
+        }
+    });
+
+    window.chartInstances[canvasId] = chart;
+}
+
+/**
+ * Phase 1: Generate HTML for success rate stacked bar chart
+ * @param {string} containerId - Container element ID
+ * @param {number} width - Canvas width in pixels
+ * @param {number} height - Canvas height in pixels
+ * @returns {string} HTML string
+ */
+function getSuccessRateChartHtml(containerId, width = 400, height = 250) {
+    const canvasId = `${containerId}-canvas`;
+    return `
+        <div id="${containerId}" class="progress-chart-container">
+            <div class="progress-chart-canvas">
+                <canvas id="${canvasId}" width="${width}" height="${height}"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Phase 2: Render success rate stacked bar chart
+ * @param {string} canvasId - Canvas element ID
+ * @param {Object} successData - Data from ProgressChartAdapter.successRateData()
+ */
+function renderSuccessRateChartNow(canvasId, successData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`Canvas not found: ${canvasId}`);
+        return;
+    }
+
+    // Handle empty data
+    if (successData.empty) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = getTextColor();
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(successData.message || 'No data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Destroy existing chart
+    if (window.chartInstances?.[canvasId]) {
+        try {
+            window.chartInstances[canvasId].destroy();
+        } catch (e) {
+            console.warn(`Error destroying chart ${canvasId}:`, e);
+        }
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: successData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    stacked: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Questions',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: true,
+                        color: getGridColor()
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        precision: 0
+                    }
+                },
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: getTextColor()
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: getTextColor()
+                    }
+                },
+                datalabels: {
+                    display: false // Can be cluttered in stacked charts
+                }
+            }
+        }
+    });
+
+    window.chartInstances[canvasId] = chart;
+}
+
+/**
+ * Phase 1: Generate HTML for learning velocity area chart
+ * @param {string} containerId - Container element ID
+ * @param {number} width - Canvas width in pixels
+ * @param {number} height - Canvas height in pixels
+ * @returns {string} HTML string
+ */
+function getLearningVelocityChartHtml(containerId, width = 500, height = 300) {
+    const canvasId = `${containerId}-canvas`;
+    return `
+        <div id="${containerId}" class="progress-chart-container">
+            <div class="progress-chart-canvas">
+                <canvas id="${canvasId}" width="${width}" height="${height}"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Phase 2: Render learning velocity area chart
+ * @param {string} canvasId - Canvas element ID
+ * @param {Object} velocityData - Data from ProgressChartAdapter.learningVelocityData()
+ */
+function renderLearningVelocityChartNow(canvasId, velocityData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`Canvas not found: ${canvasId}`);
+        return;
+    }
+
+    // Handle empty data
+    if (velocityData.empty) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = getTextColor();
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(velocityData.message || 'No data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Destroy existing chart
+    if (window.chartInstances?.[canvasId]) {
+        try {
+            window.chartInstances[canvasId].destroy();
+        } catch (e) {
+            console.warn(`Error destroying chart ${canvasId}:`, e);
+        }
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: velocityData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Questions per Day',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: true,
+                        color: getGridColor()
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        precision: 0
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        color: getTextColor()
+                    },
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: getTextColor(),
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: getTextColor()
+                    }
+                },
+                datalabels: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    window.chartInstances[canvasId] = chart;
+}
+
 // Export to namespace for explicit two-phase rendering
 window.charts.getChartHtml = getChartHtml;
 window.charts.renderChartNow = renderChartNow;
+
+// Export progress chart functions
+window.charts.getUnitProgressChartHtml = getUnitProgressChartHtml;
+window.charts.renderUnitProgressChartNow = renderUnitProgressChartNow;
+window.charts.getTimeSeriesChartHtml = getTimeSeriesChartHtml;
+window.charts.renderTimeSeriesChartNow = renderTimeSeriesChartNow;
+window.charts.getSuccessRateChartHtml = getSuccessRateChartHtml;
+window.charts.renderSuccessRateChartNow = renderSuccessRateChartNow;
+window.charts.getLearningVelocityChartHtml = getLearningVelocityChartHtml;
+window.charts.renderLearningVelocityChartNow = renderLearningVelocityChartNow;

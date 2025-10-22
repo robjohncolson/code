@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/auth_styles.css">
     <link rel="stylesheet" href="css/progress_styles.css">
+    <link rel="stylesheet" href="css/progress_dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -57,6 +58,9 @@
         <div id="questionsContainer"></div>
     </div>
 
+    <!-- Progress Dashboard Container -->
+    <div id="progressDashboard" style="display: none;"></div>
+
     <!-- Unified Floating Action Button -->
     <div class="fab-container">
         <button class="fab-main" onclick="toggleFabMenu()" title="Menu">
@@ -64,6 +68,10 @@
             <span class="fab-icon-close" style="display: none;">✕</span>
         </button>
         <div class="fab-menu" style="display: none;">
+            <button class="fab-item progress-dashboard-toggle" onclick="toggleProgressDashboard()" title="View progress charts">
+                <span class="fab-item-icon">📊</span>
+                <span class="fab-item-label">Progress</span>
+            </button>
             <button class="fab-item sprite-config-toggle" onclick="showSpriteConfigModal()" title="Sprite settings">
                 <span class="fab-item-icon">🎮</span>
                 <span class="fab-item-label">Sprite</span>
@@ -208,6 +216,9 @@
     <script src="js/offline_queue.js"></script>
     <script src="js/progress_sync.js"></script>
     <script src="js/progress_ui.js"></script>
+    <script src="js/progress_chart_adapter.js"></script>
+    <script src="js/test_progress_charts.js"></script>
+    <script src="js/progress_dashboard.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/data_manager.js"></script>
     <script>
@@ -5024,6 +5035,41 @@ if (chartInstances[`dotplot-${questionId}`]) {
                 fabIcon.style.display = 'block';
                 fabIconClose.style.display = 'none';
                 fabMain.classList.remove('active');
+            }
+        }
+
+        // Progress Dashboard Toggle
+        function toggleProgressDashboard() {
+            const dashboardContainer = document.getElementById('progressDashboard');
+            const mainContainer = document.querySelector('.container');
+
+            if (!dashboardContainer) {
+                console.error('Progress dashboard container not found');
+                return;
+            }
+
+            if (dashboardContainer.style.display === 'none' || !dashboardContainer.style.display) {
+                // Show dashboard, hide main content
+                mainContainer.style.display = 'none';
+                dashboardContainer.style.display = 'block';
+
+                // Initialize and load charts
+                if (typeof ProgressDashboard !== 'undefined') {
+                    if (!window.progressDashboard) {
+                        window.progressDashboard = new ProgressDashboard();
+                        window.progressDashboard.initialize('progressDashboard');
+                    }
+                    window.progressDashboard.loadProgressCharts();
+                } else {
+                    console.error('ProgressDashboard class not found');
+                }
+
+                // Close FAB menu
+                toggleFabMenu();
+            } else {
+                // Hide dashboard, show main content
+                dashboardContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
             }
         }
 
