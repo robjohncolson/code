@@ -1,0 +1,58 @@
+{
+  "units": [
+    {
+      "id": "1",
+      "title": "Exploring Data",
+      "totalQuestions": 45,
+      "lessons": ["L1", "L2", "L3"]
+    },
+    {
+      "id": "2",
+      "title": "Sampling and Experimentation",
+      "totalQuestions": 38,
+      "lessons": ["L1", "L2"]
+    },
+    {
+      "id": "3",
+      "title": "Probability",
+      "totalQuestions": 52,
+      "lessons": ["L1", "L2", "L3"]
+    },
+    {
+      "id": "4",
+      "title": "Random Variables",
+      "totalQuestions": 41,
+      "lessons": ["L1", "L2"]
+    },
+    {
+      "id": "5",
+      "title": "Sampling Distributions",
+      "totalQuestions": 35,
+      "lessons": ["L1", "L2"]
+    },
+    {
+      "id": "6",
+      "title": "Inference for Proportions",
+      "totalQuestions": 44,
+      "lessons": ["L1", "L2", "L3"]
+    },
+    {
+      "id": "7",
+      "title": "Inference for Means",
+      "totalQuestions": 48,
+      "lessons": ["L1", "L2", "L3"]
+    },
+    {
+      "id": "8",
+      "title": "Inference for Distributions",
+      "totalQuestions": 39,
+      "lessons": ["L1", "L2"]
+    },
+    {
+      "id": "9",
+      "title": "Inference for Regression",
+      "totalQuestions": 42,
+      "lessons": ["L1", "L2"]
+    }
+  ]
+}

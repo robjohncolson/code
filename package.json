@@ -1,0 +1,25 @@
+{
+  "name": "apstats-consensus-quiz",
+  "version": "1.0.0",
+  "description": "AP Statistics Consensus Quiz - Frontend application",
+  "type": "module",
+  "scripts": {
+    "test:frontend": "playwright test --config=test/playwright.config.js",
+    "test:frontend:headed": "playwright test --config=test/playwright.config.js --headed",
+    "test:frontend:coverage": "c8 playwright test --config=test/playwright.config.js",
+    "test:backend": "cd railway-server && npm test",
+    "test:backend:coverage": "cd railway-server && npm run test:coverage",
+    "test:all": "npm run test:frontend && npm run test:backend",
+    "test:ci": "npm run test:all",
+    "serve": "python3 -m http.server 8000",
+    "serve:alt": "npx http-server -p 8000"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "c8": "^8.0.1",
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "minimal": [
+    {
+      "questionId": "U1-L1-Q01",
+      "timestamp": "2024-10-15T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 45
+    },
+    {
+      "questionId": "U1-L1-Q02",
+      "timestamp": "2024-10-15T10:05:00.000Z",
+      "correct": false,
+      "attempts": 2,
+      "timeSpent": 120
+    }
+  ],
+  "typical": [
+    {
+      "questionId": "U1-L1-Q01",
+      "timestamp": "2024-10-10T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 45
+    },
+    {
+      "questionId": "U1-L1-Q02",
+      "timestamp": "2024-10-10T10:05:00.000Z",
+      "correct": false,
+      "attempts": 2,
+      "timeSpent": 90
+    },
+    {
+      "questionId": "U1-L2-Q01",
+      "timestamp": "2024-10-11T14:30:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 60
+    },
+    {
+      "questionId": "U2-L1-Q01",
+      "timestamp": "2024-10-12T09:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 75
+    },
+    {
+      "questionId": "U2-L1-Q02",
+      "timestamp": "2024-10-12T09:10:00.000Z",
+      "correct": false,
+      "attempts": 3,
+      "timeSpent": 180
+    },
+    {
+      "questionId": "U2-L2-Q01",
+      "timestamp": "2024-10-13T15:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 50
+    },
+    {
+      "questionId": "U3-L1-Q01",
+      "timestamp": "2024-10-14T11:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 65
+    },
+    {
+      "questionId": "U3-L1-Q02",
+      "timestamp": "2024-10-15T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 55
+    }
+  ],
+  "multiWeek": [
+    {
+      "questionId": "U1-L1-Q01",
+      "timestamp": "2024-10-01T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 45
+    },
+    {
+      "questionId": "U1-L1-Q02",
+      "timestamp": "2024-10-02T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 50
+    },
+    {
+      "questionId": "U1-L2-Q01",
+      "timestamp": "2024-10-03T10:00:00.000Z",
+      "correct": false,
+      "attempts": 2,
+      "timeSpent": 120
+    },
+    {
+      "questionId": "U2-L1-Q01",
+      "timestamp": "2024-10-08T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 60
+    },
+    {
+      "questionId": "U2-L1-Q02",
+      "timestamp": "2024-10-09T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 55
+    },
+    {
+      "questionId": "U2-L2-Q01",
+      "timestamp": "2024-10-10T10:00:00.000Z",
+      "correct": false,
+      "attempts": 3,
+      "timeSpent": 200
+    },
+    {
+      "questionId": "U3-L1-Q01",
+      "timestamp": "2024-10-15T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 70
+    },
+    {
+      "questionId": "U3-L1-Q02",
+      "timestamp": "2024-10-16T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 65
+    },
+    {
+      "questionId": "U3-L2-Q01",
+      "timestamp": "2024-10-20T10:00:00.000Z",
+      "correct": true,
+      "attempts": 1,
+      "timeSpent": 75
+    },
+    {
+      "questionId": "U4-L1-Q01",
+      "timestamp": "2024-10-22T10:00:00.000Z",
+      "correct": false,
+      "attempts": 2,
+      "timeSpent": 150
+    }
+  ],
+  "edgeCases": {
+    "empty": [],
+    "singleQuestion": [
+      {
+        "questionId": "U1-L1-Q01",
+        "timestamp": "2024-10-15T10:00:00.000Z",
+        "correct": true,
+        "attempts": 1,
+        "timeSpent": 45
+      }
+    ],
+    "sameDay": [
+      {
+        "questionId": "U1-L1-Q01",
+        "timestamp": "2024-10-15T10:00:00.000Z",
+        "correct": true,
+        "attempts": 1,
+        "timeSpent": 45
+      },
+      {
+        "questionId": "U1-L1-Q02",
+        "timestamp": "2024-10-15T11:00:00.000Z",
+        "correct": true,
+        "attempts": 1,
+        "timeSpent": 50
+      },
+      {
+        "questionId": "U1-L1-Q03",
+        "timestamp": "2024-10-15T14:00:00.000Z",
+        "correct": false,
+        "attempts": 2,
+        "timeSpent": 90
+      }
+    ],
+    "missingFields": [
+      {
+        "questionId": "U1-L1-Q01",
+        "timestamp": "2024-10-15T10:00:00.000Z"
+      },
+      {
+        "questionId": "U1-L1-Q02",
+        "correct": true,
+        "attempts": 1
+      }
+    ]
+  }
+}

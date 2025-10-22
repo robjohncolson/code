@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP Statistics Consensus Quiz - Test Suite</title>
+
+    <!-- QUnit CSS -->
+    <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.20.0.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .test-info {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #0066cc;
+        }
+
+        .test-info h2 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+
+        .test-coverage {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>AP Statistics Consensus Quiz - Test Suite</h2>
+        <p><strong>Test Infrastructure:</strong> QUnit 2.20.0 (browser-based, zero-build)</p>
+        <p><strong>Coverage:</strong> Data Manager, Chart Adapters, Curriculum Loader</p>
+        <p><strong>Run Mode:</strong> Browser or CI (via Playwright)</p>
+    </div>
+
+    <!-- QUnit test container -->
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+
+    <!-- Test fixtures container (hidden) -->
+    <div id="test-fixtures" style="display: none;">
+        <!-- Canvas for chart rendering tests -->
+        <canvas id="test-canvas" width="400" height="300"></canvas>
+
+        <!-- Mock containers for DOM tests -->
+        <div id="mock-chart-container"></div>
+        <div id="mock-dashboard-container"></div>
+    </div>
+
+    <!-- QUnit framework -->
+    <script src="https://code.jquery.com/qunit/qunit-2.20.0.js"></script>
+
+    <!-- Test utilities -->
+    <script src="test_utils.js"></script>
+
+    <!-- Mock implementations -->
+    <script src="mocks/mock_storage.js"></script>
+    <script src="mocks/mock_chart.js"></script>
+    <script src="mocks/mock_supabase.js"></script>
+
+    <!-- Source files to test (loaded before tests) -->
+    <script src="../js/progress_chart_adapter.js"></script>
+    <script src="../js/test_progress_charts.js"></script>
+
+    <!-- Test suites -->
+    <script src="data_manager.test.js"></script>
+    <script src="chart_adapter.test.js"></script>
+    <script src="curriculum_loader.test.js"></script>
+
+    <!-- Test runner -->
+    <script src="test_runner.js"></script>
+
+    <div class="test-coverage">
+        <h3>Coverage Targets</h3>
+        <ul>
+            <li>Data Manager: 80%+ coverage of core functions</li>
+            <li>Chart Adapters: 75%+ coverage of transformations</li>
+            <li>Curriculum Loader: 70%+ coverage of loading logic</li>
+        </ul>
+        <p><em>Run with coverage: <code>npm run test:frontend:coverage</code></em></p>
+    </div>
+</body>
+</html>
