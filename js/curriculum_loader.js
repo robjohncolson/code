@@ -11,12 +11,20 @@ class CurriculumLoader {
         // Configuration
         this.config = {
             curriculumUrl: options.curriculumUrl || 'data/curriculum.js',
+            manifestUrl: options.manifestUrl || 'data/curriculum_manifest.json',
+            chunkBaseUrl: options.chunkBaseUrl || 'data/',
             cacheTTL: options.cacheTTL || 30 * 60 * 1000, // 30 minutes default
             enableMemoryCache: options.enableMemoryCache !== false,
             enableIndexedDB: options.enableIndexedDB !== false,
+            enableChunkLoading: options.enableChunkLoading !== false, // P9: Enable lazy chunk loading
             maxMemoryUnits: options.maxMemoryUnits || 5, // Max units in memory
             enableFallback: options.enableFallback !== false
         };
+
+        // P9: Chunk loading state
+        this.manifest = null;
+        this.loadedChunks = new Set();
+        this.chunkLoadPromises = new Map(); // Track in-flight chunk loads
 
         // State
         this.initialized = false;
@@ -251,16 +259,32 @@ class CurriculumLoader {
         // Cache miss - need to load
         this.metrics.cacheMisses++;
 
-        // Ensure curriculum is loaded
-        if (!this.fullCurriculum) {
-            await this.init();
+        let unitQuestions;
+
+        // P9: Try chunk loading first if enabled
+        if (this.config.enableChunkLoading) {
+            try {
+                unitQuestions = await this.loadChunk(normalizedId);
+                console.log(`[CurriculumLoader] Loaded unit ${unitId} from chunk`);
+            } catch (error) {
+                console.warn(`[CurriculumLoader] Chunk loading failed for unit ${unitId}, falling back:`, error.message);
+                // Fall through to legacy loading
+            }
         }
 
-        // Extract unit questions
-        const unitQuestions = this.fullCurriculum.filter(question => {
-            const match = question.id.match(/U(\d+)/i);
-            return match && parseInt(match[1]) === normalizedId;
-        });
+        // Fallback: Load from full curriculum
+        if (!unitQuestions) {
+            // Ensure curriculum is loaded
+            if (!this.fullCurriculum) {
+                await this.init();
+            }
+
+            // Extract unit questions
+            unitQuestions = this.fullCurriculum.filter(question => {
+                const match = question.id.match(/U(\d+)/i);
+                return match && parseInt(match[1]) === normalizedId;
+            });
+        }
 
         if (unitQuestions.length === 0) {
             console.warn(`[CurriculumLoader] No questions found for unit ${unitId}`);
@@ -886,6 +910,142 @@ class CurriculumLoader {
             cacheSize: this.unitCache.size,
             maxCacheSize: this.config.maxMemoryUnits
         };
+    }
+
+    /**
+     * P9: Load curriculum manifest
+     * @returns {Promise<Object>} Manifest object
+     */
+    async loadManifest() {
+        if (this.manifest) return this.manifest;
+
+        try {
+            console.log('[CurriculumLoader] Loading manifest...');
+            const response = await fetch(this.config.manifestUrl);
+
+            if (!response.ok) {
+                throw new Error(`Failed to load manifest: ${response.status}`);
+            }
+
+            this.manifest = await response.json();
+            console.log(`[CurriculumLoader] Manifest loaded: ${Object.keys(this.manifest.units).length} units`);
+
+            return this.manifest;
+        } catch (error) {
+            console.error('[CurriculumLoader] Manifest load failed:', error);
+            // Fallback: disable chunk loading
+            this.config.enableChunkLoading = false;
+            return null;
+        }
+    }
+
+    /**
+     * P9: Load a specific curriculum chunk
+     * @param {number} unitNum - Unit number (e.g., 1, 2, 3)
+     * @returns {Promise<Array>} Unit questions
+     */
+    async loadChunk(unitNum) {
+        const unitKey = `U${unitNum}`;
+
+        // Check if already loaded
+        if (this.loadedChunks.has(unitKey)) {
+            return window.curriculumChunks?.[unitKey] || null;
+        }
+
+        // Check if currently loading
+        if (this.chunkLoadPromises.has(unitKey)) {
+            return this.chunkLoadPromises.get(unitKey);
+        }
+
+        // Start loading
+        const loadPromise = this._loadChunkImpl(unitNum);
+        this.chunkLoadPromises.set(unitKey, loadPromise);
+
+        try {
+            const result = await loadPromise;
+            this.loadedChunks.add(unitKey);
+            this.chunkLoadPromises.delete(unitKey);
+            return result;
+        } catch (error) {
+            this.chunkLoadPromises.delete(unitKey);
+            throw error;
+        }
+    }
+
+    /**
+     * P9: Internal chunk loading implementation
+     */
+    async _loadChunkImpl(unitNum) {
+        const unitKey = `U${unitNum}`;
+
+        // Performance mark
+        window.perfMonitor?.mark(`curriculum-chunk-${unitNum}-load-start`, { type: 'curriculum' });
+
+        // Ensure manifest is loaded
+        if (!this.manifest) {
+            await this.loadManifest();
+        }
+
+        if (!this.manifest || !this.manifest.units[unitNum]) {
+            throw new Error(`Unit ${unitNum} not found in manifest`);
+        }
+
+        const unitInfo = this.manifest.units[unitNum];
+        const chunkUrl = `${this.config.chunkBaseUrl}${unitInfo.filename}`;
+
+        console.log(`[CurriculumLoader] Loading chunk for unit ${unitNum}...`);
+
+        // Try dynamic import first (ES modules)
+        if (typeof import === 'function') {
+            try {
+                await import(chunkUrl);
+                const data = window.curriculumChunks?.[unitKey];
+
+                if (data) {
+                    window.perfMonitor?.mark(`curriculum-chunk-${unitNum}-load-end`, { type: 'curriculum' });
+                    console.log(`[CurriculumLoader] Loaded ${unitInfo.questionCount} questions for unit ${unitNum} via import()`);
+                    return data;
+                }
+            } catch (e) {
+                console.warn('[CurriculumLoader] Dynamic import failed, falling back to script injection:', e.message);
+            }
+        }
+
+        // Fallback: Script injection
+        await this._loadChunkViaScript(chunkUrl);
+        const data = window.curriculumChunks?.[unitKey];
+
+        if (!data) {
+            throw new Error(`Failed to load chunk for unit ${unitNum}`);
+        }
+
+        window.perfMonitor?.mark(`curriculum-chunk-${unitNum}-load-end`, { type: 'curriculum' });
+        console.log(`[CurriculumLoader] Loaded ${unitInfo.questionCount} questions for unit ${unitNum} via script`);
+
+        return data;
+    }
+
+    /**
+     * P9: Load chunk via script tag injection
+     */
+    async _loadChunkViaScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            script.onload = () => {
+                document.head.removeChild(script);
+                resolve();
+            };
+
+            script.onerror = () => {
+                document.head.removeChild(script);
+                reject(new Error(`Failed to load script: ${src}`));
+            };
+
+            document.head.appendChild(script);
+        });
     }
 
     /**

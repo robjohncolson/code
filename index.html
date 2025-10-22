@@ -18,6 +18,9 @@
     <script src="supabase_config.js"></script>
     <script src="railway_config.js"></script>
 
+    <!-- Performance monitoring (load first to capture all metrics) -->
+    <script src="js/perf_monitor.js"></script>
+
     <!-- Auth system (load early for non-blocking init) -->
     <script src="js/auth_session.js"></script>
     <script src="js/auth_ui.js"></script>
@@ -208,7 +211,8 @@
     </div>
 
 
-<script src="data/curriculum.js" defer></script>
+<!-- P9: curriculum.js removed - now loaded lazily via chunks -->
+    <!-- <script src="data/curriculum.js" defer></script> -->
     <script src="data/units.js"></script>
     <script src="js/curriculum_config.js"></script>
     <script src="js/curriculum_index.js"></script>

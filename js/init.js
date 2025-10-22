@@ -40,6 +40,9 @@ class AppInitializer {
     async initialize() {
         if (this.initialized) return;
 
+        // Performance mark: app initialization start
+        window.perfMonitor?.mark('app-init-start', { type: 'lifecycle' });
+
         console.log('[AppInit] Starting initialization...');
         this.logPhase('DOM Ready', true);
 
@@ -51,7 +54,9 @@ class AppInitializer {
             this.renderPublicContent();
 
             // Phase 3: Initialize auth UI
+            window.perfMonitor?.mark('auth-init-start', { type: 'lifecycle' });
             await this.initAuthUI();
+            window.perfMonitor?.mark('auth-init-end', { type: 'lifecycle' });
 
             // Phase 4: Initialize view guard
             await this.initViewGuard();
@@ -60,6 +65,7 @@ class AppInitializer {
             await this.restoreSession();
 
             // Phase 6: Mark as complete
+            window.perfMonitor?.mark('app-init-complete', { type: 'lifecycle' });
             this.complete();
 
         } catch (error) {
@@ -248,6 +254,9 @@ class AppInitializer {
 
         console.log(`[AppInit] ✅ Initialization complete in ${duration}ms`);
         console.log('[AppInit] Phases:', this.phases);
+
+        // Performance mark: app is now interactive
+        window.perfMonitor?.mark('app-interactive', { type: 'lifecycle' });
 
         // Emit custom event for other modules
         const event = new CustomEvent('appInitialized', {
