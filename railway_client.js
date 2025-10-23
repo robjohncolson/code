@@ -223,6 +223,16 @@
           if (chartJson !== undefined) {
               payload.chart_json = chartJson;
           }
+          const hasChart = chartJson !== null && chartJson !== undefined;
+          let approxSize = 0;
+          if (hasChart) {
+              try {
+                  approxSize = typeof chartJson === 'string' ? chartJson.length : JSON.stringify(chartJson).length;
+              } catch (sizeError) {
+                  approxSize = -1;
+              }
+          }
+          console.log(`[Railway] submit ${questionId}: chart_json ${hasChart ? (approxSize >= 0 ? `present (~${approxSize} chars)` : 'present') : 'absent'}`);
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/submit-answer`, {
               method: 'POST',
               headers: {
@@ -331,6 +341,8 @@
               ...answer,
               chart_json: answer.chart_json ?? null
           }));
+          const chartsWithPayload = normalized.filter(answer => answer.chart_json).length;
+          console.log(`[Railway] batch submit: ${normalized.length} answers (${chartsWithPayload} with chart_json)`);
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/batch-submit`, {
               method: 'POST',
               headers: {

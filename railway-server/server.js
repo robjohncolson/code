@@ -214,6 +214,14 @@ app.post('/api/submit-answer', async (req, res) => {
     // Normalize timestamp
     const normalizedTimestamp = normalizeTimestamp(timestamp || Date.now());
     const normalizedChart = normalizeChartJson(chart_json);
+    const chartSize = normalizedChart ? (() => {
+      try {
+        return JSON.stringify(normalizedChart).length;
+      } catch (err) {
+        return -1;
+      }
+    })() : 0;
+    console.log(`📨 submit-answer ${question_id}: chart_json ${normalizedChart ? (chartSize >= 0 ? `${chartSize} chars` : 'present') : 'none'}`);
 
     // Upsert to Supabase
     const { data, error } = await supabase
@@ -271,6 +279,8 @@ app.post('/api/batch-submit', async (req, res) => {
       timestamp: normalizeTimestamp(answer.timestamp || Date.now()),
       chart_json: normalizeChartJson(answer.chart_json)
     }));
+    const chartCount = normalizedAnswers.filter(answer => !!answer.chart_json).length;
+    console.log(`📦 batch-submit ${normalizedAnswers.length} answers (${chartCount} with chart_json)`);
 
     // Batch upsert to Supabase
     const { data, error } = await supabase

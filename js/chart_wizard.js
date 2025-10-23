@@ -6,6 +6,30 @@
     let wizardState = null;
     let stylesInjected = false;
 
+    function getChartTypeList() {
+        if (Array.isArray(window.CHART_TYPE_LIST) && window.CHART_TYPE_LIST.length > 0) {
+            return window.CHART_TYPE_LIST;
+        }
+        return [
+            { key: 'bar', displayName: 'Bar Chart', description: 'Compare categories using rectangular bars.', schema: { kind: 'categorical', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Category', yLabel: 'Value' } },
+            { key: 'histogram', displayName: 'Histogram', description: 'Group numeric data into bins.', schema: { kind: 'bins', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Interval', yLabel: 'Frequency' } },
+            { key: 'pie', displayName: 'Pie Chart', description: 'Show categorical parts of a whole.', schema: { kind: 'categorical', axes: null }, defaults: {} },
+            { key: 'dotplot', displayName: 'Dot Plot', description: 'Plot numeric values with stacked dots.', schema: { kind: 'numeric-list', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } },
+            { key: 'scatter', displayName: 'Scatter Plot', description: 'Display paired (x, y) data.', schema: { kind: 'xy', axes: { x: {}, y: {} } }, defaults: { xLabel: 'X Value', yLabel: 'Y Value' } },
+            { key: 'boxplot', displayName: 'Box Plot', description: 'Summarize distribution with five-number summary.', schema: { kind: 'five-number', axes: { x: null, y: {} } }, defaults: { yLabel: 'Value' } },
+            { key: 'normal', displayName: 'Normal Curve', description: 'Plot a normal distribution.', schema: { kind: 'distribution', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } },
+            { key: 'chisquare', displayName: 'Chi-Square Curve', description: 'Overlay chi-square density curves.', schema: { kind: 'distribution-list', axes: { x: {}, y: {} } }, defaults: { xLabel: 'χ² Value', yLabel: 'Density' } },
+            { key: 'numberline', displayName: 'Number Line', description: 'Render a labeled number line.', schema: { kind: 'numberline', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } }
+        ];
+    }
+
+    function getChartTypeConfig(typeKey) {
+        if (window.CHART_TYPES && window.CHART_TYPES[typeKey]) {
+            return window.CHART_TYPES[typeKey];
+        }
+        return getChartTypeList().find(type => type.key === typeKey);
+    }
+
     function injectStyles() {
         if (stylesInjected) return;
         stylesInjected = true;
@@ -264,11 +288,7 @@
         injectStyles();
         ensureModal();
 
-        const metadata = window.CHART_QUESTIONS?.[questionId];
-        if (!metadata) {
-            alert('No chart metadata available for this question yet.');
-            return;
-        }
+        const metadata = window.CHART_QUESTIONS?.[questionId] || null;
 
         const username = window.currentUsername || localStorage.getItem('consensusUsername') || '';
         if (!username) {
@@ -287,18 +307,34 @@
     }
 
     function createInitialState(questionId, metadata, existingChart) {
+        const availableTypes = getChartTypeList();
+        const fallbackType = availableTypes[0]?.key || 'histogram';
+        const hintedType = (metadata?.chartHints || []).find(hint => !!getChartTypeConfig(hint));
+        const existingType = existingChart?.type && getChartTypeConfig(existingChart.type) ? existingChart.type : null;
+        const initialType = existingType || hintedType || fallbackType;
+        const defaults = getChartTypeConfig(initialType)?.defaults || {};
+
         const baseState = {
             questionId,
             metadata,
             step: 0,
-            chartType: metadata.chartHints?.[0] || 'histogram',
+            chartType: initialType,
             histogram: [{ label: '', value: '' }],
+            bar: [{ label: '', value: '' }],
+            pie: [{ label: '', value: '' }],
             dotplot: [''],
-            scatter: [{ x: '', y: '' }],
+            scatter: [{ x: '', y: '', label: '' }],
             boxplot: { min: '', q1: '', median: '', q3: '', max: '' },
-            seriesName: existingChart?.data?.seriesName || 'Frequency',
-            xLabel: existingChart?.options?.xLabel || '',
-            yLabel: existingChart?.options?.yLabel || '',
+            normal: { mean: '', sd: '', shadeLower: '', shadeUpper: '', xMin: '', xMax: '', tickInterval: '' },
+            chisquareRows: [{ df: '', label: '' }],
+            chisquareSettings: { xMin: '', xMax: '', tickInterval: '', numPoints: '' },
+            numberline: [{ position: '', label: '', bottomLabel: '' }],
+            numberlineRange: { min: '', max: '' },
+            seriesName: existingChart?.data?.seriesName || defaults.seriesName || 'Frequency',
+            barSeriesName: existingChart?.data?.seriesName || defaults.seriesName || 'Series 1',
+            barOrientation: existingChart?.data?.orientation || defaults.orientation || 'vertical',
+            xLabel: existingChart?.options?.xLabel ?? defaults.xLabel ?? '',
+            yLabel: existingChart?.options?.yLabel ?? defaults.yLabel ?? '',
             title: existingChart?.options?.title || '',
             description: existingChart?.options?.description || '',
             csvText: '',
@@ -307,7 +343,10 @@
         };
 
         if (existingChart) {
-            baseState.chartType = existingChart.type || baseState.chartType;
+            if (existingChart.type && getChartTypeConfig(existingChart.type)) {
+                baseState.chartType = existingChart.type;
+            }
+
             if (existingChart.type === 'histogram') {
                 baseState.histogram = (existingChart.data?.bins || []).map(bin => ({
                     label: bin.label,
@@ -315,6 +354,27 @@
                 }));
                 if (baseState.histogram.length === 0) {
                     baseState.histogram = [{ label: '', value: '' }];
+                }
+                baseState.seriesName = existingChart.data?.seriesName || baseState.seriesName;
+            } else if (existingChart.type === 'bar') {
+                const categories = existingChart.data?.categories || [];
+                const values = existingChart.data?.values || [];
+                baseState.bar = categories.map((label, index) => ({
+                    label: label,
+                    value: values[index] !== undefined ? values[index] : ''
+                }));
+                if (baseState.bar.length === 0) {
+                    baseState.bar = [{ label: '', value: '' }];
+                }
+                baseState.barSeriesName = existingChart.data?.seriesName || baseState.barSeriesName;
+                baseState.barOrientation = existingChart.data?.orientation || baseState.barOrientation;
+            } else if (existingChart.type === 'pie') {
+                baseState.pie = (existingChart.data?.slices || []).map(slice => ({
+                    label: slice.label,
+                    value: slice.value
+                }));
+                if (baseState.pie.length === 0) {
+                    baseState.pie = [{ label: '', value: '' }];
                 }
             } else if (existingChart.type === 'dotplot') {
                 baseState.dotplot = (existingChart.data?.values || []).map(v => `${v}`);
@@ -325,10 +385,10 @@
                 baseState.scatter = (existingChart.data?.points || []).map(point => ({
                     x: point.x,
                     y: point.y,
-                    label: point.label
+                    label: point.label || ''
                 }));
                 if (baseState.scatter.length === 0) {
-                    baseState.scatter = [{ x: '', y: '' }];
+                    baseState.scatter = [{ x: '', y: '', label: '' }];
                 }
             } else if (existingChart.type === 'boxplot') {
                 const five = existingChart.data?.fiveNumber || existingChart.options?.boxplotData || {};
@@ -339,7 +399,55 @@
                     q3: five.q3 ?? five.Q3 ?? '',
                     max: five.max ?? ''
                 };
+            } else if (existingChart.type === 'normal') {
+                const normalData = existingChart.data || {};
+                baseState.normal = {
+                    mean: normalData.mean ?? '',
+                    sd: normalData.sd ?? '',
+                    shadeLower: normalData.shade?.lower ?? '',
+                    shadeUpper: normalData.shade?.upper ?? '',
+                    xMin: normalData.xMin ?? '',
+                    xMax: normalData.xMax ?? '',
+                    tickInterval: normalData.tickInterval ?? ''
+                };
+            } else if (existingChart.type === 'chisquare') {
+                const dfList = existingChart.data?.dfList || [];
+                const labels = existingChart.data?.labels || [];
+                baseState.chisquareRows = dfList.map((df, index) => ({
+                    df: df !== undefined ? `${df}` : '',
+                    label: labels[index] || ''
+                }));
+                if (baseState.chisquareRows.length === 0) {
+                    baseState.chisquareRows = [{ df: '', label: '' }];
+                }
+                baseState.chisquareSettings = {
+                    xMin: existingChart.data?.xMin ?? '',
+                    xMax: existingChart.data?.xMax ?? '',
+                    tickInterval: existingChart.data?.tickInterval ?? '',
+                    numPoints: existingChart.data?.numPoints ?? ''
+                };
+            } else if (existingChart.type === 'numberline') {
+                baseState.numberline = (existingChart.data?.ticks || []).map(tick => ({
+                    position: tick.x ?? tick.position ?? '',
+                    label: tick.label ?? '',
+                    bottomLabel: tick.bottomLabel ?? tick.valueLabel ?? ''
+                }));
+                if (baseState.numberline.length === 0) {
+                    baseState.numberline = [{ position: '', label: '', bottomLabel: '' }];
+                }
+                baseState.numberlineRange = {
+                    min: existingChart.data?.xMin ?? '',
+                    max: existingChart.data?.xMax ?? ''
+                };
             }
+        }
+
+        const activeDefaults = getChartTypeConfig(baseState.chartType)?.defaults || {};
+        if (!baseState.xLabel && activeDefaults.xLabel) {
+            baseState.xLabel = activeDefaults.xLabel;
+        }
+        if (!baseState.yLabel && activeDefaults.yLabel) {
+            baseState.yLabel = activeDefaults.yLabel;
         }
 
         return baseState;
@@ -402,25 +510,22 @@
         const errorHtml = error ? `<div class="chart-wizard-error">${error}</div>` : '';
 
         if (step === 0) {
-            const hints = metadata?.chartHints || ['histogram', 'dotplot', 'boxplot', 'scatter'];
+            const hints = metadata?.chartHints || [];
+            const types = getChartTypeList();
             return `
                 ${prompt}
                 ${errorHtml}
                 <div class="chart-type-grid">
-                    ${['histogram', 'dotplot', 'boxplot', 'scatter'].map(type => {
-                        const active = chartType === type ? 'active' : '';
-                        const suggested = hints.includes(type) ? '<span style="font-size:0.8rem;color:#3867d6;">Suggested</span>' : '';
-                        const descriptions = {
-                            histogram: 'Group numeric data into bins and visualize frequencies.',
-                            dotplot: 'Plot individual numeric observations with stacked dots.',
-                            boxplot: 'Summarize distribution using five-number summary.',
-                            scatter: 'Show relationship between two numeric variables.'
-                        };
+                    ${types.map(typeInfo => {
+                        const active = chartType === typeInfo.key ? 'active' : '';
+                        const suggested = hints.includes(typeInfo.key)
+                            ? '<span style="font-size:0.8rem;color:#3867d6;">Suggested</span>'
+                            : '';
                         return `
-                            <button type="button" class="chart-type-option ${active}" data-chart-type="${type}">
-                                <h4>${type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                            <button type="button" class="chart-type-option ${active}" data-chart-type="${typeInfo.key}">
+                                <h4>${typeInfo.displayName || typeInfo.key}</h4>
                                 ${suggested}
-                                <p>${descriptions[type]}</p>
+                                <p>${typeInfo.description || ''}</p>
                             </button>
                         `;
                     }).join('')}
@@ -473,7 +578,27 @@
         if (wizardState.step === 0) {
             body.querySelectorAll('[data-chart-type]').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    wizardState.chartType = btn.getAttribute('data-chart-type');
+                    const selectedType = btn.getAttribute('data-chart-type');
+                    wizardState.chartType = selectedType;
+                    const typeConfig = getChartTypeConfig(selectedType) || {};
+                    const defaults = typeConfig.defaults || {};
+                    if (!wizardState.xLabel && defaults.xLabel) {
+                        wizardState.xLabel = defaults.xLabel;
+                    }
+                    if (!wizardState.yLabel && defaults.yLabel) {
+                        wizardState.yLabel = defaults.yLabel;
+                    }
+                    if (selectedType === 'bar') {
+                        if (!wizardState.barSeriesName) {
+                            wizardState.barSeriesName = defaults.seriesName || 'Series 1';
+                        }
+                        if (!wizardState.barOrientation) {
+                            wizardState.barOrientation = defaults.orientation || 'vertical';
+                        }
+                    }
+                    if (selectedType === 'histogram' && !wizardState.seriesName) {
+                        wizardState.seriesName = defaults.seriesName || 'Frequency';
+                    }
                     wizardState.error = '';
                     renderWizard();
                 });
@@ -504,31 +629,71 @@
             input.addEventListener('input', (event) => {
                 const target = event.target;
                 const field = target.getAttribute('data-chart-input');
-                const index = parseInt(target.getAttribute('data-index'), 10);
-                if (wizardState.chartType === 'histogram') {
-                    if (field === 'label') {
-                        wizardState.histogram[index].label = target.value;
-                    } else if (field === 'value') {
-                        wizardState.histogram[index].value = target.value;
+                const group = target.getAttribute('data-group') || wizardState.chartType;
+                const indexRaw = target.getAttribute('data-index');
+                const index = indexRaw !== null ? parseInt(indexRaw, 10) : NaN;
+
+                if (group === 'histogram') {
+                    if (!isNaN(index)) {
+                        if (field === 'label') {
+                            wizardState.histogram[index].label = target.value;
+                        } else if (field === 'value') {
+                            wizardState.histogram[index].value = target.value;
+                        }
                     }
-                } else if (wizardState.chartType === 'dotplot') {
-                    wizardState.dotplot[index] = target.value;
-                } else if (wizardState.chartType === 'scatter') {
-                    wizardState.scatter[index][field] = target.value;
-                } else if (wizardState.chartType === 'boxplot') {
+                } else if (group === 'bar') {
+                    if (!isNaN(index)) {
+                        wizardState.bar[index][field] = target.value;
+                    }
+                } else if (group === 'pie') {
+                    if (!isNaN(index)) {
+                        wizardState.pie[index][field] = target.value;
+                    }
+                } else if (group === 'dotplot') {
+                    if (!isNaN(index)) {
+                        wizardState.dotplot[index] = target.value;
+                    }
+                } else if (group === 'scatter') {
+                    if (!isNaN(index)) {
+                        wizardState.scatter[index][field] = target.value;
+                    }
+                } else if (group === 'boxplot') {
                     wizardState.boxplot[field] = target.value;
+                } else if (group === 'normal') {
+                    wizardState.normal[field] = target.value;
+                } else if (group === 'chisquare') {
+                    if (!isNaN(index)) {
+                        wizardState.chisquareRows[index][field] = target.value;
+                    }
+                } else if (group === 'chisquare-settings') {
+                    wizardState.chisquareSettings[field] = target.value;
+                } else if (group === 'numberline') {
+                    if (!isNaN(index)) {
+                        wizardState.numberline[index][field] = target.value;
+                    }
+                } else if (group === 'numberline-range') {
+                    wizardState.numberlineRange[field] = target.value;
                 }
             });
         });
 
         body.querySelectorAll('[data-action="add-row"]').forEach(btn => {
             btn.addEventListener('click', () => {
-                if (wizardState.chartType === 'histogram') {
+                const group = btn.getAttribute('data-group') || wizardState.chartType;
+                if (group === 'histogram') {
                     wizardState.histogram.push({ label: '', value: '' });
-                } else if (wizardState.chartType === 'dotplot') {
+                } else if (group === 'bar') {
+                    wizardState.bar.push({ label: '', value: '' });
+                } else if (group === 'pie') {
+                    wizardState.pie.push({ label: '', value: '' });
+                } else if (group === 'dotplot') {
                     wizardState.dotplot.push('');
-                } else if (wizardState.chartType === 'scatter') {
-                    wizardState.scatter.push({ x: '', y: '' });
+                } else if (group === 'scatter') {
+                    wizardState.scatter.push({ x: '', y: '', label: '' });
+                } else if (group === 'chisquare') {
+                    wizardState.chisquareRows.push({ df: '', label: '' });
+                } else if (group === 'numberline') {
+                    wizardState.numberline.push({ position: '', label: '', bottomLabel: '' });
                 }
                 renderWizard();
             });
@@ -536,24 +701,33 @@
 
         body.querySelectorAll('[data-action="remove-row"]').forEach(btn => {
             btn.addEventListener('click', () => {
+                const group = btn.getAttribute('data-group') || wizardState.chartType;
                 const index = parseInt(btn.getAttribute('data-index'), 10);
-                if (wizardState.chartType === 'histogram' && wizardState.histogram.length > 1) {
+                if (group === 'histogram' && wizardState.histogram.length > 1) {
                     wizardState.histogram.splice(index, 1);
-                } else if (wizardState.chartType === 'dotplot' && wizardState.dotplot.length > 1) {
+                } else if (group === 'bar' && wizardState.bar.length > 1) {
+                    wizardState.bar.splice(index, 1);
+                } else if (group === 'pie' && wizardState.pie.length > 1) {
+                    wizardState.pie.splice(index, 1);
+                } else if (group === 'dotplot' && wizardState.dotplot.length > 1) {
                     wizardState.dotplot.splice(index, 1);
-                } else if (wizardState.chartType === 'scatter' && wizardState.scatter.length > 1) {
+                } else if (group === 'scatter' && wizardState.scatter.length > 1) {
                     wizardState.scatter.splice(index, 1);
+                } else if (group === 'chisquare' && wizardState.chisquareRows.length > 1) {
+                    wizardState.chisquareRows.splice(index, 1);
+                } else if (group === 'numberline' && wizardState.numberline.length > 1) {
+                    wizardState.numberline.splice(index, 1);
                 }
                 renderWizard();
             });
         });
 
-        const parseButton = body.querySelector('[data-action="parse-csv"]');
-        if (parseButton) {
-            parseButton.addEventListener('click', () => {
-                parseCSVData();
+        body.querySelectorAll('[data-action="parse-csv"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const group = btn.getAttribute('data-group') || wizardState.chartType;
+                parseCSVData(group);
             });
-        }
+        });
 
         const xInput = body.querySelector('input[data-role="xLabel"]');
         if (xInput) {
@@ -585,9 +759,21 @@
                 wizardState.seriesName = event.target.value;
             });
         }
+        const barSeriesInput = body.querySelector('input[data-role="barSeriesName"]');
+        if (barSeriesInput) {
+            barSeriesInput.addEventListener('input', (event) => {
+                wizardState.barSeriesName = event.target.value;
+            });
+        }
+        const barOrientationSelect = body.querySelector('select[data-role="barOrientation"]');
+        if (barOrientationSelect) {
+            barOrientationSelect.addEventListener('change', (event) => {
+                wizardState.barOrientation = event.target.value || 'vertical';
+            });
+        }
     }
 
-    function parseCSVData() {
+    function parseCSVData(groupOverride) {
         if (!wizardState?.csvText) {
             wizardState.error = 'Paste CSV data before parsing.';
             renderWizard();
@@ -602,7 +788,8 @@
         }
 
         try {
-            if (wizardState.chartType === 'histogram') {
+            const targetType = groupOverride || wizardState.chartType;
+            if (targetType === 'histogram') {
                 const parsedBins = rows.map(row => {
                     const [label, value] = row.split(/,|\t/);
                     return { label: (label || '').trim(), value: value !== undefined ? value.trim() : '' };
@@ -611,21 +798,45 @@
                     throw new Error('Each row should include a label and value separated by a comma.');
                 }
                 wizardState.histogram = parsedBins;
-            } else if (wizardState.chartType === 'dotplot') {
+            } else if (targetType === 'bar') {
+                const parsedRows = rows.map(row => {
+                    const [label, value] = row.split(/,|\t/);
+                    return { label: (label || '').trim(), value: value !== undefined ? value.trim() : '' };
+                }).filter(item => item.label);
+                if (parsedRows.length === 0) {
+                    throw new Error('Each row should include a category and value separated by a comma.');
+                }
+                wizardState.bar = parsedRows;
+            } else if (targetType === 'pie') {
+                const parsedRows = rows.map(row => {
+                    const [label, value] = row.split(/,|\t/);
+                    return { label: (label || '').trim(), value: value !== undefined ? value.trim() : '' };
+                }).filter(item => item.label);
+                if (parsedRows.length === 0) {
+                    throw new Error('Each row should include a slice label and value separated by a comma.');
+                }
+                wizardState.pie = parsedRows;
+            } else if (targetType === 'dotplot') {
                 const values = rows.flatMap(row => row.split(/,|\s+/).map(v => v.trim()).filter(Boolean));
                 if (values.length === 0) {
                     throw new Error('Provide numeric values separated by commas or spaces.');
                 }
                 wizardState.dotplot = values;
-            } else if (wizardState.chartType === 'scatter') {
+            } else if (targetType === 'scatter') {
                 const points = rows.map(row => {
-                    const [x, y] = row.split(/,|\t/);
-                    return { x: x !== undefined ? x.trim() : '', y: y !== undefined ? y.trim() : '' };
+                    const [x, y, label] = row.split(/,|\t/);
+                    return {
+                        x: x !== undefined ? x.trim() : '',
+                        y: y !== undefined ? y.trim() : '',
+                        label: label !== undefined ? label.trim() : ''
+                    };
                 }).filter(point => point.x !== '' && point.y !== '');
                 if (points.length === 0) {
                     throw new Error('Each row should include x and y values separated by a comma.');
                 }
                 wizardState.scatter = points;
+            } else {
+                throw new Error('CSV parsing is not supported for this chart type.');
             }
             wizardState.error = '';
         } catch (error) {
@@ -677,7 +888,29 @@
     function validateCurrentData() {
         if (!wizardState) return false;
         const type = wizardState.chartType;
-        if (type === 'histogram') {
+        if (type === 'bar') {
+            const rows = wizardState.bar.filter(row => row.label && row.value !== '');
+            if (rows.length === 0) {
+                wizardState.error = 'Add at least one category with a value.';
+                return false;
+            }
+            const invalid = rows.find(row => isNaN(parseFloat(row.value)));
+            if (invalid) {
+                wizardState.error = `Value for "${invalid.label}" must be numeric.`;
+                return false;
+            }
+        } else if (type === 'pie') {
+            const rows = wizardState.pie.filter(row => row.label && row.value !== '');
+            if (rows.length === 0) {
+                wizardState.error = 'Add at least one slice with a value.';
+                return false;
+            }
+            const invalid = rows.find(row => isNaN(parseFloat(row.value)));
+            if (invalid) {
+                wizardState.error = `Value for "${invalid.label}" must be numeric.`;
+                return false;
+            }
+        } else if (type === 'histogram') {
             const bins = wizardState.histogram.filter(bin => bin.label && bin.value !== '');
             if (bins.length === 0) {
                 wizardState.error = 'Add at least one bin with a label and value.';
@@ -715,25 +948,134 @@
                 wizardState.error = 'Enter numeric values for the five-number summary.';
                 return false;
             }
+        } else if (type === 'normal') {
+            const { mean, sd, xMin, xMax, tickInterval, shadeLower, shadeUpper } = wizardState.normal;
+            const meanValue = parseFloat(mean);
+            const sdValue = parseFloat(sd);
+            if (isNaN(meanValue)) {
+                wizardState.error = 'Provide a numeric mean for the normal curve.';
+                return false;
+            }
+            if (isNaN(sdValue) || sdValue <= 0) {
+                wizardState.error = 'Standard deviation must be a positive number.';
+                return false;
+            }
+            const optionalNumbers = [
+                { value: xMin, label: 'X min' },
+                { value: xMax, label: 'X max' },
+                { value: tickInterval, label: 'Tick interval' },
+                { value: shadeLower, label: 'Shade lower bound' },
+                { value: shadeUpper, label: 'Shade upper bound' }
+            ];
+            for (const opt of optionalNumbers) {
+                if (opt.value !== '' && isNaN(parseFloat(opt.value))) {
+                    wizardState.error = `${opt.label} must be numeric if provided.`;
+                    return false;
+                }
+            }
+            if (xMin !== '' && xMax !== '' && parseFloat(xMin) >= parseFloat(xMax)) {
+                wizardState.error = 'Ensure X min is less than X max.';
+                return false;
+            }
+        } else if (type === 'chisquare') {
+            const rows = wizardState.chisquareRows.filter(row => row.df !== '');
+            if (rows.length === 0) {
+                wizardState.error = 'Add at least one degrees-of-freedom value.';
+                return false;
+            }
+            const invalid = rows.find(row => {
+                const df = parseFloat(row.df);
+                return isNaN(df) || df <= 0;
+            });
+            if (invalid) {
+                wizardState.error = 'Degrees of freedom must be positive numbers.';
+                return false;
+            }
+            const { xMin, xMax, tickInterval, numPoints } = wizardState.chisquareSettings;
+            const optional = [
+                { value: xMin, label: 'X min' },
+                { value: xMax, label: 'X max' },
+                { value: tickInterval, label: 'Tick interval' },
+                { value: numPoints, label: 'Points per curve', validator: val => parseInt(val, 10) > 10 }
+            ];
+            for (const opt of optional) {
+                if (opt.value !== '') {
+                    if (isNaN(parseFloat(opt.value))) {
+                        wizardState.error = `${opt.label} must be numeric.`;
+                        return false;
+                    }
+                    if (opt.label === 'Points per curve') {
+                        const parsed = parseInt(opt.value, 10);
+                        if (!(parsed > 10)) {
+                            wizardState.error = 'Points per curve must be greater than 10.';
+                            return false;
+                        }
+                    }
+                }
+            }
+            if (xMin !== '' && xMax !== '' && parseFloat(xMin) >= parseFloat(xMax)) {
+                wizardState.error = 'Ensure X min is less than X max.';
+                return false;
+            }
+        } else if (type === 'numberline') {
+            const ticks = wizardState.numberline.filter(tick => tick.position !== '');
+            if (ticks.length === 0) {
+                wizardState.error = 'Add at least one tick position for the number line.';
+                return false;
+            }
+            const invalid = ticks.find(tick => isNaN(parseFloat(tick.position)));
+            if (invalid) {
+                wizardState.error = 'Tick positions must be numeric.';
+                return false;
+            }
+            const { min, max } = wizardState.numberlineRange;
+            if (min !== '' && isNaN(parseFloat(min))) {
+                wizardState.error = 'Number line minimum must be numeric.';
+                return false;
+            }
+            if (max !== '' && isNaN(parseFloat(max))) {
+                wizardState.error = 'Number line maximum must be numeric.';
+                return false;
+            }
+            if (min !== '' && max !== '' && parseFloat(min) >= parseFloat(max)) {
+                wizardState.error = 'Ensure minimum is less than maximum for the number line.';
+                return false;
+            }
         }
         wizardState.error = '';
         return true;
     }
 
     function getDataEntryContent(chartType) {
+        const typeConfig = getChartTypeConfig(chartType) || {};
+        const axes = typeConfig.schema?.axes;
+        const axisParts = [];
+
+        if (axes !== null) {
+            const showXAxis = axes === undefined || axes.x !== null;
+            const showYAxis = axes === undefined || axes.y !== null;
+            if (showXAxis) {
+                const placeholder = axes?.x?.label || 'X-axis label';
+                axisParts.push(`
+                    <div class="chart-form-group">
+                        <label>${placeholder}</label>
+                        <input type="text" data-role="xLabel" value="${wizardState.xLabel || ''}" placeholder="${placeholder}">
+                    </div>
+                `);
+            }
+            if (showYAxis) {
+                const placeholder = axes?.y?.label || 'Y-axis label';
+                axisParts.push(`
+                    <div class="chart-form-group">
+                        <label>${placeholder}</label>
+                        <input type="text" data-role="yLabel" value="${wizardState.yLabel || ''}" placeholder="${placeholder}">
+                    </div>
+                `);
+            }
+        }
+
         const axisSection = `
-            <div class="chart-form-group">
-                <label>X-axis label</label>
-                <input type="text" data-role="xLabel" value="${wizardState.xLabel || ''}" placeholder="e.g., Order amount ($)">
-            </div>
-            ${chartType !== 'dotplot' ? `<div class="chart-form-group">
-                <label>Y-axis label</label>
-                <input type="text" data-role="yLabel" value="${wizardState.yLabel || ''}" placeholder="e.g., Frequency">
-            </div>` : ''}
-            ${chartType === 'histogram' ? `<div class="chart-form-group">
-                <label>Series name</label>
-                <input type="text" data-role="seriesName" value="${wizardState.seriesName || ''}" placeholder="Frequency">
-            </div>` : ''}
+            ${axisParts.join('')}
             <div class="chart-form-group">
                 <label>Chart title (optional)</label>
                 <input type="text" data-role="title" value="${wizardState.title || ''}">
@@ -747,13 +1089,18 @@
         if (chartType === 'histogram') {
             const rows = wizardState.histogram.map((bin, index) => `
                 <tr>
-                    <td><input data-chart-input="label" data-index="${index}" value="${bin.label || ''}" placeholder="Interval"></td>
-                    <td><input data-chart-input="value" data-index="${index}" value="${bin.value || ''}" placeholder="Frequency"></td>
-                    <td><button type="button" data-action="remove-row" data-index="${index}">Remove</button></td>
+                    <td><input data-chart-input="label" data-group="histogram" data-index="${index}" value="${bin.label || ''}" placeholder="Interval"></td>
+                    <td><input data-chart-input="value" data-group="histogram" data-index="${index}" value="${bin.value || ''}" placeholder="Frequency"></td>
+                    <td><button type="button" data-action="remove-row" data-group="histogram" data-index="${index}">Remove</button></td>
                 </tr>
             `).join('');
+            const defaultSeries = typeConfig.defaults?.seriesName || 'Frequency';
             return `
                 ${axisSection}
+                <div class="chart-form-group">
+                    <label>Series name</label>
+                    <input type="text" data-role="seriesName" value="${wizardState.seriesName || ''}" placeholder="${defaultSeries}">
+                </div>
                 <div class="chart-form-group">
                     <label>Histogram bins</label>
                     <table class="chart-data-table">
@@ -761,10 +1108,72 @@
                         <tbody>${rows}</tbody>
                     </table>
                     <div class="chart-data-actions">
-                        <button type="button" data-action="add-row">Add row</button>
-                        <button type="button" data-action="parse-csv">Parse CSV</button>
+                        <button type="button" data-action="add-row" data-group="histogram">Add bin</button>
+                        <button type="button" data-action="parse-csv" data-group="histogram">Parse CSV</button>
                     </div>
-                    <textarea data-chart-csv placeholder="Paste label,value rows">${wizardState.csvText || ''}</textarea>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'label,value'} rows">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'bar') {
+            const rows = wizardState.bar.map((row, index) => `
+                <tr>
+                    <td><input data-chart-input="label" data-group="bar" data-index="${index}" value="${row.label || ''}" placeholder="Category"></td>
+                    <td><input data-chart-input="value" data-group="bar" data-index="${index}" value="${row.value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="bar" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            const defaultSeries = typeConfig.defaults?.seriesName || 'Series 1';
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Series name</label>
+                    <input type="text" data-role="barSeriesName" value="${wizardState.barSeriesName || ''}" placeholder="${defaultSeries}">
+                </div>
+                <div class="chart-form-group">
+                    <label>Orientation</label>
+                    <select data-role="barOrientation">
+                        <option value="vertical" ${wizardState.barOrientation === 'horizontal' ? '' : 'selected'}>Vertical (default)</option>
+                        <option value="horizontal" ${wizardState.barOrientation === 'horizontal' ? 'selected' : ''}>Horizontal</option>
+                    </select>
+                </div>
+                <div class="chart-form-group">
+                    <label>Bar categories</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Category</th><th>Value</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="bar">Add category</button>
+                        <button type="button" data-action="parse-csv" data-group="bar">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'category,value'} rows">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'pie') {
+            const rows = wizardState.pie.map((slice, index) => `
+                <tr>
+                    <td><input data-chart-input="label" data-group="pie" data-index="${index}" value="${slice.label || ''}" placeholder="Slice label"></td>
+                    <td><input data-chart-input="value" data-group="pie" data-index="${index}" value="${slice.value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="pie" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Pie slices</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Label</th><th>Value</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="pie">Add slice</button>
+                        <button type="button" data-action="parse-csv" data-group="pie">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'label,value'} rows">${wizardState.csvText || ''}</textarea>
                 </div>
             `;
         }
@@ -772,8 +1181,8 @@
         if (chartType === 'dotplot') {
             const rows = wizardState.dotplot.map((value, index) => `
                 <tr>
-                    <td><input data-chart-input="value" data-index="${index}" value="${value || ''}" placeholder="Value"></td>
-                    <td><button type="button" data-action="remove-row" data-index="${index}">Remove</button></td>
+                    <td><input data-chart-input="value" data-group="dotplot" data-index="${index}" value="${value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="dotplot" data-index="${index}">Remove</button></td>
                 </tr>
             `).join('');
             return `
@@ -785,10 +1194,10 @@
                         <tbody>${rows}</tbody>
                     </table>
                     <div class="chart-data-actions">
-                        <button type="button" data-action="add-row">Add value</button>
-                        <button type="button" data-action="parse-csv">Parse CSV</button>
+                        <button type="button" data-action="add-row" data-group="dotplot">Add value</button>
+                        <button type="button" data-action="parse-csv" data-group="dotplot">Parse CSV</button>
                     </div>
-                    <textarea data-chart-csv placeholder="Paste values (comma or space separated)">${wizardState.csvText || ''}</textarea>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'values separated by commas'}">${wizardState.csvText || ''}</textarea>
                 </div>
             `;
         }
@@ -796,9 +1205,10 @@
         if (chartType === 'scatter') {
             const rows = wizardState.scatter.map((point, index) => `
                 <tr>
-                    <td><input data-chart-input="x" data-index="${index}" value="${point.x || ''}" placeholder="X"></td>
-                    <td><input data-chart-input="y" data-index="${index}" value="${point.y || ''}" placeholder="Y"></td>
-                    <td><button type="button" data-action="remove-row" data-index="${index}">Remove</button></td>
+                    <td><input data-chart-input="x" data-group="scatter" data-index="${index}" value="${point.x || ''}" placeholder="X"></td>
+                    <td><input data-chart-input="y" data-group="scatter" data-index="${index}" value="${point.y || ''}" placeholder="Y"></td>
+                    <td><input data-chart-input="label" data-group="scatter" data-index="${index}" value="${point.label || ''}" placeholder="Label (optional)"></td>
+                    <td><button type="button" data-action="remove-row" data-group="scatter" data-index="${index}">Remove</button></td>
                 </tr>
             `).join('');
             return `
@@ -806,34 +1216,122 @@
                 <div class="chart-form-group">
                     <label>Scatterplot points</label>
                     <table class="chart-data-table">
-                        <thead><tr><th>X</th><th>Y</th><th></th></tr></thead>
+                        <thead><tr><th>X</th><th>Y</th><th>Label</th><th></th></tr></thead>
                         <tbody>${rows}</tbody>
                     </table>
                     <div class="chart-data-actions">
-                        <button type="button" data-action="add-row">Add point</button>
-                        <button type="button" data-action="parse-csv">Parse CSV</button>
+                        <button type="button" data-action="add-row" data-group="scatter">Add point</button>
+                        <button type="button" data-action="parse-csv" data-group="scatter">Parse CSV</button>
                     </div>
-                    <textarea data-chart-csv placeholder="Paste x,y pairs">${wizardState.csvText || ''}</textarea>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'x,y'} rows (optional third column for label)">${wizardState.csvText || ''}</textarea>
                 </div>
             `;
         }
 
-        const { min, q1, median, q3, max } = wizardState.boxplot;
-        return `
-            ${axisSection}
-            <div class="chart-form-group">
-                <label>Five-number summary</label>
-                <table class="chart-data-table">
-                    <tbody>
-                        <tr><th>Minimum</th><td><input data-chart-input="min" value="${min || ''}" placeholder="Minimum"></td></tr>
-                        <tr><th>Q1</th><td><input data-chart-input="q1" value="${q1 || ''}" placeholder="First quartile"></td></tr>
-                        <tr><th>Median</th><td><input data-chart-input="median" value="${median || ''}" placeholder="Median"></td></tr>
-                        <tr><th>Q3</th><td><input data-chart-input="q3" value="${q3 || ''}" placeholder="Third quartile"></td></tr>
-                        <tr><th>Maximum</th><td><input data-chart-input="max" value="${max || ''}" placeholder="Maximum"></td></tr>
-                    </tbody>
-                </table>
-            </div>
-        `;
+        if (chartType === 'boxplot') {
+            const { min, q1, median, q3, max } = wizardState.boxplot;
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Five-number summary</label>
+                    <table class="chart-data-table">
+                        <tbody>
+                            <tr><th>Minimum</th><td><input data-chart-input="min" data-group="boxplot" value="${min || ''}" placeholder="Minimum"></td></tr>
+                            <tr><th>Q1</th><td><input data-chart-input="q1" data-group="boxplot" value="${q1 || ''}" placeholder="First quartile"></td></tr>
+                            <tr><th>Median</th><td><input data-chart-input="median" data-group="boxplot" value="${median || ''}" placeholder="Median"></td></tr>
+                            <tr><th>Q3</th><td><input data-chart-input="q3" data-group="boxplot" value="${q3 || ''}" placeholder="Third quartile"></td></tr>
+                            <tr><th>Maximum</th><td><input data-chart-input="max" data-group="boxplot" value="${max || ''}" placeholder="Maximum"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        if (chartType === 'normal') {
+            const normal = wizardState.normal || {};
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Normal distribution parameters</label>
+                    <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                        <div><label>Mean (μ)</label><input data-chart-input="mean" data-group="normal" value="${normal.mean || ''}" placeholder="e.g., 0"></div>
+                        <div><label>Std. deviation (σ)</label><input data-chart-input="sd" data-group="normal" value="${normal.sd || ''}" placeholder="e.g., 1"></div>
+                        <div><label>X min (optional)</label><input data-chart-input="xMin" data-group="normal" value="${normal.xMin || ''}" placeholder="Auto"></div>
+                        <div><label>X max (optional)</label><input data-chart-input="xMax" data-group="normal" value="${normal.xMax || ''}" placeholder="Auto"></div>
+                        <div><label>Tick interval (optional)</label><input data-chart-input="tickInterval" data-group="normal" value="${normal.tickInterval || ''}" placeholder="σ"></div>
+                        <div><label>Shade lower bound</label><input data-chart-input="shadeLower" data-group="normal" value="${normal.shadeLower || ''}" placeholder="None"></div>
+                        <div><label>Shade upper bound</label><input data-chart-input="shadeUpper" data-group="normal" value="${normal.shadeUpper || ''}" placeholder="None"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (chartType === 'chisquare') {
+            const rows = wizardState.chisquareRows.map((row, index) => `
+                <tr>
+                    <td><input data-chart-input="df" data-group="chisquare" data-index="${index}" value="${row.df || ''}" placeholder="Degrees of freedom"></td>
+                    <td><input data-chart-input="label" data-group="chisquare" data-index="${index}" value="${row.label || ''}" placeholder="Label (optional)"></td>
+                    <td><button type="button" data-action="remove-row" data-group="chisquare" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            const settings = wizardState.chisquareSettings || {};
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Chi-square curves</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Degrees of freedom</th><th>Label</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="chisquare">Add curve</button>
+                    </div>
+                </div>
+                <div class="chart-form-group">
+                    <label>Axis & resolution (optional)</label>
+                    <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+                        <div><label>X min</label><input data-chart-input="xMin" data-group="chisquare-settings" value="${settings.xMin || ''}" placeholder="Auto"></div>
+                        <div><label>X max</label><input data-chart-input="xMax" data-group="chisquare-settings" value="${settings.xMax || ''}" placeholder="Auto"></div>
+                        <div><label>Tick interval</label><input data-chart-input="tickInterval" data-group="chisquare-settings" value="${settings.tickInterval || ''}" placeholder="Auto"></div>
+                        <div><label>Points per curve</label><input data-chart-input="numPoints" data-group="chisquare-settings" value="${settings.numPoints || ''}" placeholder="120"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (chartType === 'numberline') {
+            const rows = wizardState.numberline.map((tick, index) => `
+                <tr>
+                    <td><input data-chart-input="position" data-group="numberline" data-index="${index}" value="${tick.position || ''}" placeholder="Position"></td>
+                    <td><input data-chart-input="label" data-group="numberline" data-index="${index}" value="${tick.label || ''}" placeholder="Top label"></td>
+                    <td><input data-chart-input="bottomLabel" data-group="numberline" data-index="${index}" value="${tick.bottomLabel || ''}" placeholder="Bottom label"></td>
+                    <td><button type="button" data-action="remove-row" data-group="numberline" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            const range = wizardState.numberlineRange || {};
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Number line ticks</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Position</th><th>Top label</th><th>Bottom label</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="numberline">Add tick</button>
+                    </div>
+                </div>
+                <div class="chart-form-group">
+                    <label>Optional axis overrides</label>
+                    <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+                        <div><label>Minimum</label><input data-chart-input="min" data-group="numberline-range" value="${range.min || ''}" placeholder="Auto"></div>
+                        <div><label>Maximum</label><input data-chart-input="max" data-group="numberline-range" value="${range.max || ''}" placeholder="Auto"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `${axisSection}<p>Unsupported chart type.</p>`;
     }
 
     function getPreviewContent() {
@@ -896,7 +1394,50 @@
             description: wizardState.description?.trim() || ''
         };
 
-        if (wizardState.chartType === 'histogram') {
+        const type = wizardState.chartType;
+
+        if (type === 'bar') {
+            const rows = wizardState.bar
+                .filter(row => row.label && row.value !== '')
+                .map(row => ({ label: row.label.trim(), value: parseFloat(row.value) }));
+            if (rows.length === 0 || rows.some(row => isNaN(row.value))) {
+                if (showError) {
+                    wizardState.error = 'Add at least one category with a numeric value.';
+                }
+                return null;
+            }
+            return {
+                type: 'bar',
+                data: {
+                    categories: rows.map(row => row.label),
+                    values: rows.map(row => row.value),
+                    seriesName: wizardState.barSeriesName?.trim() || 'Series 1',
+                    orientation: wizardState.barOrientation === 'horizontal' ? 'horizontal' : 'vertical'
+                },
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (type === 'pie') {
+            const slices = wizardState.pie
+                .filter(row => row.label && row.value !== '')
+                .map(row => ({ label: row.label.trim(), value: parseFloat(row.value) }));
+            if (slices.length === 0 || slices.some(slice => isNaN(slice.value))) {
+                if (showError) {
+                    wizardState.error = 'Add at least one slice with a numeric value.';
+                }
+                return null;
+            }
+            return {
+                type: 'pie',
+                data: { slices },
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (type === 'histogram') {
             const bins = wizardState.histogram
                 .filter(bin => bin.label && bin.value !== '')
                 .map(bin => ({ label: bin.label.trim(), value: parseFloat(bin.value) }));
@@ -923,7 +1464,7 @@
             };
         }
 
-        if (wizardState.chartType === 'dotplot') {
+        if (type === 'dotplot') {
             const values = wizardState.dotplot
                 .map(v => v.trim())
                 .filter(Boolean)
@@ -942,7 +1483,7 @@
             };
         }
 
-        if (wizardState.chartType === 'scatter') {
+        if (type === 'scatter') {
             const points = wizardState.scatter
                 .map(pt => ({ x: pt.x.trim(), y: pt.y.trim(), label: pt.label?.trim() }))
                 .filter(pt => pt.x !== '' && pt.y !== '')
@@ -961,28 +1502,116 @@
             };
         }
 
-        const { min, q1, median, q3, max } = wizardState.boxplot;
-        const parsed = [min, q1, median, q3, max].map(v => parseFloat(v));
-        if (parsed.some(v => isNaN(v))) {
-            if (showError) {
-                wizardState.error = 'Provide numeric values for min, Q1, median, Q3, and max.';
-            }
-            return null;
-        }
-        return {
-            type: 'boxplot',
-            data: {
-                fiveNumber: {
-                    min: parsed[0],
-                    q1: parsed[1],
-                    median: parsed[2],
-                    q3: parsed[3],
-                    max: parsed[4]
+        if (type === 'boxplot') {
+            const { min, q1, median, q3, max } = wizardState.boxplot;
+            const parsed = [min, q1, median, q3, max].map(v => parseFloat(v));
+            if (parsed.some(v => isNaN(v))) {
+                if (showError) {
+                    wizardState.error = 'Provide numeric values for min, Q1, median, Q3, and max.';
                 }
-            },
-            options: commonOptions,
-            meta: baseMeta
-        };
+                return null;
+            }
+            return {
+                type: 'boxplot',
+                data: {
+                    fiveNumber: {
+                        min: parsed[0],
+                        q1: parsed[1],
+                        median: parsed[2],
+                        q3: parsed[3],
+                        max: parsed[4]
+                    }
+                },
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (type === 'normal') {
+            const { mean, sd, xMin, xMax, tickInterval, shadeLower, shadeUpper } = wizardState.normal;
+            const meanValue = parseFloat(mean);
+            const sdValue = parseFloat(sd);
+            if (isNaN(meanValue) || isNaN(sdValue) || sdValue <= 0) {
+                if (showError) {
+                    wizardState.error = 'Normal curve requires numeric mean and positive standard deviation.';
+                }
+                return null;
+            }
+            const normalData = { mean: meanValue, sd: sdValue };
+            if (xMin !== '') normalData.xMin = parseFloat(xMin);
+            if (xMax !== '') normalData.xMax = parseFloat(xMax);
+            if (tickInterval !== '') normalData.tickInterval = parseFloat(tickInterval);
+            if (shadeLower !== '' || shadeUpper !== '') {
+                normalData.shade = {
+                    lower: shadeLower !== '' ? parseFloat(shadeLower) : null,
+                    upper: shadeUpper !== '' ? parseFloat(shadeUpper) : null
+                };
+            }
+            return {
+                type: 'normal',
+                data: normalData,
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (type === 'chisquare') {
+            const rows = wizardState.chisquareRows
+                .filter(row => row.df !== '')
+                .map(row => ({ df: parseFloat(row.df), label: row.label?.trim() || '' }));
+            if (rows.length === 0 || rows.some(row => isNaN(row.df) || row.df <= 0)) {
+                if (showError) {
+                    wizardState.error = 'Provide positive numeric degrees of freedom.';
+                }
+                return null;
+            }
+            const settings = wizardState.chisquareSettings;
+            const data = {
+                dfList: rows.map(row => row.df),
+                labels: rows.map((row, index) => row.label || `df = ${rows[index].df}`)
+            };
+            if (settings.xMin !== '') data.xMin = parseFloat(settings.xMin);
+            if (settings.xMax !== '') data.xMax = parseFloat(settings.xMax);
+            if (settings.tickInterval !== '') data.tickInterval = parseFloat(settings.tickInterval);
+            if (settings.numPoints !== '') data.numPoints = parseInt(settings.numPoints, 10);
+            return {
+                type: 'chisquare',
+                data,
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (type === 'numberline') {
+            const ticks = wizardState.numberline
+                .filter(tick => tick.position !== '')
+                .map(tick => ({
+                    x: parseFloat(tick.position),
+                    label: tick.label?.trim() || '',
+                    bottomLabel: tick.bottomLabel?.trim() || ''
+                }));
+            if (ticks.length === 0 || ticks.some(tick => isNaN(tick.x))) {
+                if (showError) {
+                    wizardState.error = 'Add numeric tick positions for the number line.';
+                }
+                return null;
+            }
+            const range = wizardState.numberlineRange;
+            const data = { ticks };
+            if (range.min !== '') data.xMin = parseFloat(range.min);
+            if (range.max !== '') data.xMax = parseFloat(range.max);
+            return {
+                type: 'numberline',
+                data,
+                options: commonOptions,
+                meta: baseMeta
+            };
+        }
+
+        if (showError) {
+            wizardState.error = 'Unsupported chart type.';
+        }
+        return null;
     }
 
     function convertSIFToChartData(sif) {
@@ -996,6 +1625,41 @@
                 yAxis: { title: options.yLabel || undefined }
             }
         };
+
+        if (sif.type === 'bar') {
+            const categories = sif.data?.categories || [];
+            const values = (sif.data?.values || []).map(value => Number(value) || 0);
+            const seriesName = sif.data?.seriesName || 'Series 1';
+            const orientation = sif.data?.orientation === 'horizontal' ? 'horizontal' : 'vertical';
+            return {
+                chartType: 'bar',
+                title: baseConfig.title,
+                xLabels: categories,
+                series: [{ name: seriesName, values }],
+                chartConfig: {
+                    ...baseConfig.chartConfig,
+                    orientation,
+                    xAxis: { title: options.xLabel || 'Category' },
+                    yAxis: { title: options.yLabel || 'Value' }
+                }
+            };
+        }
+
+        if (sif.type === 'pie') {
+            const slices = sif.data?.slices || [];
+            const values = slices.map(slice => ({
+                name: slice.label,
+                value: Number(slice.value) || 0
+            }));
+            return {
+                chartType: 'pie',
+                title: baseConfig.title,
+                series: [{ values }],
+                chartConfig: {
+                    ...baseConfig.chartConfig
+                }
+            };
+        }
 
         if (sif.type === 'histogram') {
             const bins = sif.data?.bins || [];
@@ -1062,6 +1726,73 @@
                         Q3: five.q3 ?? five.Q3,
                         max: five.max
                     }
+                }
+            };
+        }
+
+        if (sif.type === 'normal') {
+            const data = sif.data || {};
+            const shade = data.shade;
+            const xAxisConfig = {
+                ...baseConfig.chartConfig.xAxis,
+                min: data.xMin,
+                max: data.xMax,
+                tickInterval: data.tickInterval
+            };
+            return {
+                chartType: 'normal',
+                title: baseConfig.title,
+                mean: Number(data.mean) || 0,
+                sd: Number(data.sd) || 1,
+                shade: shade ? { lower: shade.lower, upper: shade.upper } : undefined,
+                chartConfig: {
+                    ...baseConfig.chartConfig,
+                    xAxis: xAxisConfig,
+                    yAxis: baseConfig.chartConfig.yAxis
+                }
+            };
+        }
+
+        if (sif.type === 'chisquare') {
+            const data = sif.data || {};
+            const dfList = (data.dfList || []).map(value => Number(value) || 0);
+            const labels = data.labels || dfList.map(df => `df = ${df}`);
+            return {
+                chartType: 'chisquare',
+                title: baseConfig.title,
+                dfList,
+                labels,
+                chartConfig: {
+                    ...baseConfig.chartConfig,
+                    xAxis: {
+                        ...baseConfig.chartConfig.xAxis,
+                        min: data.xMin,
+                        max: data.xMax,
+                        tickInterval: data.tickInterval
+                    },
+                    yAxis: baseConfig.chartConfig.yAxis,
+                    numPoints: data.numPoints ? Number(data.numPoints) : undefined
+                }
+            };
+        }
+
+        if (sif.type === 'numberline') {
+            const ticks = (sif.data?.ticks || []).map(tick => ({
+                x: Number(tick.x),
+                label: tick.label,
+                bottomLabel: tick.bottomLabel
+            }));
+            return {
+                chartType: 'numberline',
+                title: baseConfig.title,
+                ticks,
+                xAxis: {
+                    min: sif.data?.xMin,
+                    max: sif.data?.xMax,
+                    title: options.xLabel || undefined
+                },
+                chartConfig: {
+                    ...baseConfig.chartConfig
                 }
             };
         }
