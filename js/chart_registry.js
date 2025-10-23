@@ -1,23 +1,6 @@
 (function() {
     const registryList = [
         {
-            key: 'histogram',
-            displayName: 'Histogram',
-            description: 'Bin numeric data and visualize the frequency in each interval.',
-            schema: {
-                kind: 'bins',
-                axes: { x: { label: 'Interval' }, y: { label: 'Frequency' } },
-                csv: 'interval,frequency'
-            },
-            renderer: 'histogram',
-            defaults: {
-                xLabel: 'Interval',
-                yLabel: 'Frequency',
-                seriesName: 'Frequency',
-                orientation: 'vertical'
-            }
-        },
-        {
             key: 'bar',
             displayName: 'Bar Chart',
             description: 'Compare categories using rectangular bars for numeric values.',
@@ -35,31 +18,19 @@
             }
         },
         {
-            key: 'pie',
-            displayName: 'Pie Chart',
-            description: 'Show how categorical parts contribute to the whole.',
+            key: 'line',
+            displayName: 'Line Chart',
+            description: 'Connect points across categories to highlight trends.',
             schema: {
-                kind: 'categorical',
-                axes: null,
+                kind: 'categorical-series',
+                axes: { x: { label: 'Category' }, y: { label: 'Value' } },
                 csv: 'category,value'
             },
-            renderer: 'pie',
+            renderer: 'line',
             defaults: {
-                seriesName: 'Slices'
-            }
-        },
-        {
-            key: 'dotplot',
-            displayName: 'Dot Plot',
-            description: 'Plot individual numeric observations as stacked dots.',
-            schema: {
-                kind: 'numeric-list',
-                axes: { x: { label: 'Value' }, y: null },
-                csv: 'value,value,value'
-            },
-            renderer: 'dotplot',
-            defaults: {
-                xLabel: 'Value'
+                xLabel: 'Category',
+                yLabel: 'Value',
+                seriesName: 'Series 1'
             }
         },
         {
@@ -75,6 +46,104 @@
             defaults: {
                 xLabel: 'X Value',
                 yLabel: 'Y Value'
+            }
+        },
+        {
+            key: 'bubble',
+            displayName: 'Bubble Chart',
+            description: 'Show three variables using x, y position and bubble size.',
+            schema: {
+                kind: 'xyr',
+                axes: { x: { label: 'X Value' }, y: { label: 'Y Value' } },
+                csv: 'x,y,r'
+            },
+            renderer: 'bubble',
+            defaults: {
+                xLabel: 'X Value',
+                yLabel: 'Y Value'
+            }
+        },
+        {
+            key: 'radar',
+            displayName: 'Radar Chart',
+            description: 'Compare multivariate data across circular axes.',
+            schema: {
+                kind: 'categories-datasets',
+                axes: { x: null, y: null },
+                csv: null
+            },
+            renderer: 'radar',
+            defaults: {}
+        },
+        {
+            key: 'polarArea',
+            displayName: 'Polar Area Chart',
+            description: 'Display categories as sectors with equal angles and variable radius.',
+            schema: {
+                kind: 'segments',
+                axes: null,
+                csv: 'category,value'
+            },
+            renderer: 'polarArea',
+            defaults: {}
+        },
+        {
+            key: 'pie',
+            displayName: 'Pie Chart',
+            description: 'Show how categorical parts contribute to the whole.',
+            schema: {
+                kind: 'segments',
+                axes: null,
+                csv: 'category,value'
+            },
+            renderer: 'pie',
+            defaults: {
+                seriesName: 'Slices'
+            }
+        },
+        {
+            key: 'doughnut',
+            displayName: 'Doughnut Chart',
+            description: 'Show part-to-whole relationships with an open center.',
+            schema: {
+                kind: 'segments',
+                axes: null,
+                csv: 'category,value'
+            },
+            renderer: 'doughnut',
+            defaults: {
+                seriesName: 'Segments'
+            }
+        },
+        {
+            key: 'histogram',
+            displayName: 'Histogram',
+            description: 'Bin numeric data and visualize the frequency in each interval.',
+            schema: {
+                kind: 'bins',
+                axes: { x: { label: 'Interval' }, y: { label: 'Frequency' } },
+                csv: 'interval,frequency'
+            },
+            renderer: 'histogram',
+            defaults: {
+                xLabel: 'Interval',
+                yLabel: 'Frequency',
+                seriesName: 'Frequency',
+                orientation: 'vertical'
+            }
+        },
+        {
+            key: 'dotplot',
+            displayName: 'Dot Plot',
+            description: 'Plot individual numeric observations as stacked dots.',
+            schema: {
+                kind: 'numeric-list',
+                axes: { x: { label: 'Value' }, y: null },
+                csv: 'value,value,value'
+            },
+            renderer: 'dotplot',
+            defaults: {
+                xLabel: 'Value'
             }
         },
         {

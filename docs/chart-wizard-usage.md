@@ -6,7 +6,7 @@
 - The wizard is keyboard-friendly: use <kbd>Tab</kbd> to move between controls and <kbd>Enter</kbd> to activate buttons.
 
 ## Workflow Overview
-1. **Chart type** – pick from the suggested chart types for the question. The suggested type is highlighted but you can choose any of the supported options (bar, histogram, pie, dotplot, scatter, box plot, normal curve, chi-square curve, number line).
+1. **Chart type** – pick from the suggested chart types for the question. The suggested type is highlighted but you can choose any of the supported options (bar, line, scatter, bubble, radar, polar area, pie, doughnut, histogram, dotplot, box plot, normal curve, chi-square curve, number line). Orientation toggles (for example, horizontal bars) appear automatically when a chart supports them.
 2. **Data entry** – enter labels/values or points. You can paste CSV data (comma or tab-separated) and use the “Parse CSV” helper, or add rows manually. Provide axis labels, series name, and optional title/description.
 3. **Preview & save** – review the rendered preview. Use **Save Chart** to persist the configuration, or **Delete** to remove the saved chart.
 
@@ -15,51 +15,33 @@ The chart list is driven by the read-only registry at `window.CHART_TYPE_LIST` (
 The wizard stores charts immediately in localStorage. Saved charts are rendered below the FRQ prompt and can be edited or deleted without reopening the wizard.
 
 ## Standard Internal Format (SIF)
-Each chart is saved as a JSON object with the shape:
+Each chart is saved as a JSON object with common metadata plus type-specific payloads. Common fields include:
 
-```json
-{
-  "type": "bar" | "histogram" | "pie" | "dotplot" | "scatter" | "boxplot" | "normal" | "chisquare" | "numberline",
-  "data": {
-    "categories": ["A", "B"],
-    "values": [12, 8],
-    "seriesName": "Series 1",
-    "orientation": "vertical",
-    "bins": [{ "label": "0-5", "value": 12 }],
-    "slices": [{ "label": "Yes", "value": 18 }],
-    "points": [{ "x": 3.2, "y": 7.5, "label": "Trial" }],
-    "fiveNumber": { "min": 4, "q1": 6, "median": 8, "q3": 10, "max": 12 },
-    "mean": 0,
-    "sd": 1,
-    "shade": { "lower": -1, "upper": 1 },
-    "dfList": [4, 6],
-    "labels": ["df = 4", "df = 6"],
-    "ticks": [{ "x": -2, "label": "A", "bottomLabel": "-2" }]
-  },
-  "options": {
-    "xLabel": "Order total ($)",
-    "yLabel": "Frequency",
-    "title": "Food truck orders",
-    "description": "Histogram built from the frequency table"
-  },
-  "meta": {
-    "version": 1,
-    "createdAt": "2024-11-16T15:04:05.123Z",
-    "updatedAt": "2024-11-16T15:04:05.123Z"
-  }
-}
-```
+- `type`: chart identifier (`"bar"`, `"line"`, `"scatter"`, `"bubble"`, `"radar"`, `"polarArea"`, `"pie"`, `"doughnut"`, `"histogram"`, `"dotplot"`, `"boxplot"`, `"normal"`, `"chisquare"`, `"numberline"`).
+- Optional `xLabel`, `yLabel`, `title`, and `description` (also stored under `options`).
+- `meta`: timestamps for creation/update.
 
-Fields that do not apply to a chart type are omitted (for example, `dfList` appears only for chi-square curves, `ticks` only for number lines, and `bins` only for histograms).
+Type-specific content:
+
+- **Bar / Line** – `series: [{ name, values: number[] }]` plus optional `categories` array. Bar charts also include `orientation` (`"vertical"` or `"horizontal"`).
+- **Scatter** – `points: [{ x, y, label? }]` storing numeric coordinates and optional labels.
+- **Bubble** – `points: [{ x, y, r, label? }]` with numeric radii.
+- **Radar** – `categories: string[]` and `datasets: [{ name, values: number[] }]` (all datasets share the category order).
+- **PolarArea / Pie / Doughnut** – `segments: [{ label, value }]` describing each slice or sector.
+- **Histogram** – `data.bins: [{ label, value }]` and `data.seriesName` for the frequency series.
+- **Dotplot** – `data.values: number[]` representing the raw observations.
+- **Boxplot** – `data.fiveNumber` (min, q1, median, q3, max).
+- **Normal curve** – `data.mean`, `data.sd`, optional `data.shade`, `data.xMin`, `data.xMax`, and `data.tickInterval`.
+- **Chi-square curve** – `data.dfList`, `data.labels`, and optional domain/tick metadata.
+- **Number line** – `data.ticks: [{ x, label, bottomLabel }]` plus optional `data.xMin`/`data.xMax`.
 
 ## Storage Location
-Charts are persisted offline at:
+Charts are persisted in two places for backward compatibility:
 
-```
-classData.users[USERNAME].charts[QUESTION_ID]
-```
+- `classData.users[USERNAME].answers[QUESTION_ID] = { type: "chart-response", value: <SIF>, timestamp }`
+- `classData.users[USERNAME].charts[QUESTION_ID] = <SIF>`
 
-The wizard automatically creates the `charts` map when needed and calls `saveClassData()` after every save or delete.
+The wizard automatically maintains both structures and calls `saveClassData()` after every save or delete.
 
 ## Submission & Sync
 When you submit an answer:
