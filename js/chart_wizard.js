@@ -11,11 +11,16 @@
             return window.CHART_TYPE_LIST;
         }
         return [
-            { key: 'bar', displayName: 'Bar Chart', description: 'Compare categories using rectangular bars.', schema: { kind: 'categorical', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Category', yLabel: 'Value' } },
-            { key: 'histogram', displayName: 'Histogram', description: 'Group numeric data into bins.', schema: { kind: 'bins', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Interval', yLabel: 'Frequency' } },
-            { key: 'pie', displayName: 'Pie Chart', description: 'Show categorical parts of a whole.', schema: { kind: 'categorical', axes: null }, defaults: {} },
-            { key: 'dotplot', displayName: 'Dot Plot', description: 'Plot numeric values with stacked dots.', schema: { kind: 'numeric-list', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } },
+            { key: 'bar', displayName: 'Bar Chart', description: 'Compare categories using rectangular bars.', schema: { kind: 'categorical', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Category', yLabel: 'Value', seriesName: 'Series 1', orientation: 'vertical' } },
+            { key: 'line', displayName: 'Line Chart', description: 'Connect points to show change over categories.', schema: { kind: 'categorical-series', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Category', yLabel: 'Value', seriesName: 'Series 1' } },
             { key: 'scatter', displayName: 'Scatter Plot', description: 'Display paired (x, y) data.', schema: { kind: 'xy', axes: { x: {}, y: {} } }, defaults: { xLabel: 'X Value', yLabel: 'Y Value' } },
+            { key: 'bubble', displayName: 'Bubble Chart', description: 'Visualize relationships with bubble size.', schema: { kind: 'xyr', axes: { x: {}, y: {} } }, defaults: { xLabel: 'X Value', yLabel: 'Y Value' } },
+            { key: 'radar', displayName: 'Radar Chart', description: 'Compare categories around a circular axis.', schema: { kind: 'categories-datasets', axes: { x: null, y: null } }, defaults: {} },
+            { key: 'polarArea', displayName: 'Polar Area Chart', description: 'Show parts of a whole with equal angles.', schema: { kind: 'segments', axes: null }, defaults: {} },
+            { key: 'pie', displayName: 'Pie Chart', description: 'Show categorical parts of a whole.', schema: { kind: 'segments', axes: null }, defaults: {} },
+            { key: 'doughnut', displayName: 'Doughnut Chart', description: 'Show parts of a whole with a center cutout.', schema: { kind: 'segments', axes: null }, defaults: {} },
+            { key: 'histogram', displayName: 'Histogram', description: 'Group numeric data into bins.', schema: { kind: 'bins', axes: { x: {}, y: {} } }, defaults: { xLabel: 'Interval', yLabel: 'Frequency' } },
+            { key: 'dotplot', displayName: 'Dot Plot', description: 'Plot numeric values with stacked dots.', schema: { kind: 'numeric-list', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } },
             { key: 'boxplot', displayName: 'Box Plot', description: 'Summarize distribution with five-number summary.', schema: { kind: 'five-number', axes: { x: null, y: {} } }, defaults: { yLabel: 'Value' } },
             { key: 'normal', displayName: 'Normal Curve', description: 'Plot a normal distribution.', schema: { kind: 'distribution', axes: { x: {}, y: null } }, defaults: { xLabel: 'Value' } },
             { key: 'chisquare', displayName: 'Chi-Square Curve', description: 'Overlay chi-square density curves.', schema: { kind: 'distribution-list', axes: { x: {}, y: {} } }, defaults: { xLabel: 'χ² Value', yLabel: 'Density' } },
@@ -284,6 +289,90 @@
         });
     }
 
+    function getCurrentUserRecord() {
+        const username = window.currentUsername || localStorage.getItem('consensusUsername') || '';
+        if (!username) {
+            return { username: '', user: null };
+        }
+        if (!window.classData) {
+            window.classData = { users: {} };
+        }
+        if (!window.classData.users) {
+            window.classData.users = {};
+        }
+        if (!window.classData.users[username]) {
+            window.classData.users[username] = {
+                answers: {},
+                reasons: {},
+                timestamps: {},
+                attempts: {},
+                charts: {},
+                currentActivity: {
+                    state: 'idle',
+                    questionId: null,
+                    lastUpdate: Date.now()
+                }
+            };
+        }
+        const user = window.classData.users[username];
+        if (!user.answers) user.answers = {};
+        if (!user.charts) user.charts = {};
+        return { username, user };
+    }
+
+    function getStoredChartSIF(questionId) {
+        const { username, user } = getCurrentUserRecord();
+        if (!username || !user) return null;
+        const answerEntry = user.answers?.[questionId];
+        if (answerEntry && answerEntry.type === 'chart-response') {
+            const value = answerEntry.value;
+            if (value && typeof value === 'object') {
+                return value;
+            }
+            if (typeof value === 'string') {
+                try {
+                    return JSON.parse(value);
+                } catch (error) {
+                    console.warn('Unable to parse stored chart SIF string:', error);
+                }
+            }
+        }
+        if (user.charts && user.charts[questionId]) {
+            return user.charts[questionId];
+        }
+        return null;
+    }
+
+    function setStoredChartSIF(questionId, sif) {
+        const { username, user } = getCurrentUserRecord();
+        if (!username || !user) return;
+        const timestamp = new Date().toISOString();
+        try {
+            user.answers[questionId] = {
+                value: sif,
+                timestamp,
+                type: 'chart-response'
+            };
+        } catch (error) {
+            console.warn('Unable to set chart answer entry:', error);
+        }
+        if (!user.charts) {
+            user.charts = {};
+        }
+        user.charts[questionId] = sif;
+    }
+
+    function deleteStoredChartSIF(questionId) {
+        const { username, user } = getCurrentUserRecord();
+        if (!username || !user) return;
+        if (user.answers && user.answers[questionId]?.type === 'chart-response') {
+            delete user.answers[questionId];
+        }
+        if (user.charts && user.charts[questionId]) {
+            delete user.charts[questionId];
+        }
+    }
+
     function openChartWizard(questionId) {
         injectStyles();
         ensureModal();
@@ -300,7 +389,7 @@
             return;
         }
 
-        const existingChart = window.classData?.users?.[username]?.charts?.[questionId] || null;
+        const existingChart = getStoredChartSIF(questionId);
         wizardState = createInitialState(questionId, metadata, existingChart);
         renderWizard();
         showOverlay();
@@ -314,6 +403,13 @@
         const initialType = existingType || hintedType || fallbackType;
         const defaults = getChartTypeConfig(initialType)?.defaults || {};
 
+        const existingFirstSeries = Array.isArray(existingChart?.series) ? existingChart.series[0] : null;
+        const histogramSeriesName = existingChart?.data?.seriesName || defaults.seriesName || 'Frequency';
+        const baseSeriesName = existingFirstSeries?.name || existingChart?.data?.seriesName || defaults.seriesName || 'Series 1';
+        const baseOrientation = existingChart?.orientation || existingChart?.data?.orientation || defaults.orientation || 'vertical';
+        const baseXLabel = existingChart?.xLabel ?? existingChart?.options?.xLabel ?? defaults.xLabel ?? '';
+        const baseYLabel = existingChart?.yLabel ?? existingChart?.options?.yLabel ?? defaults.yLabel ?? '';
+
         const baseState = {
             questionId,
             metadata,
@@ -321,20 +417,27 @@
             chartType: initialType,
             histogram: [{ label: '', value: '' }],
             bar: [{ label: '', value: '' }],
+            line: [{ label: '', value: '' }],
             pie: [{ label: '', value: '' }],
+            doughnut: [{ label: '', value: '' }],
+            polarArea: [{ label: '', value: '' }],
             dotplot: [''],
             scatter: [{ x: '', y: '', label: '' }],
+            bubble: [{ x: '', y: '', r: '', label: '' }],
             boxplot: { min: '', q1: '', median: '', q3: '', max: '' },
             normal: { mean: '', sd: '', shadeLower: '', shadeUpper: '', xMin: '', xMax: '', tickInterval: '' },
             chisquareRows: [{ df: '', label: '' }],
             chisquareSettings: { xMin: '', xMax: '', tickInterval: '', numPoints: '' },
             numberline: [{ position: '', label: '', bottomLabel: '' }],
             numberlineRange: { min: '', max: '' },
-            seriesName: existingChart?.data?.seriesName || defaults.seriesName || 'Frequency',
-            barSeriesName: existingChart?.data?.seriesName || defaults.seriesName || 'Series 1',
-            barOrientation: existingChart?.data?.orientation || defaults.orientation || 'vertical',
-            xLabel: existingChart?.options?.xLabel ?? defaults.xLabel ?? '',
-            yLabel: existingChart?.options?.yLabel ?? defaults.yLabel ?? '',
+            seriesName: histogramSeriesName,
+            barSeriesName: baseSeriesName,
+            lineSeriesName: existingFirstSeries?.name || defaults.seriesName || 'Series 1',
+            barOrientation: baseOrientation,
+            radarCategories: [''],
+            radarDatasets: [{ name: 'Series 1', values: [''] }],
+            xLabel: baseXLabel,
+            yLabel: baseYLabel,
             title: existingChart?.options?.title || '',
             description: existingChart?.options?.description || '',
             csvText: '',
@@ -343,103 +446,7 @@
         };
 
         if (existingChart) {
-            if (existingChart.type && getChartTypeConfig(existingChart.type)) {
-                baseState.chartType = existingChart.type;
-            }
-
-            if (existingChart.type === 'histogram') {
-                baseState.histogram = (existingChart.data?.bins || []).map(bin => ({
-                    label: bin.label,
-                    value: bin.value
-                }));
-                if (baseState.histogram.length === 0) {
-                    baseState.histogram = [{ label: '', value: '' }];
-                }
-                baseState.seriesName = existingChart.data?.seriesName || baseState.seriesName;
-            } else if (existingChart.type === 'bar') {
-                const categories = existingChart.data?.categories || [];
-                const values = existingChart.data?.values || [];
-                baseState.bar = categories.map((label, index) => ({
-                    label: label,
-                    value: values[index] !== undefined ? values[index] : ''
-                }));
-                if (baseState.bar.length === 0) {
-                    baseState.bar = [{ label: '', value: '' }];
-                }
-                baseState.barSeriesName = existingChart.data?.seriesName || baseState.barSeriesName;
-                baseState.barOrientation = existingChart.data?.orientation || baseState.barOrientation;
-            } else if (existingChart.type === 'pie') {
-                baseState.pie = (existingChart.data?.slices || []).map(slice => ({
-                    label: slice.label,
-                    value: slice.value
-                }));
-                if (baseState.pie.length === 0) {
-                    baseState.pie = [{ label: '', value: '' }];
-                }
-            } else if (existingChart.type === 'dotplot') {
-                baseState.dotplot = (existingChart.data?.values || []).map(v => `${v}`);
-                if (baseState.dotplot.length === 0) {
-                    baseState.dotplot = [''];
-                }
-            } else if (existingChart.type === 'scatter') {
-                baseState.scatter = (existingChart.data?.points || []).map(point => ({
-                    x: point.x,
-                    y: point.y,
-                    label: point.label || ''
-                }));
-                if (baseState.scatter.length === 0) {
-                    baseState.scatter = [{ x: '', y: '', label: '' }];
-                }
-            } else if (existingChart.type === 'boxplot') {
-                const five = existingChart.data?.fiveNumber || existingChart.options?.boxplotData || {};
-                baseState.boxplot = {
-                    min: five.min ?? '',
-                    q1: five.q1 ?? five.Q1 ?? '',
-                    median: five.median ?? '',
-                    q3: five.q3 ?? five.Q3 ?? '',
-                    max: five.max ?? ''
-                };
-            } else if (existingChart.type === 'normal') {
-                const normalData = existingChart.data || {};
-                baseState.normal = {
-                    mean: normalData.mean ?? '',
-                    sd: normalData.sd ?? '',
-                    shadeLower: normalData.shade?.lower ?? '',
-                    shadeUpper: normalData.shade?.upper ?? '',
-                    xMin: normalData.xMin ?? '',
-                    xMax: normalData.xMax ?? '',
-                    tickInterval: normalData.tickInterval ?? ''
-                };
-            } else if (existingChart.type === 'chisquare') {
-                const dfList = existingChart.data?.dfList || [];
-                const labels = existingChart.data?.labels || [];
-                baseState.chisquareRows = dfList.map((df, index) => ({
-                    df: df !== undefined ? `${df}` : '',
-                    label: labels[index] || ''
-                }));
-                if (baseState.chisquareRows.length === 0) {
-                    baseState.chisquareRows = [{ df: '', label: '' }];
-                }
-                baseState.chisquareSettings = {
-                    xMin: existingChart.data?.xMin ?? '',
-                    xMax: existingChart.data?.xMax ?? '',
-                    tickInterval: existingChart.data?.tickInterval ?? '',
-                    numPoints: existingChart.data?.numPoints ?? ''
-                };
-            } else if (existingChart.type === 'numberline') {
-                baseState.numberline = (existingChart.data?.ticks || []).map(tick => ({
-                    position: tick.x ?? tick.position ?? '',
-                    label: tick.label ?? '',
-                    bottomLabel: tick.bottomLabel ?? tick.valueLabel ?? ''
-                }));
-                if (baseState.numberline.length === 0) {
-                    baseState.numberline = [{ position: '', label: '', bottomLabel: '' }];
-                }
-                baseState.numberlineRange = {
-                    min: existingChart.data?.xMin ?? '',
-                    max: existingChart.data?.xMax ?? ''
-                };
-            }
+            applySifToState(baseState, existingChart);
         }
 
         const activeDefaults = getChartTypeConfig(baseState.chartType)?.defaults || {};
@@ -451,6 +458,255 @@
         }
 
         return baseState;
+    }
+
+    function normalizeNumeric(value) {
+        if (value === null || value === undefined || value === '') return '';
+        return `${value}`;
+    }
+
+    function applySifToState(state, sif) {
+        if (!state || !sif || typeof sif !== 'object') return;
+        if (sif.type && getChartTypeConfig(sif.type)) {
+            state.chartType = sif.type;
+        }
+
+        if (sif.xLabel && !state.xLabel) {
+            state.xLabel = sif.xLabel;
+        }
+        if (sif.yLabel && !state.yLabel) {
+            state.yLabel = sif.yLabel;
+        }
+        if (sif.title && !state.title) {
+            state.title = sif.title;
+        }
+        if (sif.description && !state.description) {
+            state.description = sif.description;
+        }
+        if (sif.meta) {
+            state.originalMeta = sif.meta;
+        }
+
+        const type = sif.type;
+        const legacyData = sif.data || {};
+
+        switch (type) {
+            case 'histogram': {
+                const bins = Array.isArray(legacyData.bins) ? legacyData.bins : [];
+                if (bins.length) {
+                    state.histogram = bins.map(bin => ({
+                        label: bin.label ?? '',
+                        value: normalizeNumeric(bin.value)
+                    }));
+                }
+                if (legacyData.seriesName) {
+                    state.seriesName = legacyData.seriesName;
+                }
+                break;
+            }
+            case 'bar': {
+                let rows = [];
+                let orientation = sif.orientation || legacyData.orientation || state.barOrientation;
+                let seriesName = state.barSeriesName;
+                if (Array.isArray(sif.series) && sif.series.length > 0) {
+                    const primary = sif.series[0];
+                    if (primary && typeof primary === 'object') {
+                        if (primary.name) {
+                            seriesName = primary.name;
+                        }
+                        if (Array.isArray(primary.values)) {
+                            if (primary.values.length && typeof primary.values[0] === 'object') {
+                                rows = primary.values.map(entry => ({
+                                    label: entry.label ?? '',
+                                    value: normalizeNumeric(entry.value)
+                                }));
+                            } else {
+                                const categories = Array.isArray(sif.categories) ? sif.categories : [];
+                                rows = primary.values.map((value, index) => ({
+                                    label: categories[index] ?? `Category ${index + 1}`,
+                                    value: normalizeNumeric(value)
+                                }));
+                            }
+                        }
+                    }
+                } else if (Array.isArray(legacyData.categories)) {
+                    const categories = legacyData.categories;
+                    const values = Array.isArray(legacyData.values) ? legacyData.values : [];
+                    rows = categories.map((label, index) => ({
+                        label: label ?? '',
+                        value: normalizeNumeric(values[index] ?? '')
+                    }));
+                    if (legacyData.seriesName) {
+                        seriesName = legacyData.seriesName;
+                    }
+                    if (legacyData.orientation) {
+                        orientation = legacyData.orientation;
+                    }
+                }
+                if (rows.length) {
+                    state.bar = rows;
+                }
+                state.barSeriesName = seriesName || state.barSeriesName;
+                state.barOrientation = orientation === 'horizontal' ? 'horizontal' : 'vertical';
+                break;
+            }
+            case 'line': {
+                let rows = [];
+                let seriesName = state.lineSeriesName;
+                if (Array.isArray(sif.series) && sif.series.length > 0) {
+                    const primary = sif.series[0];
+                    if (primary) {
+                        if (primary.name) {
+                            seriesName = primary.name;
+                        }
+                        if (Array.isArray(primary.values)) {
+                            if (primary.values.length && typeof primary.values[0] === 'object') {
+                                rows = primary.values.map(entry => ({
+                                    label: entry.label ?? '',
+                                    value: normalizeNumeric(entry.value)
+                                }));
+                            } else {
+                                const categories = Array.isArray(sif.categories) ? sif.categories : [];
+                                rows = primary.values.map((value, index) => ({
+                                    label: categories[index] ?? `Category ${index + 1}`,
+                                    value: normalizeNumeric(value)
+                                }));
+                            }
+                        }
+                    }
+                }
+                if (rows.length) {
+                    state.line = rows;
+                }
+                state.lineSeriesName = seriesName || state.lineSeriesName;
+                break;
+            }
+            case 'pie':
+            case 'doughnut':
+            case 'polarArea': {
+                const segments = Array.isArray(sif.segments)
+                    ? sif.segments
+                    : Array.isArray(legacyData.slices)
+                        ? legacyData.slices
+                        : [];
+                const mapped = segments.map(segment => ({
+                    label: segment.label ?? '',
+                    value: normalizeNumeric(segment.value)
+                }));
+                if (type === 'pie' && mapped.length) {
+                    state.pie = mapped;
+                } else if (type === 'doughnut' && mapped.length) {
+                    state.doughnut = mapped;
+                } else if (type === 'polarArea' && mapped.length) {
+                    state.polarArea = mapped;
+                }
+                break;
+            }
+            case 'dotplot': {
+                const values = Array.isArray(legacyData.values) ? legacyData.values : [];
+                if (values.length) {
+                    state.dotplot = values.map(value => normalizeNumeric(value));
+                }
+                break;
+            }
+            case 'scatter': {
+                const points = Array.isArray(sif.points) ? sif.points : Array.isArray(legacyData.points) ? legacyData.points : [];
+                if (points.length) {
+                    state.scatter = points.map(point => ({
+                        x: normalizeNumeric(point.x),
+                        y: normalizeNumeric(point.y),
+                        label: point.label ? `${point.label}` : ''
+                    }));
+                }
+                break;
+            }
+            case 'bubble': {
+                const points = Array.isArray(sif.points) ? sif.points : [];
+                if (points.length) {
+                    state.bubble = points.map(point => ({
+                        x: normalizeNumeric(point.x),
+                        y: normalizeNumeric(point.y),
+                        r: normalizeNumeric(point.r),
+                        label: point.label ? `${point.label}` : ''
+                    }));
+                }
+                break;
+            }
+            case 'radar': {
+                const categories = Array.isArray(sif.categories) ? sif.categories.map(label => `${label}`) : state.radarCategories;
+                const datasets = Array.isArray(sif.datasets) ? sif.datasets : [];
+                if (categories.length) {
+                    state.radarCategories = categories;
+                }
+                if (datasets.length) {
+                    state.radarDatasets = datasets.map(dataset => ({
+                        name: dataset.name || 'Series',
+                        values: Array.isArray(dataset.values)
+                            ? dataset.values.map(value => normalizeNumeric(value))
+                            : new Array(categories.length).fill('')
+                    }));
+                }
+                break;
+            }
+            case 'boxplot': {
+                const five = legacyData.fiveNumber || state.boxplot;
+                state.boxplot = {
+                    min: normalizeNumeric(five.min ?? five.minimum ?? ''),
+                    q1: normalizeNumeric(five.q1 ?? five.Q1 ?? ''),
+                    median: normalizeNumeric(five.median ?? ''),
+                    q3: normalizeNumeric(five.q3 ?? five.Q3 ?? ''),
+                    max: normalizeNumeric(five.max ?? five.maximum ?? '')
+                };
+                break;
+            }
+            case 'normal': {
+                const data = legacyData || sif;
+                state.normal = {
+                    mean: normalizeNumeric(data.mean ?? ''),
+                    sd: normalizeNumeric(data.sd ?? ''),
+                    shadeLower: normalizeNumeric(data.shade?.lower ?? data.shadeLower ?? ''),
+                    shadeUpper: normalizeNumeric(data.shade?.upper ?? data.shadeUpper ?? ''),
+                    xMin: normalizeNumeric(data.xMin ?? ''),
+                    xMax: normalizeNumeric(data.xMax ?? ''),
+                    tickInterval: normalizeNumeric(data.tickInterval ?? '')
+                };
+                break;
+            }
+            case 'chisquare': {
+                const dfList = Array.isArray(legacyData.dfList) ? legacyData.dfList : [];
+                const labels = Array.isArray(legacyData.labels) ? legacyData.labels : [];
+                if (dfList.length) {
+                    state.chisquareRows = dfList.map((df, index) => ({
+                        df: normalizeNumeric(df),
+                        label: labels[index] ? `${labels[index]}` : ''
+                    }));
+                }
+                state.chisquareSettings = {
+                    xMin: normalizeNumeric(legacyData.xMin ?? ''),
+                    xMax: normalizeNumeric(legacyData.xMax ?? ''),
+                    tickInterval: normalizeNumeric(legacyData.tickInterval ?? ''),
+                    numPoints: normalizeNumeric(legacyData.numPoints ?? '')
+                };
+                break;
+            }
+            case 'numberline': {
+                const ticks = Array.isArray(legacyData.ticks) ? legacyData.ticks : [];
+                if (ticks.length) {
+                    state.numberline = ticks.map(tick => ({
+                        position: normalizeNumeric(tick.x ?? tick.position ?? ''),
+                        label: tick.label ? `${tick.label}` : '',
+                        bottomLabel: tick.bottomLabel ? `${tick.bottomLabel}` : (tick.valueLabel ? `${tick.valueLabel}` : '')
+                    }));
+                }
+                state.numberlineRange = {
+                    min: normalizeNumeric(legacyData.xMin ?? ''),
+                    max: normalizeNumeric(legacyData.xMax ?? '')
+                };
+                break;
+            }
+            default:
+                break;
+        }
     }
 
     function showOverlay() {
@@ -568,8 +824,7 @@
 
     function hasExistingChart() {
         if (!wizardState) return false;
-        const username = window.currentUsername || localStorage.getItem('consensusUsername') || '';
-        return !!window.classData?.users?.[username]?.charts?.[wizardState.questionId];
+        return !!getStoredChartSIF(wizardState.questionId);
     }
 
     function attachEventHandlers(body, footer) {
@@ -615,6 +870,12 @@
                 handleFooterAction(action);
             });
         });
+
+        body.querySelectorAll('[data-action="edit-data"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                handleEditDataAction();
+            });
+        });
     }
 
     function attachDataEntryHandlers(body) {
@@ -645,9 +906,21 @@
                     if (!isNaN(index)) {
                         wizardState.bar[index][field] = target.value;
                     }
+                } else if (group === 'line') {
+                    if (!isNaN(index)) {
+                        wizardState.line[index][field] = target.value;
+                    }
                 } else if (group === 'pie') {
                     if (!isNaN(index)) {
                         wizardState.pie[index][field] = target.value;
+                    }
+                } else if (group === 'doughnut') {
+                    if (!isNaN(index)) {
+                        wizardState.doughnut[index][field] = target.value;
+                    }
+                } else if (group === 'polarArea') {
+                    if (!isNaN(index)) {
+                        wizardState.polarArea[index][field] = target.value;
                     }
                 } else if (group === 'dotplot') {
                     if (!isNaN(index)) {
@@ -656,6 +929,10 @@
                 } else if (group === 'scatter') {
                     if (!isNaN(index)) {
                         wizardState.scatter[index][field] = target.value;
+                    }
+                } else if (group === 'bubble') {
+                    if (!isNaN(index)) {
+                        wizardState.bubble[index][field] = target.value;
                     }
                 } else if (group === 'boxplot') {
                     wizardState.boxplot[field] = target.value;
@@ -673,6 +950,25 @@
                     }
                 } else if (group === 'numberline-range') {
                     wizardState.numberlineRange[field] = target.value;
+                } else if (group === 'radar-category') {
+                    if (!isNaN(index)) {
+                        wizardState.radarCategories[index] = target.value;
+                    }
+                } else if (group === 'radar-value') {
+                    const datasetIndex = parseInt(target.getAttribute('data-dataset-index'), 10);
+                    if (!isNaN(index) && !isNaN(datasetIndex) && wizardState.radarDatasets[datasetIndex]) {
+                        if (!Array.isArray(wizardState.radarDatasets[datasetIndex].values)) {
+                            wizardState.radarDatasets[datasetIndex].values = [];
+                        }
+                        wizardState.radarDatasets[datasetIndex].values[index] = target.value;
+                    }
+                } else if (group === 'radar-dataset') {
+                    if (field === 'name') {
+                        const datasetIndex = !isNaN(index) ? index : parseInt(target.getAttribute('data-index'), 10);
+                        if (!isNaN(datasetIndex) && wizardState.radarDatasets[datasetIndex]) {
+                            wizardState.radarDatasets[datasetIndex].name = target.value;
+                        }
+                    }
                 }
             });
         });
@@ -684,16 +980,32 @@
                     wizardState.histogram.push({ label: '', value: '' });
                 } else if (group === 'bar') {
                     wizardState.bar.push({ label: '', value: '' });
+                } else if (group === 'line') {
+                    wizardState.line.push({ label: '', value: '' });
                 } else if (group === 'pie') {
                     wizardState.pie.push({ label: '', value: '' });
+                } else if (group === 'doughnut') {
+                    wizardState.doughnut.push({ label: '', value: '' });
+                } else if (group === 'polarArea') {
+                    wizardState.polarArea.push({ label: '', value: '' });
                 } else if (group === 'dotplot') {
                     wizardState.dotplot.push('');
                 } else if (group === 'scatter') {
                     wizardState.scatter.push({ x: '', y: '', label: '' });
+                } else if (group === 'bubble') {
+                    wizardState.bubble.push({ x: '', y: '', r: '', label: '' });
                 } else if (group === 'chisquare') {
                     wizardState.chisquareRows.push({ df: '', label: '' });
                 } else if (group === 'numberline') {
                     wizardState.numberline.push({ position: '', label: '', bottomLabel: '' });
+                } else if (group === 'radar-category') {
+                    wizardState.radarCategories.push('');
+                    wizardState.radarDatasets.forEach(dataset => {
+                        if (!Array.isArray(dataset.values)) {
+                            dataset.values = [];
+                        }
+                        dataset.values.push('');
+                    });
                 }
                 renderWizard();
             });
@@ -707,18 +1019,52 @@
                     wizardState.histogram.splice(index, 1);
                 } else if (group === 'bar' && wizardState.bar.length > 1) {
                     wizardState.bar.splice(index, 1);
+                } else if (group === 'line' && wizardState.line.length > 1) {
+                    wizardState.line.splice(index, 1);
                 } else if (group === 'pie' && wizardState.pie.length > 1) {
                     wizardState.pie.splice(index, 1);
+                } else if (group === 'doughnut' && wizardState.doughnut.length > 1) {
+                    wizardState.doughnut.splice(index, 1);
+                } else if (group === 'polarArea' && wizardState.polarArea.length > 1) {
+                    wizardState.polarArea.splice(index, 1);
                 } else if (group === 'dotplot' && wizardState.dotplot.length > 1) {
                     wizardState.dotplot.splice(index, 1);
                 } else if (group === 'scatter' && wizardState.scatter.length > 1) {
                     wizardState.scatter.splice(index, 1);
+                } else if (group === 'bubble' && wizardState.bubble.length > 1) {
+                    wizardState.bubble.splice(index, 1);
                 } else if (group === 'chisquare' && wizardState.chisquareRows.length > 1) {
                     wizardState.chisquareRows.splice(index, 1);
                 } else if (group === 'numberline' && wizardState.numberline.length > 1) {
                     wizardState.numberline.splice(index, 1);
+                } else if (group === 'radar-category' && wizardState.radarCategories.length > 1) {
+                    wizardState.radarCategories.splice(index, 1);
+                    wizardState.radarDatasets.forEach(dataset => {
+                        if (Array.isArray(dataset.values)) {
+                            dataset.values.splice(index, 1);
+                        }
+                    });
                 }
                 renderWizard();
+            });
+        });
+
+        body.querySelectorAll('[data-action="add-dataset"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const values = wizardState.radarCategories.map(() => '');
+                const nextIndex = wizardState.radarDatasets.length + 1;
+                wizardState.radarDatasets.push({ name: `Series ${nextIndex}`, values });
+                renderWizard();
+            });
+        });
+
+        body.querySelectorAll('[data-action="remove-dataset"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const index = parseInt(btn.getAttribute('data-index'), 10);
+                if (!isNaN(index) && wizardState.radarDatasets.length > 1) {
+                    wizardState.radarDatasets.splice(index, 1);
+                    renderWizard();
+                }
             });
         });
 
@@ -765,6 +1111,12 @@
                 wizardState.barSeriesName = event.target.value;
             });
         }
+        const lineSeriesInput = body.querySelector('input[data-role="lineSeriesName"]');
+        if (lineSeriesInput) {
+            lineSeriesInput.addEventListener('input', (event) => {
+                wizardState.lineSeriesName = event.target.value;
+            });
+        }
         const barOrientationSelect = body.querySelector('select[data-role="barOrientation"]');
         if (barOrientationSelect) {
             barOrientationSelect.addEventListener('change', (event) => {
@@ -798,7 +1150,7 @@
                     throw new Error('Each row should include a label and value separated by a comma.');
                 }
                 wizardState.histogram = parsedBins;
-            } else if (targetType === 'bar') {
+            } else if (targetType === 'bar' || targetType === 'line') {
                 const parsedRows = rows.map(row => {
                     const [label, value] = row.split(/,|\t/);
                     return { label: (label || '').trim(), value: value !== undefined ? value.trim() : '' };
@@ -806,16 +1158,26 @@
                 if (parsedRows.length === 0) {
                     throw new Error('Each row should include a category and value separated by a comma.');
                 }
-                wizardState.bar = parsedRows;
-            } else if (targetType === 'pie') {
+                if (targetType === 'bar') {
+                    wizardState.bar = parsedRows;
+                } else {
+                    wizardState.line = parsedRows;
+                }
+            } else if (targetType === 'pie' || targetType === 'doughnut' || targetType === 'polarArea') {
                 const parsedRows = rows.map(row => {
                     const [label, value] = row.split(/,|\t/);
                     return { label: (label || '').trim(), value: value !== undefined ? value.trim() : '' };
                 }).filter(item => item.label);
                 if (parsedRows.length === 0) {
-                    throw new Error('Each row should include a slice label and value separated by a comma.');
+                    throw new Error('Each row should include a segment label and value separated by a comma.');
                 }
-                wizardState.pie = parsedRows;
+                if (targetType === 'pie') {
+                    wizardState.pie = parsedRows;
+                } else if (targetType === 'doughnut') {
+                    wizardState.doughnut = parsedRows;
+                } else {
+                    wizardState.polarArea = parsedRows;
+                }
             } else if (targetType === 'dotplot') {
                 const values = rows.flatMap(row => row.split(/,|\s+/).map(v => v.trim()).filter(Boolean));
                 if (values.length === 0) {
@@ -835,6 +1197,21 @@
                     throw new Error('Each row should include x and y values separated by a comma.');
                 }
                 wizardState.scatter = points;
+            } else if (targetType === 'bubble') {
+                const points = rows.map(row => {
+                    const parts = row.split(/,|\t/).map(part => part.trim());
+                    const [x, y, r, label] = parts;
+                    return {
+                        x: x || '',
+                        y: y || '',
+                        r: r || '',
+                        label: label || ''
+                    };
+                }).filter(point => point.x !== '' && point.y !== '' && point.r !== '');
+                if (points.length === 0) {
+                    throw new Error('Each row should include x, y, and radius values separated by commas.');
+                }
+                wizardState.bubble = points;
             } else {
                 throw new Error('CSV parsing is not supported for this chart type.');
             }
@@ -885,11 +1262,19 @@
         }
     }
 
+    function handleEditDataAction() {
+        if (!wizardState) return;
+        wizardState.step = 1;
+        wizardState.error = '';
+        renderWizard();
+    }
+
     function validateCurrentData() {
         if (!wizardState) return false;
         const type = wizardState.chartType;
-        if (type === 'bar') {
-            const rows = wizardState.bar.filter(row => row.label && row.value !== '');
+
+        if (type === 'bar' || type === 'line') {
+            const rows = (type === 'bar' ? wizardState.bar : wizardState.line).filter(row => row.label && row.value !== '');
             if (rows.length === 0) {
                 wizardState.error = 'Add at least one category with a value.';
                 return false;
@@ -899,10 +1284,11 @@
                 wizardState.error = `Value for "${invalid.label}" must be numeric.`;
                 return false;
             }
-        } else if (type === 'pie') {
-            const rows = wizardState.pie.filter(row => row.label && row.value !== '');
+        } else if (type === 'pie' || type === 'doughnut' || type === 'polarArea') {
+            const rowsSource = type === 'pie' ? wizardState.pie : (type === 'doughnut' ? wizardState.doughnut : wizardState.polarArea);
+            const rows = rowsSource.filter(row => row.label && row.value !== '');
             if (rows.length === 0) {
-                wizardState.error = 'Add at least one slice with a value.';
+                wizardState.error = 'Add at least one segment with a value.';
                 return false;
             }
             const invalid = rows.find(row => isNaN(parseFloat(row.value)));
@@ -941,12 +1327,43 @@
                 wizardState.error = 'Scatterplot coordinates must be numeric.';
                 return false;
             }
+        } else if (type === 'bubble') {
+            const points = wizardState.bubble.filter(pt => pt.x !== '' && pt.y !== '' && pt.r !== '');
+            if (points.length === 0) {
+                wizardState.error = 'Add at least one bubble with x, y, and radius.';
+                return false;
+            }
+            if (points.some(pt => isNaN(parseFloat(pt.x)) || isNaN(parseFloat(pt.y)) || isNaN(parseFloat(pt.r)))) {
+                wizardState.error = 'Bubble chart values must be numeric.';
+                return false;
+            }
         } else if (type === 'boxplot') {
             const { min, q1, median, q3, max } = wizardState.boxplot;
             const values = [min, q1, median, q3, max].map(v => parseFloat(v));
             if (values.some(v => isNaN(v))) {
                 wizardState.error = 'Enter numeric values for the five-number summary.';
                 return false;
+            }
+        } else if (type === 'radar') {
+            const categories = (wizardState.radarCategories || []).map(cat => cat.trim()).filter(Boolean);
+            if (categories.length === 0) {
+                wizardState.error = 'Add at least one category for the radar chart.';
+                return false;
+            }
+            if (!Array.isArray(wizardState.radarDatasets) || wizardState.radarDatasets.length === 0) {
+                wizardState.error = 'Add at least one dataset for the radar chart.';
+                return false;
+            }
+            for (const dataset of wizardState.radarDatasets) {
+                const values = (dataset.values || []).slice(0, categories.length);
+                if (values.length !== categories.length || values.some(v => v === '')) {
+                    wizardState.error = `Provide values for every category in ${dataset.name || 'each dataset'}.`;
+                    return false;
+                }
+                if (values.some(v => isNaN(parseFloat(v)))) {
+                    wizardState.error = 'Radar chart values must be numeric.';
+                    return false;
+                }
             }
         } else if (type === 'normal') {
             const { mean, sd, xMin, xMax, tickInterval, shadeLower, shadeUpper } = wizardState.normal;
@@ -1042,6 +1459,7 @@
                 return false;
             }
         }
+
         wizardState.error = '';
         return true;
     }
@@ -1153,6 +1571,36 @@
             `;
         }
 
+        if (chartType === 'line') {
+            const rows = wizardState.line.map((row, index) => `
+                <tr>
+                    <td><input data-chart-input="label" data-group="line" data-index="${index}" value="${row.label || ''}" placeholder="Category"></td>
+                    <td><input data-chart-input="value" data-group="line" data-index="${index}" value="${row.value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="line" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            const defaultSeries = typeConfig.defaults?.seriesName || 'Series 1';
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Series name</label>
+                    <input type="text" data-role="lineSeriesName" value="${wizardState.lineSeriesName || ''}" placeholder="${defaultSeries}">
+                </div>
+                <div class="chart-form-group">
+                    <label>Line data</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Category</th><th>Value</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="line">Add point</button>
+                        <button type="button" data-action="parse-csv" data-group="line">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'category,value'} rows">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
         if (chartType === 'pie') {
             const rows = wizardState.pie.map((slice, index) => `
                 <tr>
@@ -1172,6 +1620,56 @@
                     <div class="chart-data-actions">
                         <button type="button" data-action="add-row" data-group="pie">Add slice</button>
                         <button type="button" data-action="parse-csv" data-group="pie">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'label,value'} rows">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'doughnut') {
+            const rows = wizardState.doughnut.map((segment, index) => `
+                <tr>
+                    <td><input data-chart-input="label" data-group="doughnut" data-index="${index}" value="${segment.label || ''}" placeholder="Segment label"></td>
+                    <td><input data-chart-input="value" data-group="doughnut" data-index="${index}" value="${segment.value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="doughnut" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Doughnut segments</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Label</th><th>Value</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="doughnut">Add segment</button>
+                        <button type="button" data-action="parse-csv" data-group="doughnut">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'label,value'} rows">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'polarArea') {
+            const rows = wizardState.polarArea.map((segment, index) => `
+                <tr>
+                    <td><input data-chart-input="label" data-group="polarArea" data-index="${index}" value="${segment.label || ''}" placeholder="Segment label"></td>
+                    <td><input data-chart-input="value" data-group="polarArea" data-index="${index}" value="${segment.value || ''}" placeholder="Value"></td>
+                    <td><button type="button" data-action="remove-row" data-group="polarArea" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Polar area segments</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>Label</th><th>Value</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="polarArea">Add segment</button>
+                        <button type="button" data-action="parse-csv" data-group="polarArea">Parse CSV</button>
                     </div>
                     <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'label,value'} rows">${wizardState.csvText || ''}</textarea>
                 </div>
@@ -1224,6 +1722,78 @@
                         <button type="button" data-action="parse-csv" data-group="scatter">Parse CSV</button>
                     </div>
                     <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'x,y'} rows (optional third column for label)">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'bubble') {
+            const rows = wizardState.bubble.map((point, index) => `
+                <tr>
+                    <td><input data-chart-input="x" data-group="bubble" data-index="${index}" value="${point.x || ''}" placeholder="X"></td>
+                    <td><input data-chart-input="y" data-group="bubble" data-index="${index}" value="${point.y || ''}" placeholder="Y"></td>
+                    <td><input data-chart-input="r" data-group="bubble" data-index="${index}" value="${point.r || ''}" placeholder="Radius"></td>
+                    <td><input data-chart-input="label" data-group="bubble" data-index="${index}" value="${point.label || ''}" placeholder="Label (optional)"></td>
+                    <td><button type="button" data-action="remove-row" data-group="bubble" data-index="${index}">Remove</button></td>
+                </tr>
+            `).join('');
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Bubble points</label>
+                    <table class="chart-data-table">
+                        <thead><tr><th>X</th><th>Y</th><th>Radius</th><th>Label</th><th></th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <div class="chart-data-actions">
+                        <button type="button" data-action="add-row" data-group="bubble">Add bubble</button>
+                        <button type="button" data-action="parse-csv" data-group="bubble">Parse CSV</button>
+                    </div>
+                    <textarea data-chart-csv placeholder="Paste ${typeConfig.schema?.csv || 'x,y,r'} rows (optional fourth column for label)">${wizardState.csvText || ''}</textarea>
+                </div>
+            `;
+        }
+
+        if (chartType === 'radar') {
+            const categories = wizardState.radarCategories || [];
+            const datasets = wizardState.radarDatasets || [];
+            const datasetHeader = datasets.map((dataset, datasetIndex) => `
+                <th>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <input data-chart-input="name" data-group="radar-dataset" data-index="${datasetIndex}" value="${dataset.name || ''}" placeholder="Series ${datasetIndex + 1}">
+                        ${datasets.length > 1 ? `<button type="button" data-action="remove-dataset" data-group="radar-dataset" data-index="${datasetIndex}" aria-label="Remove dataset">&times;</button>` : ''}
+                    </div>
+                </th>
+            `).join('');
+            const rows = categories.map((category, categoryIndex) => `
+                <tr>
+                    <td><input data-chart-input="category" data-group="radar-category" data-index="${categoryIndex}" value="${category || ''}" placeholder="Category"></td>
+                    ${datasets.map((dataset, datasetIndex) => {
+                        const val = Array.isArray(dataset.values) ? (dataset.values[categoryIndex] || '') : '';
+                        return `<td><input data-chart-input="value" data-group="radar-value" data-index="${categoryIndex}" data-dataset-index="${datasetIndex}" value="${val}" placeholder="Value"></td>`;
+                    }).join('')}
+                    <td><button type="button" data-action="remove-row" data-group="radar-category" data-index="${categoryIndex}">Remove</button></td>
+                </tr>
+            `).join('');
+            return `
+                ${axisSection}
+                <div class="chart-form-group">
+                    <label>Radar data</label>
+                    <div class="chart-data-table" style="overflow-x:auto;">
+                        <table class="chart-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    ${datasetHeader}
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <div class="chart-data-actions" style="flex-wrap:wrap;">
+                        <button type="button" data-action="add-row" data-group="radar-category">Add category</button>
+                        <button type="button" data-action="add-dataset" data-group="radar-dataset">Add dataset</button>
+                    </div>
                 </div>
             `;
         }
@@ -1346,7 +1916,7 @@
                     <div style="font-size:0.85rem;color:rgba(0,0,0,0.6);">${chartData.type.toUpperCase()} · ${wizardState.questionId}</div>
                 </div>
                 <div class="chart-preview-actions">
-                    <button type="button" data-action="back">Edit data</button>
+                    <button type="button" data-action="edit-data">Edit data</button>
                 </div>
             </div>
             <div id="chart-wizard-preview" class="chart-preview-container"></div>
@@ -1362,7 +1932,7 @@
             container.textContent = 'Add chart data to view the preview.';
             return;
         }
-        const chartConfig = convertSIFToChartData(sif);
+        const chartConfig = sifToChartConfig(sif);
         if (!chartConfig || typeof window.charts?.getChartHtml !== 'function') {
             container.classList.add('empty');
             container.textContent = 'Preview unavailable. Save to store chart data.';
@@ -1387,11 +1957,25 @@
             ? { ...wizardState.originalMeta, updatedAt: now }
             : { version: 1, createdAt: now, updatedAt: now };
 
+        const trimmedXLabel = wizardState.xLabel?.trim();
+        const trimmedYLabel = wizardState.yLabel?.trim();
+        const trimmedTitle = wizardState.title?.trim();
+        const trimmedDescription = wizardState.description?.trim();
+
         const commonOptions = {
-            xLabel: wizardState.xLabel?.trim() || '',
-            yLabel: wizardState.yLabel?.trim() || '',
-            title: wizardState.title?.trim() || '',
-            description: wizardState.description?.trim() || ''
+            xLabel: trimmedXLabel || undefined,
+            yLabel: trimmedYLabel || undefined,
+            title: trimmedTitle || undefined,
+            description: trimmedDescription || undefined
+        };
+
+        const attachCommon = (payload) => {
+            const enriched = { ...payload, options: commonOptions, meta: baseMeta };
+            if (commonOptions.xLabel !== undefined) enriched.xLabel = commonOptions.xLabel;
+            if (commonOptions.yLabel !== undefined) enriched.yLabel = commonOptions.yLabel;
+            if (commonOptions.title !== undefined) enriched.title = commonOptions.title;
+            if (commonOptions.description !== undefined) enriched.description = commonOptions.description;
+            return enriched;
         };
 
         const type = wizardState.chartType;
@@ -1406,17 +1990,42 @@
                 }
                 return null;
             }
-            return {
+            const seriesName = wizardState.barSeriesName?.trim() || 'Series 1';
+            const orientation = wizardState.barOrientation === 'horizontal' ? 'horizontal' : 'vertical';
+            return attachCommon({
                 type: 'bar',
-                data: {
-                    categories: rows.map(row => row.label),
-                    values: rows.map(row => row.value),
-                    seriesName: wizardState.barSeriesName?.trim() || 'Series 1',
-                    orientation: wizardState.barOrientation === 'horizontal' ? 'horizontal' : 'vertical'
-                },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                orientation,
+                categories: rows.map(row => row.label),
+                series: [
+                    {
+                        name: seriesName,
+                        values: rows.map(row => ({ label: row.label, value: row.value }))
+                    }
+                ]
+            });
+        }
+
+        if (type === 'line') {
+            const rows = wizardState.line
+                .filter(row => row.label && row.value !== '')
+                .map(row => ({ label: row.label.trim(), value: parseFloat(row.value) }));
+            if (rows.length === 0 || rows.some(row => isNaN(row.value))) {
+                if (showError) {
+                    wizardState.error = 'Add at least one category with a numeric value.';
+                }
+                return null;
+            }
+            const seriesName = wizardState.lineSeriesName?.trim() || 'Series 1';
+            return attachCommon({
+                type: 'line',
+                categories: rows.map(row => row.label),
+                series: [
+                    {
+                        name: seriesName,
+                        values: rows.map(row => ({ label: row.label, value: row.value }))
+                    }
+                ]
+            });
         }
 
         if (type === 'pie') {
@@ -1429,12 +2038,42 @@
                 }
                 return null;
             }
-            return {
+            return attachCommon({
                 type: 'pie',
-                data: { slices },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                segments: slices
+            });
+        }
+
+        if (type === 'doughnut') {
+            const segments = wizardState.doughnut
+                .filter(row => row.label && row.value !== '')
+                .map(row => ({ label: row.label.trim(), value: parseFloat(row.value) }));
+            if (segments.length === 0 || segments.some(segment => isNaN(segment.value))) {
+                if (showError) {
+                    wizardState.error = 'Add at least one segment with a numeric value.';
+                }
+                return null;
+            }
+            return attachCommon({
+                type: 'doughnut',
+                segments
+            });
+        }
+
+        if (type === 'polarArea') {
+            const segments = wizardState.polarArea
+                .filter(row => row.label && row.value !== '')
+                .map(row => ({ label: row.label.trim(), value: parseFloat(row.value) }));
+            if (segments.length === 0 || segments.some(segment => isNaN(segment.value))) {
+                if (showError) {
+                    wizardState.error = 'Add at least one segment with a numeric value.';
+                }
+                return null;
+            }
+            return attachCommon({
+                type: 'polarArea',
+                segments
+            });
         }
 
         if (type === 'histogram') {
@@ -1453,15 +2092,13 @@
                 }
                 return null;
             }
-            return {
+            return attachCommon({
                 type: 'histogram',
                 data: {
                     bins,
                     seriesName: wizardState.seriesName?.trim() || 'Frequency'
-                },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                }
+            });
         }
 
         if (type === 'dotplot') {
@@ -1475,12 +2112,10 @@
                 }
                 return null;
             }
-            return {
+            return attachCommon({
                 type: 'dotplot',
-                data: { values },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                data: { values }
+            });
         }
 
         if (type === 'scatter') {
@@ -1494,12 +2129,52 @@
                 }
                 return null;
             }
-            return {
+            return attachCommon({
                 type: 'scatter',
-                data: { points },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                points
+            });
+        }
+
+        if (type === 'bubble') {
+            const points = wizardState.bubble
+                .map(pt => ({ x: pt.x.trim(), y: pt.y.trim(), r: pt.r.trim(), label: pt.label?.trim() }))
+                .filter(pt => pt.x !== '' && pt.y !== '' && pt.r !== '')
+                .map(pt => ({ x: parseFloat(pt.x), y: parseFloat(pt.y), r: parseFloat(pt.r), label: pt.label }));
+            if (points.length === 0 || points.some(pt => isNaN(pt.x) || isNaN(pt.y) || isNaN(pt.r))) {
+                if (showError) {
+                    wizardState.error = 'Enter numeric x, y, and radius values for the bubble chart.';
+                }
+                return null;
+            }
+            return attachCommon({
+                type: 'bubble',
+                points
+            });
+        }
+
+        if (type === 'radar') {
+            const categories = (wizardState.radarCategories || []).map(cat => cat.trim()).filter(Boolean);
+            if (categories.length === 0) {
+                if (showError) {
+                    wizardState.error = 'Add at least one category for the radar chart.';
+                }
+                return null;
+            }
+            const datasets = (wizardState.radarDatasets || []).map(dataset => ({
+                name: dataset.name?.trim() || 'Series',
+                values: (dataset.values || []).slice(0, categories.length).map(value => parseFloat(value))
+            }));
+            if (datasets.length === 0 || datasets.some(ds => ds.values.length !== categories.length || ds.values.some(v => isNaN(v)))) {
+                if (showError) {
+                    wizardState.error = 'Provide numeric values for each category in every dataset.';
+                }
+                return null;
+            }
+            return attachCommon({
+                type: 'radar',
+                categories,
+                datasets
+            });
         }
 
         if (type === 'boxplot') {
@@ -1511,7 +2186,7 @@
                 }
                 return null;
             }
-            return {
+            return attachCommon({
                 type: 'boxplot',
                 data: {
                     fiveNumber: {
@@ -1521,10 +2196,8 @@
                         q3: parsed[3],
                         max: parsed[4]
                     }
-                },
-                options: commonOptions,
-                meta: baseMeta
-            };
+                }
+            });
         }
 
         if (type === 'normal') {
@@ -1547,12 +2220,10 @@
                     upper: shadeUpper !== '' ? parseFloat(shadeUpper) : null
                 };
             }
-            return {
+            return attachCommon({
                 type: 'normal',
-                data: normalData,
-                options: commonOptions,
-                meta: baseMeta
-            };
+                data: normalData
+            });
         }
 
         if (type === 'chisquare') {
@@ -1574,12 +2245,10 @@
             if (settings.xMax !== '') data.xMax = parseFloat(settings.xMax);
             if (settings.tickInterval !== '') data.tickInterval = parseFloat(settings.tickInterval);
             if (settings.numPoints !== '') data.numPoints = parseInt(settings.numPoints, 10);
-            return {
+            return attachCommon({
                 type: 'chisquare',
-                data,
-                options: commonOptions,
-                meta: baseMeta
-            };
+                data
+            });
         }
 
         if (type === 'numberline') {
@@ -1600,12 +2269,10 @@
             const data = { ticks };
             if (range.min !== '') data.xMin = parseFloat(range.min);
             if (range.max !== '') data.xMax = parseFloat(range.max);
-            return {
+            return attachCommon({
                 type: 'numberline',
-                data,
-                options: commonOptions,
-                meta: baseMeta
-            };
+                data
+            });
         }
 
         if (showError) {
@@ -1614,45 +2281,150 @@
         return null;
     }
 
-    function convertSIFToChartData(sif) {
+    function sifToChartConfig(sif) {
         if (!sif) return null;
         const options = sif.options || {};
+        const xLabel = sif.xLabel !== undefined ? sif.xLabel : options.xLabel;
+        const yLabel = sif.yLabel !== undefined ? sif.yLabel : options.yLabel;
+        const title = sif.title !== undefined ? sif.title : options.title;
+        const description = sif.description !== undefined ? sif.description : options.description;
+
         const baseConfig = {
-            title: options.title || undefined,
+            title: title || undefined,
             chartConfig: {
-                description: options.description || undefined,
-                xAxis: { title: options.xLabel || undefined },
-                yAxis: { title: options.yLabel || undefined }
+                description: description || undefined,
+                xAxis: { title: xLabel || undefined },
+                yAxis: { title: yLabel || undefined }
             }
         };
 
+        const legacyData = sif.data || {};
+
         if (sif.type === 'bar') {
-            const categories = sif.data?.categories || [];
-            const values = (sif.data?.values || []).map(value => Number(value) || 0);
-            const seriesName = sif.data?.seriesName || 'Series 1';
-            const orientation = sif.data?.orientation === 'horizontal' ? 'horizontal' : 'vertical';
+            const orientation = (sif.orientation || legacyData.orientation) === 'horizontal' ? 'horizontal' : 'vertical';
+            const categories = Array.isArray(sif.categories) && sif.categories.length > 0
+                ? sif.categories.slice()
+                : Array.isArray(legacyData.categories) ? legacyData.categories.slice() : [];
+            const rawSeries = Array.isArray(sif.series) && sif.series.length > 0
+                ? sif.series
+                : legacyData.seriesName || Array.isArray(legacyData.values)
+                    ? [{ name: legacyData.seriesName || 'Series 1', values: (legacyData.values || []).map((value, idx) => ({ label: categories[idx] || `Category ${idx + 1}`, value })) }]
+                    : [];
+
+            const categorySet = new Set(categories);
+            rawSeries.forEach(dataset => {
+                const valuesArray = Array.isArray(dataset.values) ? dataset.values : [];
+                valuesArray.forEach((entry, index) => {
+                    if (entry && typeof entry === 'object' && entry.label !== undefined) {
+                        categorySet.add(entry.label);
+                    } else if (categories[index]) {
+                        categorySet.add(categories[index]);
+                    } else {
+                        categorySet.add(`Category ${index + 1}`);
+                    }
+                });
+            });
+            const orderedCategories = categorySet.size > 0 ? Array.from(categorySet) : rawSeries[0]?.values?.map((_, idx) => `Category ${idx + 1}`) || [];
+
+            const series = rawSeries.map(dataset => {
+                const valuesArray = Array.isArray(dataset.values) ? dataset.values : [];
+                const normalizedValues = orderedCategories.map((label, index) => {
+                    const directMatch = valuesArray.find(value => value && typeof value === 'object' && value.label === label);
+                    if (directMatch) {
+                        return Number(directMatch.value) || 0;
+                    }
+                    const rawValue = valuesArray[index];
+                    if (rawValue && typeof rawValue === 'object') {
+                        return Number(rawValue.value) || 0;
+                    }
+                    return Number(rawValue) || 0;
+                });
+                return {
+                    name: dataset.name || legacyData.seriesName || 'Series 1',
+                    values: normalizedValues
+                };
+            });
+
             return {
                 chartType: 'bar',
                 title: baseConfig.title,
-                xLabels: categories,
-                series: [{ name: seriesName, values }],
+                xLabels: orderedCategories,
+                series,
                 chartConfig: {
                     ...baseConfig.chartConfig,
                     orientation,
-                    xAxis: { title: options.xLabel || 'Category' },
-                    yAxis: { title: options.yLabel || 'Value' }
+                    xAxis: { title: xLabel || 'Category' },
+                    yAxis: { title: yLabel || 'Value' }
                 }
             };
         }
 
-        if (sif.type === 'pie') {
-            const slices = sif.data?.slices || [];
-            const values = slices.map(slice => ({
-                name: slice.label,
-                value: Number(slice.value) || 0
+        if (sif.type === 'line') {
+            const categories = Array.isArray(sif.categories) && sif.categories.length > 0
+                ? sif.categories.slice()
+                : Array.isArray(legacyData.categories) ? legacyData.categories.slice() : [];
+            const rawSeries = Array.isArray(sif.series) && sif.series.length > 0
+                ? sif.series
+                : legacyData.seriesName || Array.isArray(legacyData.values)
+                    ? [{ name: legacyData.seriesName || 'Series 1', values: (legacyData.values || []).map((value, idx) => ({ label: categories[idx] || `Category ${idx + 1}`, value })) }]
+                    : [];
+
+            const categorySet = new Set(categories);
+            rawSeries.forEach(dataset => {
+                (dataset.values || []).forEach((entry, idx) => {
+                    if (entry && typeof entry === 'object' && entry.label !== undefined) {
+                        categorySet.add(entry.label);
+                    } else if (categories[idx]) {
+                        categorySet.add(categories[idx]);
+                    } else {
+                        categorySet.add(`Category ${idx + 1}`);
+                    }
+                });
+            });
+            const orderedCategories = categorySet.size > 0 ? Array.from(categorySet) : rawSeries[0]?.values?.map((_, idx) => `Category ${idx + 1}`) || [];
+
+            const series = rawSeries.map(dataset => {
+                const valuesArray = Array.isArray(dataset.values) ? dataset.values : [];
+                const normalizedValues = orderedCategories.map((label, index) => {
+                    const directMatch = valuesArray.find(value => value && typeof value === 'object' && value.label === label);
+                    if (directMatch) {
+                        return Number(directMatch.value) || 0;
+                    }
+                    const rawValue = valuesArray[index];
+                    if (rawValue && typeof rawValue === 'object') {
+                        return Number(rawValue.value) || 0;
+                    }
+                    return Number(rawValue) || 0;
+                });
+                return {
+                    name: dataset.name || legacyData.seriesName || 'Series 1',
+                    values: normalizedValues
+                };
+            });
+
+            return {
+                chartType: 'line',
+                title: baseConfig.title,
+                xLabels: orderedCategories,
+                series,
+                chartConfig: {
+                    ...baseConfig.chartConfig,
+                    xAxis: { title: xLabel || 'Category' },
+                    yAxis: { title: yLabel || 'Value' }
+                }
+            };
+        }
+
+        if (sif.type === 'pie' || sif.type === 'doughnut' || sif.type === 'polarArea') {
+            const segments = Array.isArray(sif.segments) && sif.segments.length > 0
+                ? sif.segments
+                : legacyData.slices || [];
+            const values = segments.map(segment => ({
+                name: segment.label,
+                value: Number(segment.value) || 0
             }));
             return {
-                chartType: 'pie',
+                chartType: sif.type,
                 title: baseConfig.title,
                 series: [{ values }],
                 chartConfig: {
@@ -1662,8 +2434,8 @@
         }
 
         if (sif.type === 'histogram') {
-            const bins = sif.data?.bins || [];
-            const seriesName = sif.data?.seriesName || 'Frequency';
+            const bins = legacyData.bins || [];
+            const seriesName = legacyData.seriesName || 'Frequency';
             return {
                 chartType: 'histogram',
                 title: baseConfig.title,
@@ -1674,8 +2446,8 @@
                 }],
                 chartConfig: {
                     ...baseConfig.chartConfig,
-                    yAxis: { title: options.yLabel || 'Frequency' },
-                    xAxis: { title: options.xLabel || 'Category' }
+                    yAxis: { title: yLabel || 'Frequency' },
+                    xAxis: { title: xLabel || 'Category' }
                 }
             };
         }
@@ -1684,17 +2456,17 @@
             return {
                 chartType: 'dotplot',
                 title: baseConfig.title,
-                values: (sif.data?.values || []).map(v => Number(v) || 0),
+                values: (legacyData.values || []).map(v => Number(v) || 0),
                 chartConfig: {
                     ...baseConfig.chartConfig,
-                    xAxis: { title: options.xLabel || 'Value' },
+                    xAxis: { title: xLabel || 'Value' },
                     gridLines: { horizontal: false, vertical: false }
                 }
             };
         }
 
         if (sif.type === 'scatter') {
-            const points = sif.data?.points || [];
+            const points = Array.isArray(sif.points) ? sif.points : legacyData.points || [];
             return {
                 chartType: 'scatter',
                 title: baseConfig.title,
@@ -1705,14 +2477,50 @@
                 })),
                 chartConfig: {
                     ...baseConfig.chartConfig,
-                    xAxis: { title: options.xLabel || 'X Value' },
-                    yAxis: { title: options.yLabel || 'Y Value' }
+                    xAxis: { title: xLabel || 'X Value' },
+                    yAxis: { title: yLabel || 'Y Value' }
+                }
+            };
+        }
+
+        if (sif.type === 'bubble') {
+            const points = Array.isArray(sif.points) ? sif.points : [];
+            return {
+                chartType: 'bubble',
+                title: baseConfig.title,
+                points: points.map(pt => ({
+                    x: Number(pt.x) || 0,
+                    y: Number(pt.y) || 0,
+                    r: Number(pt.r) || 0,
+                    label: pt.label
+                })),
+                chartConfig: {
+                    ...baseConfig.chartConfig,
+                    xAxis: { title: xLabel || 'X Value' },
+                    yAxis: { title: yLabel || 'Y Value' }
+                }
+            };
+        }
+
+        if (sif.type === 'radar') {
+            const categories = Array.isArray(sif.categories) ? sif.categories : [];
+            const datasets = Array.isArray(sif.datasets) ? sif.datasets : [];
+            return {
+                chartType: 'radar',
+                title: baseConfig.title,
+                categories,
+                datasets: datasets.map(dataset => ({
+                    name: dataset.name || 'Series',
+                    values: (dataset.values || []).map(value => Number(value) || 0)
+                })),
+                chartConfig: {
+                    ...baseConfig.chartConfig
                 }
             };
         }
 
         if (sif.type === 'boxplot') {
-            const five = sif.data?.fiveNumber || {};
+            const five = legacyData.fiveNumber || {};
             return {
                 chartType: 'boxplot',
                 title: baseConfig.title,
@@ -1731,7 +2539,7 @@
         }
 
         if (sif.type === 'normal') {
-            const data = sif.data || {};
+            const data = legacyData || {};
             const shade = data.shade;
             const xAxisConfig = {
                 ...baseConfig.chartConfig.xAxis,
@@ -1754,16 +2562,16 @@
         }
 
         if (sif.type === 'chisquare') {
-            const data = sif.data || {};
-            const dfList = (data.dfList || []).map(value => Number(value) || 0);
-            const labels = data.labels || dfList.map(df => `df = ${df}`);
+            const data = legacyData || {};
+            const dfList = data.dfList || [];
+            const labels = data.labels || [];
             return {
                 chartType: 'chisquare',
                 title: baseConfig.title,
-                dfList,
-                labels,
                 chartConfig: {
                     ...baseConfig.chartConfig,
+                    dfList,
+                    labels,
                     xAxis: {
                         ...baseConfig.chartConfig.xAxis,
                         min: data.xMin,
@@ -1771,34 +2579,31 @@
                         tickInterval: data.tickInterval
                     },
                     yAxis: baseConfig.chartConfig.yAxis,
-                    numPoints: data.numPoints ? Number(data.numPoints) : undefined
+                    numPoints: data.numPoints
                 }
             };
         }
 
         if (sif.type === 'numberline') {
-            const ticks = (sif.data?.ticks || []).map(tick => ({
-                x: Number(tick.x),
-                label: tick.label,
-                bottomLabel: tick.bottomLabel
-            }));
+            const data = legacyData || {};
             return {
                 chartType: 'numberline',
                 title: baseConfig.title,
-                ticks,
-                xAxis: {
-                    min: sif.data?.xMin,
-                    max: sif.data?.xMax,
-                    title: options.xLabel || undefined
-                },
+                ticks: data.ticks || [],
                 chartConfig: {
-                    ...baseConfig.chartConfig
+                    ...baseConfig.chartConfig,
+                    xAxis: {
+                        ...baseConfig.chartConfig.xAxis,
+                        min: data.xMin,
+                        max: data.xMax
+                    }
                 }
             };
         }
 
         return null;
     }
+
 
     function saveChart() {
         const sif = buildSIF();
@@ -1814,31 +2619,7 @@
             return;
         }
 
-        if (!window.classData) {
-            window.classData = { users: {} };
-        }
-        if (!window.classData.users) {
-            window.classData.users = {};
-        }
-        if (!window.classData.users[username]) {
-            window.classData.users[username] = {
-                answers: {},
-                reasons: {},
-                timestamps: {},
-                attempts: {},
-                charts: {},
-                currentActivity: {
-                    state: 'idle',
-                    questionId: null,
-                    lastUpdate: Date.now()
-                }
-            };
-        }
-        if (!window.classData.users[username].charts) {
-            window.classData.users[username].charts = {};
-        }
-
-        window.classData.users[username].charts[wizardState.questionId] = sif;
+        setStoredChartSIF(wizardState.questionId, sif);
         if (typeof window.saveClassData === 'function') {
             window.saveClassData();
         }
@@ -1862,10 +2643,7 @@
     }
 
     function deleteChartForQuestion(questionId, fromWizard) {
-        const username = window.currentUsername || localStorage.getItem('consensusUsername') || '';
-        if (!username) return;
-        if (!window.classData?.users?.[username]?.charts?.[questionId]) return;
-        delete window.classData.users[username].charts[questionId];
+        deleteStoredChartSIF(questionId);
         if (typeof window.saveClassData === 'function') {
             window.saveClassData();
         }
@@ -1884,8 +2662,7 @@
         const container = document.getElementById(`chart-preview-${questionId}`);
         if (!container) return;
         container.innerHTML = '';
-        const username = window.currentUsername || localStorage.getItem('consensusUsername') || '';
-        const chart = window.classData?.users?.[username]?.charts?.[questionId];
+        const chart = getStoredChartSIF(questionId);
         const button = document.querySelector(`[data-chart-button="${questionId}"]`);
         if (!chart) {
             container.classList.add('empty');
@@ -1896,7 +2673,7 @@
             return;
         }
         container.classList.remove('empty');
-        const chartData = convertSIFToChartData(chart);
+        const chartData = sifToChartConfig(chart);
         if (!chartData || typeof window.charts?.getChartHtml !== 'function') {
             container.textContent = 'Saved chart detected, but preview is unavailable.';
             return;
@@ -1929,5 +2706,5 @@
     window.deleteChartForQuestion = function(questionId) {
         deleteChartForQuestion(questionId, false);
     };
-    window.convertChartSIFToChartData = convertSIFToChartData;
+    window.convertChartSIFToChartData = sifToChartConfig;
 })();
