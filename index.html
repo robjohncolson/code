@@ -177,10 +177,12 @@
     </div>
 
 
-<script src="data/curriculum.js"></script>
+    <script src="data/curriculum.js"></script>
     <script src="data/units.js"></script>
+    <script src="data/chart_questions.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/data_manager.js"></script>
+    <script src="js/chart_wizard.js"></script>
     <script>
 
         // ========================================
@@ -260,7 +262,7 @@
         }
 
         // Push answer to Supabase
-        window.pushAnswerToSupabase = async function(username, questionId, answerValue, timestamp) {
+        window.pushAnswerToSupabase = async function(username, questionId, answerValue, timestamp, chartJsonOverride) {
             if (!turboModeActive || !supabase) return false;
 
             try {
@@ -268,6 +270,12 @@
                 if (typeof timestamp === 'string') {
                     timestamp = new Date(timestamp).getTime();
                 }
+
+                const chartPayload = chartJsonOverride !== undefined
+                    ? chartJsonOverride
+                    : (typeof window.getChartSubmissionPayload === 'function'
+                        ? window.getChartSubmissionPayload(questionId, username)
+                        : null);
 
                 // Supabase v2 upsert syntax - array of objects, onConflict as separate parameter
                 const { data, error } = await supabase
@@ -277,7 +285,8 @@
                             username: username,
                             question_id: questionId,
                             answer_value: answerValue,
-                            timestamp: timestamp
+                            timestamp: timestamp,
+                            chart_json: chartPayload ?? null
                         }],
                         { onConflict: 'username,question_id' }
                     );
@@ -299,6 +308,11 @@
                 // Ensure all timestamps are numbers
                 const processedBatch = answerBatch.map(answer => ({
                     ...answer,
+                    chart_json: (answer.chart_json !== undefined
+                        ? answer.chart_json
+                        : (typeof window.getChartSubmissionPayload === 'function'
+                            ? window.getChartSubmissionPayload(answer.question_id, answer.username)
+                            : null)) ?? null,
                     timestamp: typeof answer.timestamp === 'string'
                         ? new Date(answer.timestamp).getTime()
                         : answer.timestamp
@@ -319,13 +333,14 @@
         }
 
         // PHASE 2 OPTIMIZATION: Queue management for batching answers
-        function queueAnswerForSync(username, questionId, answerValue, timestamp) {
+        function queueAnswerForSync(username, questionId, answerValue, timestamp, chartJson = null) {
             // Add to queue
             answerSyncQueue.push({
                 username: username,
                 question_id: questionId,
                 answer_value: answerValue,
-                timestamp: timestamp
+                timestamp: timestamp,
+                chart_json: chartJson ?? null
             });
 
             console.log(`📝 Queued answer for ${questionId} (queue size: ${answerSyncQueue.length})`);
@@ -699,7 +714,7 @@
             for (const [username, userData] of Object.entries(peerData)) {
                 if (username === currentUser) continue; // skip self
                 if (!classData.users[username]) {
-                    classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                    classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
                 }
                 for (const [questionId, answerData] of Object.entries(userData.answers)) {
                     const existingAnswer = classData.users[username].answers[questionId];
@@ -824,7 +839,7 @@ function mergePeerAnswer(detail) {
     ensureClassDataInitialized();
 
     if (!classData.users[username]) {
-        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
     }
 
     const existingAnswer = classData.users[username].answers[question_id];
@@ -956,6 +971,25 @@ function refreshQuestionIfVisible(questionId) {
         let allUnitQuestions = [];
         let chartInstances = {};
         let currentTheme = 'light';
+
+        function getChartPayloadForUser(username, questionId) {
+            if (!username || !questionId) return null;
+            try {
+                const charts = classData?.users?.[username]?.charts;
+                if (!charts || !charts[questionId]) {
+                    return null;
+                }
+                return JSON.parse(JSON.stringify(charts[questionId]));
+            } catch (error) {
+                console.warn('Chart payload clone failed:', error);
+                return null;
+            }
+        }
+
+        window.getChartSubmissionPayload = function(questionId, usernameOverride) {
+            const username = usernameOverride || currentUsername || localStorage.getItem('consensusUsername') || '';
+            return getChartPayloadForUser(username.trim(), questionId);
+        };
 
         // Add this to your global variables
         let allCurriculumData = {}; // Store all units' data
@@ -1972,7 +2006,7 @@ if (continueBtn) {
 
                     // First, ensure current user exists in classData and populate their data
                     if (!classData.users[username]) {
-                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
                     }
                     if (userData.answers) {
                         // STANDARDIZATION FIX: Use migration function for current user too
@@ -1993,7 +2027,7 @@ if (continueBtn) {
                         if (otherUsername !== username) {
                             peerCount++;
                             if (!classData.users[otherUsername]) {
-                                classData.users[otherUsername] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                                classData.users[otherUsername] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
                             }
 
                             const otherUserData = allStudentsData[otherUsername];
@@ -2817,6 +2851,9 @@ function renderLessonSelector(unitInfo) {
                 const savedAnswer = classData.users[currentUsername]?.answers?.[question.id];
                 // FRQs are never disabled - unlimited retries allowed
                 const isDisabled = false;
+                const chartMetadata = window.CHART_QUESTIONS?.[question.id];
+                const savedChart = chartMetadata ? classData?.users?.[currentUsername]?.charts?.[question.id] : null;
+                const chartButtonLabel = savedChart ? 'Edit Chart' : 'Create Chart';
 
                 if (question.requiresGraph === 'histogram') {
                     // Graph-based FRQ: Show histogram input UI
@@ -2855,6 +2892,18 @@ function renderLessonSelector(unitInfo) {
                                 }
                             </div>
                             ${!isDisabled ? `<button type="button" onclick="addGraphRow('${question.id}')" class="add-bar-btn">Add Bar</button>` : ''}
+                            ${chartMetadata ? `
+                                <div class="chart-wizard-controls" style="margin-top: 16px;">
+                                    <button
+                                        type="button"
+                                        class="chart-wizard-button"
+                                        data-chart-button="${question.id}"
+                                        onclick="openChartWizard('${question.id}')"
+                                    >${chartButtonLabel}</button>
+                                    ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
+                                </div>
+                                <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
+                            ` : ''}
                         </div>
                     `;
                 } else {
@@ -2869,6 +2918,18 @@ function renderLessonSelector(unitInfo) {
                                 style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd;"
                             >${savedAnswer?.value || savedAnswer || ''}</textarea>
                         </div>
+                        ${chartMetadata ? `
+                            <div class="chart-wizard-controls">
+                                <button
+                                    type="button"
+                                    class="chart-wizard-button"
+                                    data-chart-button="${question.id}"
+                                    onclick="openChartWizard('${question.id}')"
+                                >${chartButtonLabel}</button>
+                                ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
+                            </div>
+                            <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
+                        ` : ''}
                     `;
                 }
             }
@@ -2964,6 +3025,9 @@ function renderLessonSelector(unitInfo) {
 
             // If this question is already answered, populate peer responses immediately
             setTimeout(() => {
+                if (typeof window.renderChartWizardPreview === 'function') {
+                    window.renderChartWizardPreview(question.id);
+                }
                 if (isAnswered) {
                     populatePeerResponses(question.id, question.type);
 
@@ -3467,8 +3531,11 @@ function renderLessonSelector(unitInfo) {
                     answers: {},
                     reasons: {},
                     timestamps: {},
-                    attempts: {}
+                    attempts: {},
+                    charts: {}
                 };
+            } else if (!classData.users[currentUsername].charts) {
+                classData.users[currentUsername].charts = {};
             }
 
             // Create timestamp as number for consistency
@@ -3498,12 +3565,16 @@ function renderLessonSelector(unitInfo) {
             };
             localStorage.setItem(userAnswersKey, JSON.stringify(userAnswers));
 
+            const chartPayload = typeof window.getChartSubmissionPayload === 'function'
+                ? window.getChartSubmissionPayload(questionId, currentUsername)
+                : null;
+
             // Sync to Supabase if turbo mode is active
             if (turboModeActive) {
                 // PHASE 2 OPTIMIZATION: Use batching queue instead of immediate sync
                 if (window.submitAnswerViaRailway) {
                     // Railway has its own batching, use it directly
-                    window.submitAnswerViaRailway(currentUsername, questionId, value, timestampNow)
+                    window.submitAnswerViaRailway(currentUsername, questionId, value, timestampNow, chartPayload)
                         .then(success => {
                             if (success) {
                                 console.log(`✅ Answer synced via Railway for ${questionId}`);
@@ -3515,7 +3586,7 @@ function renderLessonSelector(unitInfo) {
                         });
                 } else {
                     // Use batching queue for Supabase
-                    queueAnswerForSync(currentUsername, questionId, value, timestampNow);
+                    queueAnswerForSync(currentUsername, questionId, value, timestampNow, chartPayload);
                     console.log(`✅ Answer queued for batch sync: ${questionId}`);
                 }
             }
@@ -5931,7 +6002,7 @@ if (chartInstances[`dotplot-${questionId}`]) {
 
                                                     // ALSO store in classData structure (for peer display)
                                                     if (!classData.users[username]) {
-                                                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                                                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
                                                     }
                                                     Object.assign(classData.users[username].answers, standardizedAnswers);
 
@@ -6315,7 +6386,7 @@ if (chartInstances[`dotplot-${questionId}`]) {
 
                             // ALSO store in classData structure (for peer display)
                             if (!classData.users[username]) {
-                                classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                                classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
                             }
                             Object.assign(classData.users[username].answers, standardizedAnswers);
                             console.log(`✓ Added ${username} to classData structure`);

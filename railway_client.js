@@ -207,24 +207,28 @@
   }
 
   // Railway-enhanced answer submission
-  async function submitAnswerViaRailway(username, questionId, answerValue, timestamp) {
+  async function submitAnswerViaRailway(username, questionId, answerValue, timestamp, chartJson = null) {
       if (!USE_RAILWAY) {
           // Fall back to direct Supabase
-          return window.originalPushAnswer(username, questionId, answerValue, timestamp);
+          return window.originalPushAnswer(username, questionId, answerValue, timestamp, chartJson);
       }
 
       try {
+          const payload = {
+              username,
+              question_id: questionId,
+              answer_value: answerValue,
+              timestamp: timestamp
+          };
+          if (chartJson !== undefined) {
+              payload.chart_json = chartJson;
+          }
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/submit-answer`, {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json'
               },
-              body: JSON.stringify({
-                  username,
-                  question_id: questionId,
-                  answer_value: answerValue,
-                  timestamp: timestamp
-              })
+              body: JSON.stringify(payload)
           });
 
           const result = await response.json();
@@ -238,7 +242,7 @@
       } catch (error) {
           console.error('Railway submit failed, falling back to direct Supabase:', error);
           // Only fall back if Railway actually failed
-          return window.originalPushAnswer(username, questionId, answerValue, timestamp);
+          return window.originalPushAnswer(username, questionId, answerValue, timestamp, chartJson);
       }
   }
 
@@ -323,12 +327,16 @@
       }
 
       try {
+          const normalized = answers.map(answer => ({
+              ...answer,
+              chart_json: answer.chart_json ?? null
+          }));
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/batch-submit`, {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ answers })
+              body: JSON.stringify({ answers: normalized })
           });
 
           const result = await response.json();

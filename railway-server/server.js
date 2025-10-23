@@ -52,6 +52,21 @@ function normalizeTimestamp(timestamp) {
   return timestamp;
 }
 
+function normalizeChartJson(chart) {
+  if (chart === undefined || chart === null) {
+    return null;
+  }
+  if (typeof chart === 'string') {
+    try {
+      return JSON.parse(chart);
+    } catch (error) {
+      console.warn('Failed to parse chart_json string, storing null.');
+      return null;
+    }
+  }
+  return chart;
+}
+
 // ============================
 // REST API ENDPOINTS
 // ============================
@@ -194,10 +209,11 @@ app.get('/api/question-stats/:questionId', async (req, res) => {
 // Submit answer (proxies to Supabase and broadcasts via WebSocket)
 app.post('/api/submit-answer', async (req, res) => {
   try {
-    const { username, question_id, answer_value, timestamp } = req.body;
+    const { username, question_id, answer_value, timestamp, chart_json } = req.body;
 
     // Normalize timestamp
     const normalizedTimestamp = normalizeTimestamp(timestamp || Date.now());
+    const normalizedChart = normalizeChartJson(chart_json);
 
     // Upsert to Supabase
     const { data, error } = await supabase
@@ -206,7 +222,8 @@ app.post('/api/submit-answer', async (req, res) => {
         username,
         question_id,
         answer_value,
-        timestamp: normalizedTimestamp
+        timestamp: normalizedTimestamp,
+        chart_json: normalizedChart
       }], { onConflict: 'username,question_id' });
 
     if (error) throw error;
@@ -221,7 +238,8 @@ app.post('/api/submit-answer', async (req, res) => {
       username,
       question_id,
       answer_value,
-      timestamp: normalizedTimestamp
+      timestamp: normalizedTimestamp,
+      chart_json: normalizedChart
     };
 
     broadcastToClients(update);
@@ -250,7 +268,8 @@ app.post('/api/batch-submit', async (req, res) => {
     // Normalize all timestamps
     const normalizedAnswers = answers.map(answer => ({
       ...answer,
-      timestamp: normalizeTimestamp(answer.timestamp || Date.now())
+      timestamp: normalizeTimestamp(answer.timestamp || Date.now()),
+      chart_json: normalizeChartJson(answer.chart_json)
     }));
 
     // Batch upsert to Supabase
