@@ -22,6 +22,7 @@ function initClassData() {
             reasons: {},
             timestamps: {},
             attempts: {},
+            charts: {},
             // TASK 3.3: Real-time activity tracking for pig system
             currentActivity: {
                 state: 'idle',        // idle, viewing, answering, submitted
@@ -31,6 +32,9 @@ function initClassData() {
         };
     } else {
         // TASK 4.1: Migrate existing users to have currentActivity field
+        if (!classData.users[currentUsername].charts) {
+            classData.users[currentUsername].charts = {};
+        }
         if (!classData.users[currentUsername].currentActivity) {
             classData.users[currentUsername].currentActivity = {
                 state: 'idle',
@@ -594,7 +598,9 @@ function importMasterData(data, targetUsername = null) {
 
                     // ALSO store in classData structure (for peer display)
                     if (!classData.users[username]) {
-                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {} };
+                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
+                    } else if (!classData.users[username].charts) {
+                        classData.users[username].charts = {};
                     }
                     Object.assign(classData.users[username].answers, standardizedAnswers);
                     console.log(`✓ Added ${username} to classData structure`);
@@ -627,6 +633,16 @@ function importMasterData(data, targetUsername = null) {
                     if (classData.users[username]) {
                         Object.assign(classData.users[username].attempts, userInfo.attempts);
                     }
+                }
+
+                if (userInfo.charts) {
+                    if (!classData.users[username]) {
+                        classData.users[username] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
+                    }
+                    if (!classData.users[username].charts) {
+                        classData.users[username].charts = {};
+                    }
+                    Object.assign(classData.users[username].charts, userInfo.charts);
                 }
             });
 
