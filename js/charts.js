@@ -89,6 +89,7 @@ function renderChartNow(chartData, canvasId) {
 
             // Configure bar spacing - gaps for bar charts, no gaps for histograms
             const isHistogram = chartData.chartType === 'histogram';
+            const binningMode = isHistogram ? (config.binningMode || 'auto') : null;
             const categoryPercentage = isHistogram ? 1.0 : 0.8;
             const barPercentage = isHistogram ? 1.0 : 0.9;
 
@@ -232,7 +233,7 @@ function renderChartNow(chartData, canvasId) {
                             ticks: {
                                 color: getTextColor()
                             },
-                            offset: true
+                            offset: isHistogram ? (binningMode === 'explicit' ? false : true) : true
                         }
                     },
                     plugins: {
@@ -1451,11 +1452,14 @@ function renderChartNow(chartData, canvasId) {
             // --------------------------------------------------
             // Normal distribution curve with optional shaded region
             // --------------------------------------------------
-            const mean = (typeof chartData.mean === 'number') ? chartData.mean : 0;
-            const sd   = (typeof chartData.sd   === 'number' && chartData.sd > 0) ? chartData.sd : 1;
-            const shade = chartData.shade || null; // {lower: number|null, upper: number|null}
-
             const config        = chartData.chartConfig || {};
+            const useProvidedParams = config.useProvidedParams !== false;
+            const rawMean = (typeof chartData.mean === 'number') ? chartData.mean : 0;
+            const rawSd   = (typeof chartData.sd   === 'number' && chartData.sd > 0) ? chartData.sd : 1;
+            const mean    = useProvidedParams ? rawMean : 0;
+            const sd      = useProvidedParams ? rawSd : 1;
+            const shade   = chartData.shade || null; // {lower: number|null, upper: number|null}
+
             const xAxisConfig   = config.xAxis || {};
             const yAxisConfig   = config.yAxis || {};
 
