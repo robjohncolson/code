@@ -5591,17 +5591,6 @@ if (chartInstances[`dotplot-${questionId}`]) {
             promptUsername();
         }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+S to export data
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                if (currentUsername) {
-                    exportPersonal();
-                }
-            }
-        });
-
         // Lazy loading charts removed - using immediate two-phase rendering instead
 
         // Helper function to check if an answer is correct
