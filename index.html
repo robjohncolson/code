@@ -183,8 +183,8 @@
     <script src="js/auth.js"></script>
     <script src="js/data_manager.js"></script>
     <script src="js/chart_registry.js"></script>
-    <script defer src="docs/analysis/frq_chart_inventory.js"></script>
     <script src="js/chart_wizard.js"></script>
+    <script defer src="docs/analysis/frq_chart_inventory.js"></script>
     <script>
 
         // ========================================
@@ -264,34 +264,26 @@
         }
 
         // Push answer to Supabase
-        window.pushAnswerToSupabase = async function(username, questionId, answerValue, timestamp, chartJsonOverride) {
+        window.pushAnswerToSupabase = async function(username, questionId, answerValue, timestamp) {
             if (!turboModeActive || !supabase) return false;
 
             try {
                 // Ensure timestamp is a number (Unix milliseconds)
-                if (typeof timestamp === 'string') {
-                    timestamp = new Date(timestamp).getTime();
-                }
+                const normalizedTimestamp = typeof timestamp === 'string'
+                    ? new Date(timestamp).getTime()
+                    : timestamp;
 
-                const chartPayload = chartJsonOverride !== undefined
-                    ? chartJsonOverride
-                    : (typeof window.getChartSubmissionPayload === 'function'
-                        ? window.getChartSubmissionPayload(questionId, username)
-                        : null);
+                const payload = {
+                    username,
+                    question_id: questionId,
+                    answer_value: answerValue,
+                    timestamp: normalizedTimestamp
+                };
 
                 // Supabase v2 upsert syntax - array of objects, onConflict as separate parameter
                 const { data, error } = await supabase
                     .from('answers')
-                    .upsert(
-                        [{
-                            username: username,
-                            question_id: questionId,
-                            answer_value: answerValue,
-                            timestamp: timestamp,
-                            chart_json: chartPayload ?? null
-                        }],
-                        { onConflict: 'username,question_id' }
-                    );
+                    .upsert([payload], { onConflict: 'username,question_id' });
 
                 if (error) throw error;
                 console.log(`✅ Synced answer for ${questionId} to cloud`);
@@ -309,12 +301,9 @@
             try {
                 // Ensure all timestamps are numbers
                 const processedBatch = answerBatch.map(answer => ({
-                    ...answer,
-                    chart_json: (answer.chart_json !== undefined
-                        ? answer.chart_json
-                        : (typeof window.getChartSubmissionPayload === 'function'
-                            ? window.getChartSubmissionPayload(answer.question_id, answer.username)
-                            : null)) ?? null,
+                    username: answer.username,
+                    question_id: answer.question_id,
+                    answer_value: answer.answer_value,
                     timestamp: typeof answer.timestamp === 'string'
                         ? new Date(answer.timestamp).getTime()
                         : answer.timestamp
@@ -335,14 +324,13 @@
         }
 
         // PHASE 2 OPTIMIZATION: Queue management for batching answers
-        function queueAnswerForSync(username, questionId, answerValue, timestamp, chartJson = null) {
+        function queueAnswerForSync(username, questionId, answerValue, timestamp) {
             // Add to queue
             answerSyncQueue.push({
                 username: username,
                 question_id: questionId,
                 answer_value: answerValue,
-                timestamp: timestamp,
-                chart_json: chartJson ?? null
+                timestamp: timestamp
             });
 
             console.log(`📝 Queued answer for ${questionId} (queue size: ${answerSyncQueue.length})`);
@@ -3567,16 +3555,12 @@ function renderLessonSelector(unitInfo) {
             };
             localStorage.setItem(userAnswersKey, JSON.stringify(userAnswers));
 
-            const chartPayload = typeof window.getChartSubmissionPayload === 'function'
-                ? window.getChartSubmissionPayload(questionId, currentUsername)
-                : null;
-
             // Sync to Supabase if turbo mode is active
             if (turboModeActive) {
                 // PHASE 2 OPTIMIZATION: Use batching queue instead of immediate sync
                 if (window.submitAnswerViaRailway) {
                     // Railway has its own batching, use it directly
-                    window.submitAnswerViaRailway(currentUsername, questionId, value, timestampNow, chartPayload)
+                    window.submitAnswerViaRailway(currentUsername, questionId, value, timestampNow)
                         .then(success => {
                             if (success) {
                                 console.log(`✅ Answer synced via Railway for ${questionId}`);
@@ -3588,7 +3572,7 @@ function renderLessonSelector(unitInfo) {
                         });
                 } else {
                     // Use batching queue for Supabase
-                    queueAnswerForSync(currentUsername, questionId, value, timestampNow, chartPayload);
+                    queueAnswerForSync(currentUsername, questionId, value, timestampNow);
                     console.log(`✅ Answer queued for batch sync: ${questionId}`);
                 }
             }

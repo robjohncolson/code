@@ -52,21 +52,6 @@ function normalizeTimestamp(timestamp) {
   return timestamp;
 }
 
-function normalizeChartJson(chart) {
-  if (chart === undefined || chart === null) {
-    return null;
-  }
-  if (typeof chart === 'string') {
-    try {
-      return JSON.parse(chart);
-    } catch (error) {
-      console.warn('Failed to parse chart_json string, storing null.');
-      return null;
-    }
-  }
-  return chart;
-}
-
 // ============================
 // REST API ENDPOINTS
 // ============================
@@ -209,19 +194,21 @@ app.get('/api/question-stats/:questionId', async (req, res) => {
 // Submit answer (proxies to Supabase and broadcasts via WebSocket)
 app.post('/api/submit-answer', async (req, res) => {
   try {
-    const { username, question_id, answer_value, timestamp, chart_json } = req.body;
+    const { username, question_id, answer_value, timestamp } = req.body;
 
     // Normalize timestamp
     const normalizedTimestamp = normalizeTimestamp(timestamp || Date.now());
-    const normalizedChart = normalizeChartJson(chart_json);
-    const chartSize = normalizedChart ? (() => {
+    const answerSize = (() => {
       try {
-        return JSON.stringify(normalizedChart).length;
+        return typeof answer_value === 'string'
+          ? answer_value.length
+          : JSON.stringify(answer_value).length;
       } catch (err) {
         return -1;
       }
-    })() : 0;
-    console.log(`📨 submit-answer ${question_id}: chart_json ${normalizedChart ? (chartSize >= 0 ? `${chartSize} chars` : 'present') : 'none'}`);
+    })();
+    const sizeLabel = answerSize >= 0 ? `${answerSize} chars` : 'received';
+    console.log(`📨 submit-answer ${question_id}: answer_value ${sizeLabel}`);
 
     // Upsert to Supabase
     const { data, error } = await supabase
@@ -230,8 +217,7 @@ app.post('/api/submit-answer', async (req, res) => {
         username,
         question_id,
         answer_value,
-        timestamp: normalizedTimestamp,
-        chart_json: normalizedChart
+        timestamp: normalizedTimestamp
       }], { onConflict: 'username,question_id' });
 
     if (error) throw error;
@@ -246,8 +232,7 @@ app.post('/api/submit-answer', async (req, res) => {
       username,
       question_id,
       answer_value,
-      timestamp: normalizedTimestamp,
-      chart_json: normalizedChart
+      timestamp: normalizedTimestamp
     };
 
     broadcastToClients(update);
@@ -275,12 +260,12 @@ app.post('/api/batch-submit', async (req, res) => {
 
     // Normalize all timestamps
     const normalizedAnswers = answers.map(answer => ({
-      ...answer,
-      timestamp: normalizeTimestamp(answer.timestamp || Date.now()),
-      chart_json: normalizeChartJson(answer.chart_json)
+      username: answer.username,
+      question_id: answer.question_id,
+      answer_value: answer.answer_value,
+      timestamp: normalizeTimestamp(answer.timestamp || Date.now())
     }));
-    const chartCount = normalizedAnswers.filter(answer => !!answer.chart_json).length;
-    console.log(`📦 batch-submit ${normalizedAnswers.length} answers (${chartCount} with chart_json)`);
+    console.log(`📦 batch-submit ${normalizedAnswers.length} answers`);
 
     // Batch upsert to Supabase
     const { data, error } = await supabase

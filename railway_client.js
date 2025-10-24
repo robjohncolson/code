@@ -207,10 +207,13 @@
   }
 
   // Railway-enhanced answer submission
-  async function submitAnswerViaRailway(username, questionId, answerValue, timestamp, chartJson = null) {
+  async function submitAnswerViaRailway(username, questionId, answerValue, timestamp) {
+      const fallbackSubmit = typeof window.originalPushAnswer === 'function'
+          ? window.originalPushAnswer
+          : null;
       if (!USE_RAILWAY) {
           // Fall back to direct Supabase
-          return window.originalPushAnswer(username, questionId, answerValue, timestamp, chartJson);
+          return fallbackSubmit ? fallbackSubmit(username, questionId, answerValue, timestamp) : false;
       }
 
       try {
@@ -220,19 +223,7 @@
               answer_value: answerValue,
               timestamp: timestamp
           };
-          if (chartJson !== undefined) {
-              payload.chart_json = chartJson;
-          }
-          const hasChart = chartJson !== null && chartJson !== undefined;
-          let approxSize = 0;
-          if (hasChart) {
-              try {
-                  approxSize = typeof chartJson === 'string' ? chartJson.length : JSON.stringify(chartJson).length;
-              } catch (sizeError) {
-                  approxSize = -1;
-              }
-          }
-          console.log(`[Railway] submit ${questionId}: chart_json ${hasChart ? (approxSize >= 0 ? `present (~${approxSize} chars)` : 'present') : 'absent'}`);
+          console.log(`[Railway] submit ${questionId}: payload ready (${typeof answerValue})`);
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/submit-answer`, {
               method: 'POST',
               headers: {
@@ -252,7 +243,7 @@
       } catch (error) {
           console.error('Railway submit failed, falling back to direct Supabase:', error);
           // Only fall back if Railway actually failed
-          return window.originalPushAnswer(username, questionId, answerValue, timestamp, chartJson);
+          return fallbackSubmit ? fallbackSubmit(username, questionId, answerValue, timestamp) : false;
       }
   }
 
@@ -338,11 +329,14 @@
 
       try {
           const normalized = answers.map(answer => ({
-              ...answer,
-              chart_json: answer.chart_json ?? null
+              username: answer.username,
+              question_id: answer.question_id,
+              answer_value: answer.answer_value,
+              timestamp: typeof answer.timestamp === 'string'
+                  ? new Date(answer.timestamp).getTime()
+                  : answer.timestamp
           }));
-          const chartsWithPayload = normalized.filter(answer => answer.chart_json).length;
-          console.log(`[Railway] batch submit: ${normalized.length} answers (${chartsWithPayload} with chart_json)`);
+          console.log(`[Railway] batch submit: ${normalized.length} answers`);
           const response = await fetch(`${RAILWAY_SERVER_URL}/api/batch-submit`, {
               method: 'POST',
               headers: {
