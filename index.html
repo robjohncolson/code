@@ -141,7 +141,6 @@
             </div>
 
             <div class="sync-footer">
-                <small><i class="fas fa-keyboard"></i> Tip: Press Ctrl+S to quickly access sync options</small>
             </div>
         </div>
     </div>
@@ -2782,36 +2781,7 @@ if (continueBtn) {
             }
         });
 
-        // Global Ctrl+S Shortcut Handler
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.key === 's') {
-                // Check if user is typing in an input field
-                const activeElement = document.activeElement;
-                const isTyping = activeElement && (
-                    activeElement.tagName === 'TEXTAREA' ||
-                    activeElement.tagName === 'INPUT' ||
-                    activeElement.contentEditable === 'true' ||
-                    activeElement.classList.contains('frq-textarea') ||
-                    activeElement.classList.contains('reason-textarea')
-                );
-
-                // Don't trigger if user is typing
-                if (isTyping) {
-                    return;
-                }
-
-                // Prevent browser's default save behavior
-                event.preventDefault();
-
-                // Flash green effect
-                flashGreenScreen();
-
-                // Open sync modal after flash
-                setTimeout(() => {
-                    showSyncModal();
-                }, 150);
-            }
-        });
+        // Ctrl+S sync shortcut removed to avoid overriding native save dialogs
 
         // Green flash effect function
         function flashGreenScreen() {
