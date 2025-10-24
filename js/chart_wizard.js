@@ -4,6 +4,7 @@
     const CONTENT_ID = 'chart-wizard-content';
     const PREVIEW_PREFIX = 'chart-preview-canvas-';
     const FRQ_INVENTORY_PATH = 'docs/analysis/frq_chart_inventory.json';
+    const OUTBOX_STORAGE_PREFIX = 'outbox_';
     const PRIMARY_CHART_TYPES = ['normal', 'histogram', 'scatter', 'bar', 'chisquare'];
     const SECONDARY_MULTI_TYPES = ['dotplot', 'boxplot'];
     const HIDDEN_BY_DEFAULT_TYPES = ['pie', 'line', 'numberline', 'doughnut', 'polarArea', 'bubble', 'radar'];
@@ -12,7 +13,10 @@
     let stylesInjected = false;
     let frqInventoryPromise = null;
     let frqInventoryMap = null;
+    let frqInventoryAvailable = false;
+    let frqInventoryErrorMessage = '';
     let lastFocusedElement = null;
+    let outboxWatcherInitialized = false;
 
     function getChartTypeList() {
         if (Array.isArray(window.CHART_TYPE_LIST) && window.CHART_TYPE_LIST.length > 0) {
@@ -355,33 +359,53 @@
         if (frqInventoryPromise) {
             return frqInventoryPromise;
         }
-        if (typeof fetch !== 'function') {
-            return null;
-        }
-        frqInventoryPromise = fetch(FRQ_INVENTORY_PATH, { cache: 'no-cache' })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Inventory fetch failed with status ${response.status}`);
+        frqInventoryPromise = (async () => {
+            let data = null;
+            let fetchError = null;
+            const canFetch = typeof fetch === 'function';
+
+            if (canFetch) {
+                try {
+                    const response = await fetch(FRQ_INVENTORY_PATH, { cache: 'no-cache' });
+                    if (!response.ok) {
+                        throw new Error(`Inventory fetch failed with status ${response.status}`);
+                    }
+                    data = await response.json();
+                } catch (error) {
+                    fetchError = error;
                 }
-                return response.json();
-            })
-            .then(data => {
+            }
+
+            if (!data && typeof window !== 'undefined' && window.FRQ_CHART_INVENTORY) {
+                data = window.FRQ_CHART_INVENTORY;
+            }
+
+            if (data && typeof data === 'object') {
                 const map = new Map();
-                if (data && Array.isArray(data.items)) {
-                    data.items.forEach(item => {
-                        if (item && item.id) {
-                            map.set(item.id, item);
-                        }
-                    });
-                }
+                const items = Array.isArray(data.items) ? data.items : [];
+                items.forEach(item => {
+                    if (item && item.id) {
+                        map.set(item.id, item);
+                    }
+                });
                 frqInventoryMap = map;
+                frqInventoryAvailable = map.size > 0;
+                frqInventoryErrorMessage = '';
                 return data;
-            })
-            .catch(error => {
-                console.warn('Unable to load FRQ chart inventory:', error);
-                frqInventoryMap = null;
-                return null;
-            });
+            }
+
+            frqInventoryMap = null;
+            frqInventoryAvailable = false;
+            if (fetchError) {
+                console.warn('Unable to load FRQ chart inventory:', fetchError);
+                frqInventoryErrorMessage = 'Recommendation data unavailable (offline)';
+            } else if (!canFetch && !window.FRQ_CHART_INVENTORY) {
+                frqInventoryErrorMessage = 'Recommendation data unavailable (offline)';
+            } else {
+                frqInventoryErrorMessage = '';
+            }
+            return null;
+        })();
         return frqInventoryPromise;
     }
 
@@ -390,6 +414,26 @@
             return null;
         }
         return frqInventoryMap.get(questionId) || null;
+    }
+
+    function buildFallbackTypeGroups(existingType) {
+        const seen = new Set();
+        const addKeys = (keys) => {
+            (keys || []).forEach(key => {
+                if (!seen.has(key) && shouldExposeType(key, existingType)) {
+                    seen.add(key);
+                }
+            });
+        };
+
+        addKeys(PRIMARY_CHART_TYPES);
+        addKeys(SECONDARY_MULTI_TYPES);
+        getChartTypeList().forEach(info => addKeys([info.key]));
+
+        return {
+            recommended: [],
+            more: mapTypeInfos(Array.from(seen))
+        };
     }
 
     function mergeFlagObjects(baseFlags, overrideFlags) {
@@ -600,7 +644,7 @@
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return null;
         const answerEntry = user.answers?.[questionId];
-        if (answerEntry && answerEntry.type === 'chart-response') {
+        if (answerEntry && answerEntry.value) {
             const value = answerEntry.value;
             if (value && typeof value === 'object') {
                 return value;
@@ -619,15 +663,14 @@
         return null;
     }
 
-    function setStoredChartSIF(questionId, sif) {
+    function setStoredChartSIF(questionId, sif, timestampOverride) {
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return;
-        const timestamp = new Date().toISOString();
+        const timestamp = timestampOverride || new Date().toISOString();
         try {
             user.answers[questionId] = {
                 value: sif,
-                timestamp,
-                type: 'chart-response'
+                timestamp
             };
         } catch (error) {
             console.warn('Unable to set chart answer entry:', error);
@@ -636,16 +679,128 @@
             user.charts = {};
         }
         user.charts[questionId] = sif;
+        return timestamp;
     }
 
     function deleteStoredChartSIF(questionId) {
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return;
-        if (user.answers && user.answers[questionId]?.type === 'chart-response') {
-            delete user.answers[questionId];
+        if (user.answers && user.answers[questionId]) {
+            const entry = user.answers[questionId];
+            if (entry && entry.value && typeof entry.value === 'object' && entry.value.type) {
+                delete user.answers[questionId];
+            }
         }
         if (user.charts && user.charts[questionId]) {
             delete user.charts[questionId];
+        }
+    }
+
+    function getOutboxKey(username) {
+        return `${OUTBOX_STORAGE_PREFIX}${username}`;
+    }
+
+    function readOutbox(username) {
+        if (!username) return [];
+        try {
+            const raw = localStorage.getItem(getOutboxKey(username));
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.filter(entry => entry
+                && typeof entry.question_id === 'string'
+                && typeof entry.answer_value === 'string'
+                && entry.timestamp);
+        } catch (error) {
+            console.warn('Unable to read chart submission outbox:', error);
+            return [];
+        }
+    }
+
+    function writeOutbox(username, entries) {
+        if (!username) return;
+        try {
+            if (!entries || entries.length === 0) {
+                localStorage.removeItem(getOutboxKey(username));
+            } else {
+                localStorage.setItem(getOutboxKey(username), JSON.stringify(entries));
+            }
+        } catch (error) {
+            console.warn('Unable to write chart submission outbox:', error);
+        }
+    }
+
+    function queueOutboxEntry(username, questionId, answerValue, timestamp) {
+        if (!username || !questionId || !answerValue) return;
+        const entries = readOutbox(username).filter(entry => entry.question_id !== questionId);
+        entries.push({ question_id: questionId, answer_value: answerValue, timestamp });
+        writeOutbox(username, entries);
+    }
+
+    function removeOutboxEntry(username, questionId) {
+        if (!username || !questionId) return;
+        const entries = readOutbox(username);
+        const filtered = entries.filter(entry => entry.question_id !== questionId);
+        if (filtered.length !== entries.length) {
+            writeOutbox(username, filtered);
+        }
+    }
+
+    async function flushOutbox(forcedUsername) {
+        const username = forcedUsername
+            || window.currentUsername
+            || localStorage.getItem('consensusUsername')
+            || '';
+        if (!username) return;
+        const submissionFn = typeof window.pushAnswerToSupabase === 'function'
+            ? window.pushAnswerToSupabase
+            : null;
+        if (!submissionFn) return;
+
+        const entries = readOutbox(username);
+        if (!entries.length) return;
+
+        const remaining = [];
+        for (let index = 0; index < entries.length; index += 1) {
+            const entry = entries[index];
+            let success = false;
+            try {
+                success = await submissionFn(username, entry.question_id, entry.answer_value, entry.timestamp);
+            } catch (error) {
+                console.warn('Error submitting queued chart response:', error);
+                success = false;
+            }
+            if (success) {
+                continue;
+            }
+            remaining.push(entry);
+            for (let j = index + 1; j < entries.length; j += 1) {
+                remaining.push(entries[j]);
+            }
+            break;
+        }
+
+        if (remaining.length !== entries.length) {
+            writeOutbox(username, remaining);
+        }
+    }
+
+    function initializeOutboxWatcher() {
+        if (outboxWatcherInitialized) return;
+        outboxWatcherInitialized = true;
+
+        const attemptFlush = () => {
+            if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+                flushOutbox();
+            }
+        };
+
+        window.addEventListener('online', attemptFlush);
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            attemptFlush();
+        } else {
+            window.addEventListener('DOMContentLoaded', attemptFlush, { once: true });
         }
     }
 
@@ -672,13 +827,18 @@
             console.warn('Chart wizard continuing without FRQ inventory:', error);
         }
 
-        const inventoryEntry = getInventoryEntry(questionId);
+        const inventoryAvailable = frqInventoryAvailable;
+        const inventoryEntry = inventoryAvailable ? getInventoryEntry(questionId) : null;
         const typeDefaults = computeTypeDefaults(inventoryEntry);
-        const typeGroups = deriveTypeGroups(inventoryEntry, existingChart?.type);
+        const typeGroups = inventoryAvailable
+            ? deriveTypeGroups(inventoryEntry, existingChart?.type)
+            : buildFallbackTypeGroups(existingChart?.type);
         wizardState = createInitialState(questionId, metadata, existingChart, {
             typeGroups,
             typeDefaults,
-            inventoryEntry
+            inventoryEntry,
+            inventoryUnavailable: !inventoryAvailable,
+            inventoryHint: !inventoryAvailable ? (frqInventoryErrorMessage || 'Recommendation data unavailable (offline)') : ''
         });
         wizardState.shouldFocusChartType = true;
         renderWizard();
@@ -737,7 +897,9 @@
             typeGroups: helpers?.typeGroups || { recommended: mapTypeInfos(PRIMARY_CHART_TYPES), more: mapTypeInfos(SECONDARY_MULTI_TYPES) },
             typeDefaults: helpers?.typeDefaults || {},
             inventoryEntry: helpers?.inventoryEntry || null,
-            showMore: false,
+            inventoryUnavailable: helpers?.inventoryUnavailable === true,
+            inventoryHint: helpers?.inventoryHint || '',
+            showMore: helpers?.inventoryUnavailable === true,
             scatterOptions: { regressionLine: undefined, showResidualPlot: undefined },
             histogramSettings: { mode: undefined },
             normalOptions: { useParams: undefined, shadeEnabled: undefined }
@@ -1136,10 +1298,17 @@
             overlay.setAttribute('aria-hidden', 'true');
         }
         wizardState = null;
-        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        const focusTarget = lastFocusedElement;
+        if (focusTarget && typeof focusTarget.focus === 'function') {
             setTimeout(() => {
                 try {
-                    lastFocusedElement.focus();
+                    const stillExists = (typeof focusTarget.isConnected === 'boolean'
+                        ? focusTarget.isConnected
+                        : document.contains(focusTarget));
+                    if (!stillExists) {
+                        return;
+                    }
+                    focusTarget.focus();
                 } catch (error) {
                     console.warn('Unable to restore focus after closing chart wizard:', error);
                 }
@@ -1233,6 +1402,10 @@
             const recommended = Array.isArray(typeGroups.recommended) ? typeGroups.recommended : [];
             const more = Array.isArray(typeGroups.more) ? typeGroups.more : [];
             const showMore = wizardState.showMore === true;
+            const inventoryUnavailable = wizardState.inventoryUnavailable === true;
+            const hintHtml = inventoryUnavailable && wizardState.inventoryHint
+                ? `<div class="chart-inline-message" role="status">${wizardState.inventoryHint}</div>`
+                : '';
             const renderOption = (typeInfo, section) => {
                 const active = chartType === typeInfo.key ? 'active' : '';
                 const ariaPressed = chartType === typeInfo.key ? 'true' : 'false';
@@ -1248,7 +1421,9 @@
                 `;
             };
 
-            const recommendedHtml = recommended.length
+            const recommendedHtml = inventoryUnavailable
+                ? ''
+                : recommended.length
                 ? `
                     <div class="chart-type-section" aria-label="Recommended chart types">
                         <h3>Recommended for this FRQ</h3>
@@ -1277,6 +1452,7 @@
             return `
                 ${prompt}
                 ${errorHtml}
+                ${hintHtml}
                 ${recommendedHtml}
                 <div class="chart-type-section" aria-label="More chart types">
                     <button type="button" class="chart-type-more-toggle" data-action="toggle-more" aria-expanded="${showMore ? 'true' : 'false'}">
@@ -3256,7 +3432,8 @@
     }
 
 
-    function saveChart() {
+    async function saveChart() {
+        if (!wizardState) return;
         const sif = buildSIF();
         if (!sif) {
             renderWizard();
@@ -3270,17 +3447,47 @@
             return;
         }
 
-        setStoredChartSIF(wizardState.questionId, sif);
+        const questionId = wizardState.questionId;
+        const timestamp = new Date().toISOString();
+        setStoredChartSIF(questionId, sif, timestamp);
         if (typeof window.saveClassData === 'function') {
             window.saveClassData();
         }
 
-        if (typeof window.showMessage === 'function') {
-            window.showMessage('Chart saved to your response.', 'success');
+        const answerValue = JSON.stringify(sif);
+        const submissionFn = typeof window.pushAnswerToSupabase === 'function'
+            ? window.pushAnswerToSupabase
+            : null;
+        let submissionSuccess = false;
+
+        if (submissionFn) {
+            try {
+                submissionSuccess = await submissionFn(username, questionId, answerValue, timestamp);
+            } catch (error) {
+                console.warn('Chart submission failed:', error);
+                submissionSuccess = false;
+            }
+        }
+
+        if (submissionSuccess) {
+            removeOutboxEntry(username, questionId);
+            if (typeof window.showMessage === 'function') {
+                window.showMessage('Chart saved and submitted.', 'success');
+            } else {
+                alert('Chart saved and submitted.');
+            }
+            await flushOutbox(username);
+        } else {
+            queueOutboxEntry(username, questionId, answerValue, timestamp);
+            if (typeof window.showMessage === 'function') {
+                window.showMessage('Saved offline (queued).', 'info');
+            } else {
+                alert('Saved offline (queued).');
+            }
         }
 
         if (typeof window.renderChartWizardPreview === 'function') {
-            window.renderChartWizardPreview(wizardState.questionId);
+            window.renderChartWizardPreview(questionId);
         }
 
         closeWizard();
@@ -3351,6 +3558,8 @@
             }
         }, 50);
     }
+
+    initializeOutboxWatcher();
 
     window.openChartWizard = openChartWizard;
     window.renderChartWizardPreview = renderChartWizardPreview;
