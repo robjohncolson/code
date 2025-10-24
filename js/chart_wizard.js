@@ -1305,7 +1305,7 @@
                     const stillExists = (typeof focusTarget.isConnected === 'boolean'
                         ? focusTarget.isConnected
                         : document.contains(focusTarget));
-                    if (!stillExists) {
+                    if (!stillExists || typeof focusTarget.focus !== 'function') {
                         return;
                     }
                     focusTarget.focus();
@@ -3454,7 +3454,8 @@
             window.saveClassData();
         }
 
-        const answerValue = JSON.stringify(sif);
+        const sifJson = JSON.stringify(sif);
+        const answerValue = sifJson;
         const submissionFn = typeof window.pushAnswerToSupabase === 'function'
             ? window.pushAnswerToSupabase
             : null;
@@ -3471,6 +3472,22 @@
 
         if (submissionSuccess) {
             removeOutboxEntry(username, questionId);
+            try {
+                if (window.classData
+                    && window.classData.users
+                    && window.classData.users[username]) {
+                    const userRecord = window.classData.users[username];
+                    if (!userRecord.answers) {
+                        userRecord.answers = {};
+                    }
+                    userRecord.answers[questionId] = {
+                        value: sif,
+                        timestamp
+                    };
+                }
+            } catch (updateError) {
+                console.warn('Unable to refresh chart answer cache after submit:', updateError);
+            }
             if (typeof window.showMessage === 'function') {
                 window.showMessage('Chart saved and submitted.', 'success');
             } else {

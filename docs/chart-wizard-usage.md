@@ -45,8 +45,8 @@ The wizard automatically maintains both structures and calls `saveClassData()` a
 
 ## Submission & Sync
 When you submit an answer:
-- The saved chart (if any) is attached as `chart_json` in the standard submission payload.
-- Railway and Supabase both receive the optional `chart_json` column, so remote storage stays in sync with local edits.
+- The wizard stringifies the SIF object and stores it in `answer_value` alongside the FRQ response.
+- Railway and Supabase receive the same payload (username, question_id, answer_value, timestamp) via the proxy helper.
 - Deleting a chart updates localStorage immediately. To clear the remote copy, submit the FRQ again after deleting.
 
 ## Tips
