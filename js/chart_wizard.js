@@ -3,8 +3,16 @@
     const OVERLAY_ID = 'chart-wizard-overlay';
     const CONTENT_ID = 'chart-wizard-content';
     const PREVIEW_PREFIX = 'chart-preview-canvas-';
+    const FRQ_INVENTORY_PATH = 'docs/analysis/frq_chart_inventory.json';
+    const PRIMARY_CHART_TYPES = ['normal', 'histogram', 'scatter', 'bar', 'chisquare'];
+    const SECONDARY_MULTI_TYPES = ['dotplot', 'boxplot'];
+    const HIDDEN_BY_DEFAULT_TYPES = ['pie', 'line', 'numberline', 'doughnut', 'polarArea', 'bubble', 'radar'];
+
     let wizardState = null;
     let stylesInjected = false;
+    let frqInventoryPromise = null;
+    let frqInventoryMap = null;
+    let lastFocusedElement = null;
 
     function getChartTypeList() {
         if (Array.isArray(window.CHART_TYPE_LIST) && window.CHART_TYPE_LIST.length > 0) {
@@ -96,6 +104,19 @@
                 grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
                 gap: 12px;
             }
+            .chart-type-section {
+                margin-bottom: 18px;
+            }
+            .chart-type-section h3 {
+                margin: 0 0 10px;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            .chart-type-empty {
+                font-size: 0.9rem;
+                color: rgba(0,0,0,0.65);
+                margin: 0;
+            }
             .chart-type-option {
                 border: 2px solid transparent;
                 border-radius: 8px;
@@ -121,6 +142,63 @@
                 margin: 0;
                 font-size: 0.85rem;
                 color: rgba(0,0,0,0.7);
+            }
+            .chart-type-pill {
+                display: inline-block;
+                font-size: 0.75rem;
+                color: #3867d6;
+                background: rgba(56, 103, 214, 0.15);
+                padding: 2px 8px;
+                border-radius: 999px;
+                margin-bottom: 6px;
+            }
+            .chart-type-more-toggle {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 8px;
+                background: rgba(0,0,0,0.06);
+                border: none;
+                border-radius: 8px;
+                padding: 10px 12px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .chart-type-more-toggle:focus-visible {
+                outline: 2px solid #4b7bec;
+                outline-offset: 2px;
+            }
+            .chart-type-more-icon {
+                font-size: 0.8rem;
+            }
+            .chart-type-more-grid.is-collapsed {
+                display: none;
+            }
+            .chart-type-more-grid.is-expanded {
+                margin-top: 12px;
+            }
+            .chart-toggle-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .chart-toggle-option {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+            }
+            .chart-toggle-option input[type="checkbox"],
+            .chart-toggle-option input[type="radio"] {
+                accent-color: #4b7bec;
+            }
+            .chart-inline-message {
+                font-size: 0.9rem;
+                color: rgba(0,0,0,0.65);
+                background: rgba(0,0,0,0.04);
+                padding: 10px 12px;
+                border-radius: 8px;
             }
             .chart-form-group {
                 margin-bottom: 16px;
@@ -253,9 +331,203 @@
                 .chart-type-option p {
                     color: rgba(255,255,255,0.7);
                 }
+                .chart-type-pill {
+                    color: #aebdff;
+                    background: rgba(80, 130, 255, 0.25);
+                }
+                .chart-type-more-toggle {
+                    background: rgba(255,255,255,0.1);
+                    color: #f5f5f5;
+                }
+                .chart-type-empty {
+                    color: rgba(255,255,255,0.7);
+                }
+                .chart-inline-message {
+                    color: rgba(255,255,255,0.75);
+                    background: rgba(255,255,255,0.08);
+                }
             }
         `;
         document.head.appendChild(style);
+    }
+
+    async function loadFrqInventory() {
+        if (frqInventoryPromise) {
+            return frqInventoryPromise;
+        }
+        if (typeof fetch !== 'function') {
+            return null;
+        }
+        frqInventoryPromise = fetch(FRQ_INVENTORY_PATH, { cache: 'no-cache' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Inventory fetch failed with status ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const map = new Map();
+                if (data && Array.isArray(data.items)) {
+                    data.items.forEach(item => {
+                        if (item && item.id) {
+                            map.set(item.id, item);
+                        }
+                    });
+                }
+                frqInventoryMap = map;
+                return data;
+            })
+            .catch(error => {
+                console.warn('Unable to load FRQ chart inventory:', error);
+                frqInventoryMap = null;
+                return null;
+            });
+        return frqInventoryPromise;
+    }
+
+    function getInventoryEntry(questionId) {
+        if (!questionId || !frqInventoryMap) {
+            return null;
+        }
+        return frqInventoryMap.get(questionId) || null;
+    }
+
+    function mergeFlagObjects(baseFlags, overrideFlags) {
+        const merged = { ...baseFlags };
+        if (overrideFlags && typeof overrideFlags === 'object') {
+            Object.keys(overrideFlags).forEach(key => {
+                merged[key] = overrideFlags[key];
+            });
+        }
+        return merged;
+    }
+
+    function computeTypeDefaults(entry) {
+        const defaults = {};
+        if (!entry) {
+            return defaults;
+        }
+
+        const globalFlags = entry.subFlags && typeof entry.subFlags === 'object'
+            ? entry.subFlags
+            : {};
+        const subFlagsByType = entry.subFlagsByType && typeof entry.subFlagsByType === 'object'
+            ? entry.subFlagsByType
+            : {};
+
+        const typeList = entry.chartType === 'multi'
+            ? (Array.isArray(entry.types) ? entry.types : [])
+            : entry.chartType
+                ? [entry.chartType]
+                : [];
+
+        typeList.forEach(typeKey => {
+            const mergedFlags = mergeFlagObjects(globalFlags, subFlagsByType[typeKey]);
+            defaults[typeKey] = { flags: mergedFlags };
+        });
+
+        if (entry.chartType === 'multi'
+            && typeList.includes('scatter')
+            && typeList.includes('normal')) {
+            const scatterFlags = defaults.scatter?.flags || {};
+            const normalFlags = defaults.normal?.flags || {};
+            const shouldLink = scatterFlags.scatterNeedsRegression === true || normalFlags.normalParams === true;
+            if (shouldLink) {
+                if (!defaults.scatter) defaults.scatter = { flags: {} };
+                if (!defaults.normal) defaults.normal = { flags: {} };
+                defaults.scatter.flags.scatterNeedsRegression = true;
+                defaults.normal.flags.normalParams = true;
+            }
+        }
+
+        return defaults;
+    }
+
+    function mapTypeInfos(typeKeys) {
+        const allTypes = getChartTypeList();
+        const typeMap = new Map(allTypes.map(info => [info.key, info]));
+        const result = [];
+        (typeKeys || []).forEach(key => {
+            if (typeMap.has(key)) {
+                result.push(typeMap.get(key));
+            }
+        });
+        return result;
+    }
+
+    function shouldExposeType(key, existingType) {
+        if (key === existingType) {
+            return true;
+        }
+        if (HIDDEN_BY_DEFAULT_TYPES.includes(key)) {
+            return window.CHART_WIZARD_SHOW_ALL_TYPES === true;
+        }
+        return true;
+    }
+
+    function deriveTypeGroups(entry, existingType) {
+        const recommendedKeys = [];
+        const fallbackKeys = [...PRIMARY_CHART_TYPES];
+        const entryHasData = !!entry;
+
+        if (entryHasData) {
+            if (entry.chartType === 'multi' && Array.isArray(entry.types)) {
+                entry.types.forEach(typeKey => {
+                    if (shouldExposeType(typeKey, existingType) && !recommendedKeys.includes(typeKey)) {
+                        recommendedKeys.push(typeKey);
+                    }
+                });
+            } else if (entry.chartType && shouldExposeType(entry.chartType, existingType)) {
+                recommendedKeys.push(entry.chartType);
+            }
+        }
+
+        if (recommendedKeys.length === 0) {
+            fallbackKeys.forEach(key => {
+                if (shouldExposeType(key, existingType)) {
+                    recommendedKeys.push(key);
+                }
+            });
+        }
+
+        const preferredMore = new Set();
+        fallbackKeys.forEach(key => {
+            if (!recommendedKeys.includes(key) && shouldExposeType(key, existingType)) {
+                preferredMore.add(key);
+            }
+        });
+        SECONDARY_MULTI_TYPES.forEach(key => {
+            if (shouldExposeType(key, existingType)) {
+                preferredMore.add(key);
+            }
+        });
+
+        const allKnownTypes = getChartTypeList().map(info => info.key);
+        allKnownTypes.forEach(key => {
+            if (!recommendedKeys.includes(key)
+                && !preferredMore.has(key)
+                && shouldExposeType(key, existingType)) {
+                const hiddenByDefault = HIDDEN_BY_DEFAULT_TYPES.includes(key);
+                if (!hiddenByDefault || window.CHART_WIZARD_SHOW_ALL_TYPES === true || key === existingType) {
+                    preferredMore.add(key);
+                }
+            }
+        });
+
+        if (existingType && !recommendedKeys.includes(existingType) && !preferredMore.has(existingType)) {
+            preferredMore.add(existingType);
+        }
+
+        recommendedKeys.forEach(key => {
+            if (preferredMore.has(key)) {
+                preferredMore.delete(key);
+            }
+        });
+
+        const recommended = mapTypeInfos(recommendedKeys);
+        const more = mapTypeInfos(Array.from(preferredMore));
+
+        return { recommended, more };
     }
 
     function ensureModal() {
@@ -263,10 +535,14 @@
         const overlay = document.createElement('div');
         overlay.id = OVERLAY_ID;
         overlay.className = 'chart-wizard-overlay';
+        overlay.setAttribute('aria-hidden', 'true');
 
         const modal = document.createElement('div');
         modal.id = MODAL_ID;
         modal.className = 'chart-wizard-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('tabindex', '-1');
 
         const content = document.createElement('div');
         content.id = CONTENT_ID;
@@ -373,7 +649,7 @@
         }
     }
 
-    function openChartWizard(questionId) {
+    async function openChartWizard(questionId) {
         injectStyles();
         ensureModal();
 
@@ -390,17 +666,32 @@
         }
 
         const existingChart = getStoredChartSIF(questionId);
-        wizardState = createInitialState(questionId, metadata, existingChart);
+        try {
+            await loadFrqInventory();
+        } catch (error) {
+            console.warn('Chart wizard continuing without FRQ inventory:', error);
+        }
+
+        const inventoryEntry = getInventoryEntry(questionId);
+        const typeDefaults = computeTypeDefaults(inventoryEntry);
+        const typeGroups = deriveTypeGroups(inventoryEntry, existingChart?.type);
+        wizardState = createInitialState(questionId, metadata, existingChart, {
+            typeGroups,
+            typeDefaults,
+            inventoryEntry
+        });
+        wizardState.shouldFocusChartType = true;
         renderWizard();
         showOverlay();
     }
 
-    function createInitialState(questionId, metadata, existingChart) {
+    function createInitialState(questionId, metadata, existingChart, helpers = {}) {
         const availableTypes = getChartTypeList();
         const fallbackType = availableTypes[0]?.key || 'histogram';
         const hintedType = (metadata?.chartHints || []).find(hint => !!getChartTypeConfig(hint));
         const existingType = existingChart?.type && getChartTypeConfig(existingChart.type) ? existingChart.type : null;
-        const initialType = existingType || hintedType || fallbackType;
+        const recommendedFirst = helpers?.typeGroups?.recommended?.[0]?.key;
+        const initialType = existingType || hintedType || recommendedFirst || fallbackType;
         const defaults = getChartTypeConfig(initialType)?.defaults || {};
 
         const existingFirstSeries = Array.isArray(existingChart?.series) ? existingChart.series[0] : null;
@@ -442,12 +733,22 @@
             description: existingChart?.options?.description || '',
             csvText: '',
             originalMeta: existingChart?.meta || null,
-            error: ''
+            error: '',
+            typeGroups: helpers?.typeGroups || { recommended: mapTypeInfos(PRIMARY_CHART_TYPES), more: mapTypeInfos(SECONDARY_MULTI_TYPES) },
+            typeDefaults: helpers?.typeDefaults || {},
+            inventoryEntry: helpers?.inventoryEntry || null,
+            showMore: false,
+            scatterOptions: { regressionLine: undefined, showResidualPlot: undefined },
+            histogramSettings: { mode: undefined },
+            normalOptions: { useParams: undefined, shadeEnabled: undefined }
         };
 
         if (existingChart) {
             applySifToState(baseState, existingChart);
         }
+
+        initializeTypeDefaults(baseState);
+        applyDefaultOptionsForType(baseState, baseState.chartType);
 
         const activeDefaults = getChartTypeConfig(baseState.chartType)?.defaults || {};
         if (!baseState.xLabel && activeDefaults.xLabel) {
@@ -458,6 +759,63 @@
         }
 
         return baseState;
+    }
+
+    function initializeTypeDefaults(state) {
+        if (!state) return;
+        if (!state.scatterOptions) {
+            state.scatterOptions = { regressionLine: undefined, showResidualPlot: undefined };
+        }
+        if (!state.histogramSettings) {
+            state.histogramSettings = { mode: undefined };
+        }
+        if (!state.normalOptions) {
+            state.normalOptions = { useParams: undefined, shadeEnabled: undefined };
+        }
+
+        const defaults = state.typeDefaults || {};
+        const scatterFlags = defaults.scatter?.flags || {};
+        if (state.scatterOptions.regressionLine === undefined) {
+            state.scatterOptions.regressionLine = scatterFlags.scatterNeedsRegression === true;
+        }
+        if (state.scatterOptions.showResidualPlot === undefined) {
+            state.scatterOptions.showResidualPlot = scatterFlags.residualPlot === true;
+        }
+
+        const histogramFlags = defaults.histogram?.flags || {};
+        if (!state.histogramSettings.mode) {
+            state.histogramSettings.mode = histogramFlags.histogramFromTable === true ? 'explicit' : 'auto';
+        }
+
+        const normalFlags = defaults.normal?.flags || {};
+        if (state.normalOptions.useParams === undefined) {
+            const hasExplicit = Object.prototype.hasOwnProperty.call(normalFlags, 'normalParams');
+            state.normalOptions.useParams = hasExplicit ? normalFlags.normalParams === true : true;
+        }
+        if (state.normalOptions.shadeEnabled === undefined) {
+            state.normalOptions.shadeEnabled = false;
+        }
+    }
+
+    function applyDefaultOptionsForType(state, typeKey) {
+        if (!state || !typeKey) return;
+        const defaults = state.typeDefaults?.[typeKey]?.flags || {};
+        if (typeKey === 'scatter') {
+            if (state.scatterOptions.regressionLine === undefined) {
+                state.scatterOptions.regressionLine = defaults.scatterNeedsRegression === true;
+            }
+            if (state.scatterOptions.showResidualPlot === undefined) {
+                state.scatterOptions.showResidualPlot = defaults.residualPlot === true;
+            }
+        } else if (typeKey === 'histogram') {
+            if (!state.histogramSettings.mode || state.histogramSettings.mode === 'auto') {
+                state.histogramSettings.mode = defaults.histogramFromTable === true ? 'explicit' : state.histogramSettings.mode || 'auto';
+            }
+        } else if (typeKey === 'normal') {
+            if (state.normalOptions.useParams === undefined) {
+                state.normalOptions.useParams = defaults.normalParams === true;
+            }
+        }
     }
 
     function normalizeNumeric(value) {
@@ -492,21 +850,33 @@
 
         switch (type) {
             case 'histogram': {
-                const bins = Array.isArray(legacyData.bins) ? legacyData.bins : [];
-                if (bins.length) {
-                    state.histogram = bins.map(bin => ({
+                if (!state.histogramSettings) {
+                    state.histogramSettings = {};
+                }
+                const binning = sif.binning || {};
+                const binsSource = Array.isArray(binning.bins) && binning.bins.length
+                    ? binning.bins
+                    : Array.isArray(legacyData.bins) ? legacyData.bins : [];
+                if (binsSource.length) {
+                    state.histogram = binsSource.map(bin => ({
                         label: bin.label ?? '',
                         value: normalizeNumeric(bin.value)
                     }));
                 }
-                if (legacyData.seriesName) {
-                    state.seriesName = legacyData.seriesName;
+                if (binning.mode) {
+                    state.histogramSettings.mode = binning.mode;
+                } else if (legacyData.mode) {
+                    state.histogramSettings.mode = legacyData.mode;
+                }
+                const seriesName = sif.seriesName || legacyData.seriesName;
+                if (seriesName) {
+                    state.seriesName = seriesName;
                 }
                 break;
             }
             case 'bar': {
                 let rows = [];
-                let orientation = sif.orientation || legacyData.orientation || state.barOrientation;
+                let orientation = sif.chartConfig?.orientation || sif.orientation || legacyData.orientation || state.barOrientation;
                 let seriesName = state.barSeriesName;
                 if (Array.isArray(sif.series) && sif.series.length > 0) {
                     const primary = sif.series[0];
@@ -542,6 +912,12 @@
                     if (legacyData.orientation) {
                         orientation = legacyData.orientation;
                     }
+                } else if (Array.isArray(sif.categories) && Array.isArray(legacyData.values)) {
+                    const values = legacyData.values;
+                    rows = sif.categories.map((label, index) => ({
+                        label: label ?? '',
+                        value: normalizeNumeric(values[index] ?? '')
+                    }));
                 }
                 if (rows.length) {
                     state.bar = rows;
@@ -603,7 +979,11 @@
                 break;
             }
             case 'dotplot': {
-                const values = Array.isArray(legacyData.values) ? legacyData.values : [];
+                const values = Array.isArray(sif.values)
+                    ? sif.values
+                    : Array.isArray(legacyData.values)
+                        ? legacyData.values
+                        : [];
                 if (values.length) {
                     state.dotplot = values.map(value => normalizeNumeric(value));
                 }
@@ -617,6 +997,17 @@
                         y: normalizeNumeric(point.y),
                         label: point.label ? `${point.label}` : ''
                     }));
+                }
+                if (!state.scatterOptions) {
+                    state.scatterOptions = { regressionLine: false, showResidualPlot: false };
+                }
+                if (sif.chartConfig && typeof sif.chartConfig === 'object') {
+                    if (sif.chartConfig.regressionLine !== undefined) {
+                        state.scatterOptions.regressionLine = !!sif.chartConfig.regressionLine;
+                    }
+                    if (sif.chartConfig.referenceLineAtZero !== undefined) {
+                        state.scatterOptions.showResidualPlot = !!sif.chartConfig.referenceLineAtZero;
+                    }
                 }
                 break;
             }
@@ -649,7 +1040,7 @@
                 break;
             }
             case 'boxplot': {
-                const five = legacyData.fiveNumber || state.boxplot;
+                const five = sif.fiveNumber || legacyData.fiveNumber || state.boxplot;
                 state.boxplot = {
                     min: normalizeNumeric(five.min ?? five.minimum ?? ''),
                     q1: normalizeNumeric(five.q1 ?? five.Q1 ?? ''),
@@ -660,32 +1051,44 @@
                 break;
             }
             case 'normal': {
-                const data = legacyData || sif;
+                const data = sif;
+                const chartConfig = sif.chartConfig || {};
                 state.normal = {
-                    mean: normalizeNumeric(data.mean ?? ''),
-                    sd: normalizeNumeric(data.sd ?? ''),
-                    shadeLower: normalizeNumeric(data.shade?.lower ?? data.shadeLower ?? ''),
-                    shadeUpper: normalizeNumeric(data.shade?.upper ?? data.shadeUpper ?? ''),
-                    xMin: normalizeNumeric(data.xMin ?? ''),
-                    xMax: normalizeNumeric(data.xMax ?? ''),
-                    tickInterval: normalizeNumeric(data.tickInterval ?? '')
+                    mean: normalizeNumeric(data.mean ?? legacyData.mean ?? ''),
+                    sd: normalizeNumeric(data.sd ?? legacyData.sd ?? ''),
+                    shadeLower: normalizeNumeric((data.shade?.lower ?? legacyData.shade?.lower ?? legacyData.shadeLower) ?? ''),
+                    shadeUpper: normalizeNumeric((data.shade?.upper ?? legacyData.shade?.upper ?? legacyData.shadeUpper) ?? ''),
+                    xMin: normalizeNumeric(chartConfig.xMin ?? legacyData.xMin ?? ''),
+                    xMax: normalizeNumeric(chartConfig.xMax ?? legacyData.xMax ?? ''),
+                    tickInterval: normalizeNumeric(chartConfig.tickInterval ?? legacyData.tickInterval ?? '')
                 };
+                if (!state.normalOptions) {
+                    state.normalOptions = { useParams: true, shadeEnabled: false };
+                }
+                if (chartConfig.useProvidedParams === false) {
+                    state.normalOptions.useParams = false;
+                } else if (state.normalOptions.useParams === undefined) {
+                    state.normalOptions.useParams = true;
+                }
+                const hasShade = state.normal.shadeLower !== '' || state.normal.shadeUpper !== '';
+                state.normalOptions.shadeEnabled = hasShade;
                 break;
             }
             case 'chisquare': {
-                const dfList = Array.isArray(legacyData.dfList) ? legacyData.dfList : [];
-                const labels = Array.isArray(legacyData.labels) ? legacyData.labels : [];
+                const dfList = Array.isArray(sif.dfList) ? sif.dfList : Array.isArray(legacyData.dfList) ? legacyData.dfList : [];
+                const labels = Array.isArray(sif.labels) ? sif.labels : Array.isArray(legacyData.labels) ? legacyData.labels : [];
                 if (dfList.length) {
                     state.chisquareRows = dfList.map((df, index) => ({
                         df: normalizeNumeric(df),
                         label: labels[index] ? `${labels[index]}` : ''
                     }));
                 }
+                const cfg = sif.chartConfig || legacyData || {};
                 state.chisquareSettings = {
-                    xMin: normalizeNumeric(legacyData.xMin ?? ''),
-                    xMax: normalizeNumeric(legacyData.xMax ?? ''),
-                    tickInterval: normalizeNumeric(legacyData.tickInterval ?? ''),
-                    numPoints: normalizeNumeric(legacyData.numPoints ?? '')
+                    xMin: normalizeNumeric(cfg.xMin ?? ''),
+                    xMax: normalizeNumeric(cfg.xMax ?? ''),
+                    tickInterval: normalizeNumeric(cfg.tickInterval ?? ''),
+                    numPoints: normalizeNumeric(cfg.numPoints ?? '')
                 };
                 break;
             }
@@ -712,7 +1115,17 @@
     function showOverlay() {
         const overlay = document.getElementById(OVERLAY_ID);
         if (overlay) {
+            lastFocusedElement = document.activeElement && typeof document.activeElement.focus === 'function'
+                ? document.activeElement
+                : null;
             overlay.style.display = 'flex';
+            overlay.setAttribute('aria-hidden', 'false');
+            const modal = overlay.querySelector(`#${MODAL_ID}`);
+            if (modal) {
+                requestAnimationFrame(() => {
+                    focusTypeSelection(modal);
+                });
+            }
         }
     }
 
@@ -720,8 +1133,19 @@
         const overlay = document.getElementById(OVERLAY_ID);
         if (overlay) {
             overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
         }
         wizardState = null;
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            setTimeout(() => {
+                try {
+                    lastFocusedElement.focus();
+                } catch (error) {
+                    console.warn('Unable to restore focus after closing chart wizard:', error);
+                }
+            }, 0);
+        }
+        lastFocusedElement = null;
     }
 
     function renderWizard() {
@@ -732,9 +1156,12 @@
         const header = document.createElement('div');
         header.className = 'chart-wizard-header';
         header.innerHTML = `
-            <div class="chart-wizard-title">Chart Wizard · ${wizardState.questionId}</div>
+            <div class="chart-wizard-title" id="chart-wizard-title">Chart Wizard · ${wizardState.questionId}</div>
             <button class="chart-wizard-close" aria-label="Close chart wizard">&times;</button>
         `;
+        if (modal) {
+            modal.setAttribute('aria-labelledby', 'chart-wizard-title');
+        }
 
         const body = document.createElement('div');
         body.className = 'chart-wizard-body';
@@ -753,8 +1180,44 @@
         header.querySelector('button').addEventListener('click', closeWizard);
         attachEventHandlers(body, footer);
 
+        if (wizardState.shouldFocusChartType && wizardState.step === 0) {
+            requestAnimationFrame(() => {
+                focusTypeSelection(modal);
+            });
+            wizardState.shouldFocusChartType = false;
+        }
+
+        if (wizardState.focusMoreToggle) {
+            requestAnimationFrame(() => {
+                if (!modal) return;
+                const toggle = modal.querySelector('.chart-type-more-toggle');
+                if (toggle && typeof toggle.focus === 'function') {
+                    toggle.focus();
+                }
+            });
+            wizardState.focusMoreToggle = false;
+        }
+
         if (wizardState.step === 2) {
             renderPreviewCanvas();
+        }
+    }
+
+    function focusTypeSelection(modal) {
+        if (!modal) return;
+        let target = null;
+        if (wizardState?.step === 0) {
+            target = modal.querySelector('.chart-type-option.active')
+                || modal.querySelector('.chart-type-option');
+        }
+        if (!target) {
+            target = modal.querySelector('.chart-wizard-close');
+        }
+        if (!target) {
+            target = modal;
+        }
+        if (target && typeof target.focus === 'function') {
+            target.focus();
         }
     }
 
@@ -766,25 +1229,61 @@
         const errorHtml = error ? `<div class="chart-wizard-error">${error}</div>` : '';
 
         if (step === 0) {
-            const hints = metadata?.chartHints || [];
-            const types = getChartTypeList();
+            const typeGroups = wizardState.typeGroups || { recommended: getChartTypeList(), more: [] };
+            const recommended = Array.isArray(typeGroups.recommended) ? typeGroups.recommended : [];
+            const more = Array.isArray(typeGroups.more) ? typeGroups.more : [];
+            const showMore = wizardState.showMore === true;
+            const renderOption = (typeInfo, section) => {
+                const active = chartType === typeInfo.key ? 'active' : '';
+                const ariaPressed = chartType === typeInfo.key ? 'true' : 'false';
+                const pill = section === 'recommended'
+                    ? '<span class="chart-type-pill">Recommended</span>'
+                    : '';
+                return `
+                    <button type="button" class="chart-type-option ${active}" data-chart-type="${typeInfo.key}" aria-pressed="${ariaPressed}">
+                        <h4>${typeInfo.displayName || typeInfo.key}</h4>
+                        ${pill}
+                        <p>${typeInfo.description || ''}</p>
+                    </button>
+                `;
+            };
+
+            const recommendedHtml = recommended.length
+                ? `
+                    <div class="chart-type-section" aria-label="Recommended chart types">
+                        <h3>Recommended for this FRQ</h3>
+                        <div class="chart-type-grid">
+                            ${recommended.map(typeInfo => renderOption(typeInfo, 'recommended')).join('')}
+                        </div>
+                    </div>
+                `
+                : `
+                    <div class="chart-type-section" aria-label="Recommended chart types">
+                        <h3>Recommended for this FRQ</h3>
+                        <p class="chart-type-empty">No specific chart types detected for this FRQ. Choose from the additional options below.</p>
+                    </div>
+                `;
+
+            const moreContent = more.length
+                ? `
+                    <div class="chart-type-grid chart-type-more-grid ${showMore ? 'is-expanded' : 'is-collapsed'}" data-more-container aria-hidden="${showMore ? 'false' : 'true'}">
+                        ${more.map(typeInfo => renderOption(typeInfo, 'more')).join('')}
+                    </div>
+                `
+                : `
+                    <p class="chart-type-empty">No additional chart types are available.</p>
+                `;
+
             return `
                 ${prompt}
                 ${errorHtml}
-                <div class="chart-type-grid">
-                    ${types.map(typeInfo => {
-                        const active = chartType === typeInfo.key ? 'active' : '';
-                        const suggested = hints.includes(typeInfo.key)
-                            ? '<span style="font-size:0.8rem;color:#3867d6;">Suggested</span>'
-                            : '';
-                        return `
-                            <button type="button" class="chart-type-option ${active}" data-chart-type="${typeInfo.key}">
-                                <h4>${typeInfo.displayName || typeInfo.key}</h4>
-                                ${suggested}
-                                <p>${typeInfo.description || ''}</p>
-                            </button>
-                        `;
-                    }).join('')}
+                ${recommendedHtml}
+                <div class="chart-type-section" aria-label="More chart types">
+                    <button type="button" class="chart-type-more-toggle" data-action="toggle-more" aria-expanded="${showMore ? 'true' : 'false'}">
+                        <span>${showMore ? 'Hide additional charts' : 'More chart types'}</span>
+                        <span class="chart-type-more-icon" aria-hidden="true">${showMore ? '▲' : '▼'}</span>
+                    </button>
+                    ${moreContent}
                 </div>
             `;
         }
@@ -831,6 +1330,13 @@
         if (!wizardState) return;
 
         if (wizardState.step === 0) {
+            body.querySelectorAll('[data-action="toggle-more"]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    wizardState.showMore = !wizardState.showMore;
+                    wizardState.focusMoreToggle = true;
+                    renderWizard();
+                });
+            });
             body.querySelectorAll('[data-chart-type]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const selectedType = btn.getAttribute('data-chart-type');
@@ -854,6 +1360,7 @@
                     if (selectedType === 'histogram' && !wizardState.seriesName) {
                         wizardState.seriesName = defaults.seriesName || 'Frequency';
                     }
+                    applyDefaultOptionsForType(wizardState, selectedType);
                     wizardState.error = '';
                     renderWizard();
                 });
@@ -970,6 +1477,54 @@
                         }
                     }
                 }
+            });
+        });
+
+        body.querySelectorAll('[data-option-toggle]').forEach(input => {
+            input.addEventListener('change', (event) => {
+                const toggle = event.target.getAttribute('data-option-toggle');
+                if (!wizardState.scatterOptions) {
+                    wizardState.scatterOptions = { regressionLine: false, showResidualPlot: false };
+                }
+                if (!wizardState.normalOptions) {
+                    wizardState.normalOptions = { useParams: true, shadeEnabled: false };
+                }
+                if (!wizardState.histogramSettings) {
+                    wizardState.histogramSettings = { mode: 'auto' };
+                }
+
+                if (toggle === 'scatter-regression') {
+                    wizardState.scatterOptions.regressionLine = event.target.checked;
+                } else if (toggle === 'scatter-residual') {
+                    wizardState.scatterOptions.showResidualPlot = event.target.checked;
+                } else if (toggle === 'histogram-mode') {
+                    const value = event.target.value === 'explicit' ? 'explicit' : 'auto';
+                    wizardState.histogramSettings.mode = value;
+                } else if (toggle === 'normal-params') {
+                    const isChecked = event.target.checked;
+                    wizardState.normalOptions.useParams = isChecked;
+                    if (!isChecked) {
+                        wizardState.normalOptions.previousParams = {
+                            mean: wizardState.normal.mean,
+                            sd: wizardState.normal.sd
+                        };
+                        wizardState.normal.mean = '0';
+                        wizardState.normal.sd = '1';
+                    } else if (wizardState.normalOptions.previousParams) {
+                        const prev = wizardState.normalOptions.previousParams;
+                        wizardState.normal.mean = prev.mean || '';
+                        wizardState.normal.sd = prev.sd || '';
+                        delete wizardState.normalOptions.previousParams;
+                    }
+                } else if (toggle === 'normal-shade') {
+                    const isChecked = event.target.checked;
+                    wizardState.normalOptions.shadeEnabled = isChecked;
+                    if (!isChecked) {
+                        wizardState.normal.shadeLower = '';
+                        wizardState.normal.shadeUpper = '';
+                    }
+                }
+                renderWizard();
             });
         });
 
@@ -1380,10 +1935,14 @@
             const optionalNumbers = [
                 { value: xMin, label: 'X min' },
                 { value: xMax, label: 'X max' },
-                { value: tickInterval, label: 'Tick interval' },
-                { value: shadeLower, label: 'Shade lower bound' },
-                { value: shadeUpper, label: 'Shade upper bound' }
+                { value: tickInterval, label: 'Tick interval' }
             ];
+            if (wizardState.normalOptions?.shadeEnabled) {
+                optionalNumbers.push(
+                    { value: shadeLower, label: 'Shade lower bound' },
+                    { value: shadeUpper, label: 'Shade upper bound' }
+                );
+            }
             for (const opt of optionalNumbers) {
                 if (opt.value !== '' && isNaN(parseFloat(opt.value))) {
                     wizardState.error = `${opt.label} must be numeric if provided.`;
@@ -1513,11 +2072,26 @@
                 </tr>
             `).join('');
             const defaultSeries = typeConfig.defaults?.seriesName || 'Frequency';
+            const histogramSettings = wizardState.histogramSettings || {};
+            const mode = histogramSettings.mode === 'explicit' ? 'explicit' : 'auto';
             return `
                 ${axisSection}
                 <div class="chart-form-group">
                     <label>Series name</label>
                     <input type="text" data-role="seriesName" value="${wizardState.seriesName || ''}" placeholder="${defaultSeries}">
+                </div>
+                <div class="chart-form-group">
+                    <label>Binning mode</label>
+                    <div class="chart-toggle-list" role="group" aria-label="Histogram binning mode">
+                        <label class="chart-toggle-option">
+                            <input type="radio" name="histogram-binning" value="explicit" data-option-toggle="histogram-mode" ${mode === 'explicit' ? 'checked' : ''}>
+                            <span>Use custom bins</span>
+                        </label>
+                        <label class="chart-toggle-option">
+                            <input type="radio" name="histogram-binning" value="auto" data-option-toggle="histogram-mode" ${mode === 'auto' ? 'checked' : ''}>
+                            <span>Let the wizard choose bins</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="chart-form-group">
                     <label>Histogram bins</label>
@@ -1709,8 +2283,22 @@
                     <td><button type="button" data-action="remove-row" data-group="scatter" data-index="${index}">Remove</button></td>
                 </tr>
             `).join('');
+            const scatterOptions = wizardState.scatterOptions || {};
             return `
                 ${axisSection}
+                <div class="chart-form-group">
+                    <label>Scatterplot options</label>
+                    <div class="chart-toggle-list" role="group" aria-label="Scatterplot options">
+                        <label class="chart-toggle-option">
+                            <input type="checkbox" data-option-toggle="scatter-regression" ${scatterOptions.regressionLine ? 'checked' : ''}>
+                            <span>Include regression line</span>
+                        </label>
+                        <label class="chart-toggle-option">
+                            <input type="checkbox" data-option-toggle="scatter-residual" ${scatterOptions.showResidualPlot ? 'checked' : ''}>
+                            <span>Show residual reference line</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="chart-form-group">
                     <label>Scatterplot points</label>
                     <table class="chart-data-table">
@@ -1819,20 +2407,52 @@
 
         if (chartType === 'normal') {
             const normal = wizardState.normal || {};
+            const normalOptions = wizardState.normalOptions || {};
+            const useParams = normalOptions.useParams !== false;
+            const shadeEnabled = normalOptions.shadeEnabled === true || (normal.shadeLower || normal.shadeUpper);
+            const axisControls = `
+                <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                    <div><label>X min (optional)</label><input data-chart-input="xMin" data-group="normal" value="${normal.xMin || ''}" placeholder="Auto"></div>
+                    <div><label>X max (optional)</label><input data-chart-input="xMax" data-group="normal" value="${normal.xMax || ''}" placeholder="Auto"></div>
+                    <div><label>Tick interval (optional)</label><input data-chart-input="tickInterval" data-group="normal" value="${normal.tickInterval || ''}" placeholder="σ"></div>
+                </div>
+            `;
+            const shadingControls = shadeEnabled ? `
+                <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                    <div><label>Shade lower bound</label><input data-chart-input="shadeLower" data-group="normal" value="${normal.shadeLower || ''}" placeholder="None"></div>
+                    <div><label>Shade upper bound</label><input data-chart-input="shadeUpper" data-group="normal" value="${normal.shadeUpper || ''}" placeholder="None"></div>
+                </div>
+            ` : '';
+            const paramsControls = useParams ? `
+                <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                    <div><label>Mean (μ)</label><input data-chart-input="mean" data-group="normal" value="${normal.mean || ''}" placeholder="e.g., 0"></div>
+                    <div><label>Std. deviation (σ)</label><input data-chart-input="sd" data-group="normal" value="${normal.sd || ''}" placeholder="e.g., 1"></div>
+                </div>
+            ` : '<div class="chart-inline-message">Using the standard normal curve (μ = 0, σ = 1).</div>';
             return `
                 ${axisSection}
                 <div class="chart-form-group">
-                    <label>Normal distribution parameters</label>
-                    <div class="chart-data-table" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
-                        <div><label>Mean (μ)</label><input data-chart-input="mean" data-group="normal" value="${normal.mean || ''}" placeholder="e.g., 0"></div>
-                        <div><label>Std. deviation (σ)</label><input data-chart-input="sd" data-group="normal" value="${normal.sd || ''}" placeholder="e.g., 1"></div>
-                        <div><label>X min (optional)</label><input data-chart-input="xMin" data-group="normal" value="${normal.xMin || ''}" placeholder="Auto"></div>
-                        <div><label>X max (optional)</label><input data-chart-input="xMax" data-group="normal" value="${normal.xMax || ''}" placeholder="Auto"></div>
-                        <div><label>Tick interval (optional)</label><input data-chart-input="tickInterval" data-group="normal" value="${normal.tickInterval || ''}" placeholder="σ"></div>
-                        <div><label>Shade lower bound</label><input data-chart-input="shadeLower" data-group="normal" value="${normal.shadeLower || ''}" placeholder="None"></div>
-                        <div><label>Shade upper bound</label><input data-chart-input="shadeUpper" data-group="normal" value="${normal.shadeUpper || ''}" placeholder="None"></div>
+                    <label>Normal curve options</label>
+                    <div class="chart-toggle-list" role="group" aria-label="Normal curve options">
+                        <label class="chart-toggle-option">
+                            <input type="checkbox" data-option-toggle="normal-params" ${useParams ? 'checked' : ''}>
+                            <span>Use mean and standard deviation</span>
+                        </label>
+                        <label class="chart-toggle-option">
+                            <input type="checkbox" data-option-toggle="normal-shade" ${shadeEnabled ? 'checked' : ''}>
+                            <span>Shade a region under the curve</span>
+                        </label>
                     </div>
                 </div>
+                <div class="chart-form-group">
+                    <label>${useParams ? 'Normal distribution parameters' : 'Distribution'}</label>
+                    ${paramsControls}
+                </div>
+                <div class="chart-form-group">
+                    <label>Axis & spacing (optional)</label>
+                    ${axisControls}
+                </div>
+                ${shadeEnabled ? `<div class="chart-form-group"><label>Shaded region</label>${shadingControls}</div>` : ''}
             `;
         }
 
@@ -1994,14 +2614,16 @@
             const orientation = wizardState.barOrientation === 'horizontal' ? 'horizontal' : 'vertical';
             return attachCommon({
                 type: 'bar',
-                orientation,
                 categories: rows.map(row => row.label),
                 series: [
                     {
                         name: seriesName,
-                        values: rows.map(row => ({ label: row.label, value: row.value }))
+                        values: rows.map(row => row.value)
                     }
-                ]
+                ],
+                chartConfig: {
+                    orientation
+                }
             });
         }
 
@@ -2094,9 +2716,10 @@
             }
             return attachCommon({
                 type: 'histogram',
-                data: {
-                    bins,
-                    seriesName: wizardState.seriesName?.trim() || 'Frequency'
+                seriesName: wizardState.seriesName?.trim() || 'Frequency',
+                binning: {
+                    mode: wizardState.histogramSettings?.mode === 'explicit' ? 'explicit' : 'auto',
+                    bins
                 }
             });
         }
@@ -2114,7 +2737,7 @@
             }
             return attachCommon({
                 type: 'dotplot',
-                data: { values }
+                values
             });
         }
 
@@ -2131,7 +2754,11 @@
             }
             return attachCommon({
                 type: 'scatter',
-                points
+                points,
+                chartConfig: {
+                    regressionLine: wizardState.scatterOptions?.regressionLine === true,
+                    referenceLineAtZero: wizardState.scatterOptions?.showResidualPlot === true
+                }
             });
         }
 
@@ -2188,14 +2815,12 @@
             }
             return attachCommon({
                 type: 'boxplot',
-                data: {
-                    fiveNumber: {
-                        min: parsed[0],
-                        q1: parsed[1],
-                        median: parsed[2],
-                        q3: parsed[3],
-                        max: parsed[4]
-                    }
+                fiveNumber: {
+                    min: parsed[0],
+                    q1: parsed[1],
+                    median: parsed[2],
+                    q3: parsed[3],
+                    max: parsed[4]
                 }
             });
         }
@@ -2210,19 +2835,26 @@
                 }
                 return null;
             }
-            const normalData = { mean: meanValue, sd: sdValue };
-            if (xMin !== '') normalData.xMin = parseFloat(xMin);
-            if (xMax !== '') normalData.xMax = parseFloat(xMax);
-            if (tickInterval !== '') normalData.tickInterval = parseFloat(tickInterval);
-            if (shadeLower !== '' || shadeUpper !== '') {
-                normalData.shade = {
+            const chartConfig = {};
+            if (xMin !== '') chartConfig.xMin = parseFloat(xMin);
+            if (xMax !== '') chartConfig.xMax = parseFloat(xMax);
+            if (tickInterval !== '') chartConfig.tickInterval = parseFloat(tickInterval);
+            if (wizardState.normalOptions?.useParams === false) {
+                chartConfig.useProvidedParams = false;
+            }
+            let shade = null;
+            if (wizardState.normalOptions?.shadeEnabled) {
+                shade = {
                     lower: shadeLower !== '' ? parseFloat(shadeLower) : null,
                     upper: shadeUpper !== '' ? parseFloat(shadeUpper) : null
                 };
             }
             return attachCommon({
                 type: 'normal',
-                data: normalData
+                mean: meanValue,
+                sd: sdValue,
+                shade,
+                chartConfig
             });
         }
 
@@ -2237,17 +2869,16 @@
                 return null;
             }
             const settings = wizardState.chisquareSettings;
-            const data = {
-                dfList: rows.map(row => row.df),
-                labels: rows.map((row, index) => row.label || `df = ${rows[index].df}`)
-            };
-            if (settings.xMin !== '') data.xMin = parseFloat(settings.xMin);
-            if (settings.xMax !== '') data.xMax = parseFloat(settings.xMax);
-            if (settings.tickInterval !== '') data.tickInterval = parseFloat(settings.tickInterval);
-            if (settings.numPoints !== '') data.numPoints = parseInt(settings.numPoints, 10);
+            const chartConfig = {};
+            if (settings.xMin !== '') chartConfig.xMin = parseFloat(settings.xMin);
+            if (settings.xMax !== '') chartConfig.xMax = parseFloat(settings.xMax);
+            if (settings.tickInterval !== '') chartConfig.tickInterval = parseFloat(settings.tickInterval);
+            if (settings.numPoints !== '') chartConfig.numPoints = parseInt(settings.numPoints, 10);
             return attachCommon({
                 type: 'chisquare',
-                data
+                dfList: rows.map(row => row.df),
+                labels: rows.map((row, index) => row.label || `df = ${rows[index].df}`),
+                chartConfig
             });
         }
 
@@ -2434,8 +3065,9 @@
         }
 
         if (sif.type === 'histogram') {
-            const bins = legacyData.bins || [];
-            const seriesName = legacyData.seriesName || 'Frequency';
+            const binning = sif.binning || legacyData || {};
+            const bins = Array.isArray(binning.bins) ? binning.bins : [];
+            const seriesName = sif.seriesName || legacyData.seriesName || 'Frequency';
             return {
                 chartType: 'histogram',
                 title: baseConfig.title,
@@ -2447,7 +3079,8 @@
                 chartConfig: {
                     ...baseConfig.chartConfig,
                     yAxis: { title: yLabel || 'Frequency' },
-                    xAxis: { title: xLabel || 'Category' }
+                    xAxis: { title: xLabel || 'Category' },
+                    binningMode: binning.mode || undefined
                 }
             };
         }
@@ -2456,7 +3089,7 @@
             return {
                 chartType: 'dotplot',
                 title: baseConfig.title,
-                values: (legacyData.values || []).map(v => Number(v) || 0),
+                values: (Array.isArray(sif.values) ? sif.values : legacyData.values || []).map(v => Number(v) || 0),
                 chartConfig: {
                     ...baseConfig.chartConfig,
                     xAxis: { title: xLabel || 'Value' },
@@ -2467,6 +3100,25 @@
 
         if (sif.type === 'scatter') {
             const points = Array.isArray(sif.points) ? sif.points : legacyData.points || [];
+            const scatterConfig = {
+                ...baseConfig.chartConfig,
+                xAxis: { title: xLabel || 'X Value' },
+                yAxis: { title: yLabel || 'Y Value' }
+            };
+            if (sif.chartConfig) {
+                if (sif.chartConfig.regressionLine !== undefined) {
+                    scatterConfig.regressionLine = sif.chartConfig.regressionLine;
+                }
+                if (sif.chartConfig.referenceLineAtZero !== undefined) {
+                    scatterConfig.referenceLineAtZero = sif.chartConfig.referenceLineAtZero;
+                }
+            }
+            if (scatterConfig.regressionLine === undefined && legacyData.regressionLine !== undefined) {
+                scatterConfig.regressionLine = legacyData.regressionLine;
+            }
+            if (scatterConfig.referenceLineAtZero === undefined && legacyData.referenceLineAtZero !== undefined) {
+                scatterConfig.referenceLineAtZero = legacyData.referenceLineAtZero;
+            }
             return {
                 chartType: 'scatter',
                 title: baseConfig.title,
@@ -2475,11 +3127,7 @@
                     y: Number(pt.y) || 0,
                     label: pt.label
                 })),
-                chartConfig: {
-                    ...baseConfig.chartConfig,
-                    xAxis: { title: xLabel || 'X Value' },
-                    yAxis: { title: yLabel || 'Y Value' }
-                }
+                chartConfig: scatterConfig
             };
         }
 
@@ -2520,7 +3168,7 @@
         }
 
         if (sif.type === 'boxplot') {
-            const five = legacyData.fiveNumber || {};
+            const five = sif.fiveNumber || legacyData.fiveNumber || {};
             return {
                 chartType: 'boxplot',
                 title: baseConfig.title,
@@ -2539,32 +3187,35 @@
         }
 
         if (sif.type === 'normal') {
-            const data = legacyData || {};
-            const shade = data.shade;
+            const data = sif;
+            const chartCfg = sif.chartConfig || {};
+            const shade = data.shade ?? legacyData.shade;
             const xAxisConfig = {
                 ...baseConfig.chartConfig.xAxis,
-                min: data.xMin,
-                max: data.xMax,
-                tickInterval: data.tickInterval
+                min: chartCfg.xMin ?? legacyData.xMin,
+                max: chartCfg.xMax ?? legacyData.xMax,
+                tickInterval: chartCfg.tickInterval ?? legacyData.tickInterval
             };
             return {
                 chartType: 'normal',
                 title: baseConfig.title,
-                mean: Number(data.mean) || 0,
-                sd: Number(data.sd) || 1,
+                mean: Number(data.mean ?? legacyData.mean) || 0,
+                sd: Number(data.sd ?? legacyData.sd) || 1,
                 shade: shade ? { lower: shade.lower, upper: shade.upper } : undefined,
                 chartConfig: {
                     ...baseConfig.chartConfig,
                     xAxis: xAxisConfig,
-                    yAxis: baseConfig.chartConfig.yAxis
+                    yAxis: baseConfig.chartConfig.yAxis,
+                    useProvidedParams: chartCfg.useProvidedParams ?? legacyData.useProvidedParams
                 }
             };
         }
 
         if (sif.type === 'chisquare') {
-            const data = legacyData || {};
-            const dfList = data.dfList || [];
-            const labels = data.labels || [];
+            const data = sif;
+            const dfList = data.dfList || legacyData.dfList || [];
+            const labels = data.labels || legacyData.labels || [];
+            const cfg = data.chartConfig || legacyData || {};
             return {
                 chartType: 'chisquare',
                 title: baseConfig.title,
@@ -2574,12 +3225,12 @@
                     labels,
                     xAxis: {
                         ...baseConfig.chartConfig.xAxis,
-                        min: data.xMin,
-                        max: data.xMax,
-                        tickInterval: data.tickInterval
+                        min: cfg.xMin,
+                        max: cfg.xMax,
+                        tickInterval: cfg.tickInterval
                     },
                     yAxis: baseConfig.chartConfig.yAxis,
-                    numPoints: data.numPoints
+                    numPoints: cfg.numPoints
                 }
             };
         }
