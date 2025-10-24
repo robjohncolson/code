@@ -5652,8 +5652,23 @@ if (chartInstances[`dotplot-${questionId}`]) {
         // Add this if it doesn't already exist
         if(!window.turboModeListenerAttached) {
             window.addEventListener('turboModeChanged', (e) => {
-                if (!e.detail.enabled && window.spriteManager) {
+                const enabled = !!(e && e.detail && e.detail.enabled);
+                if (typeof turboModeActive !== 'undefined') {
+                    turboModeActive = enabled;
+                    console.info(`RECOVERY: Turbo mode state updated via event listener → ${enabled ? 'enabled' : 'disabled'}`);
+                }
+
+                if (!enabled && window.spriteManager) {
                     window.spriteManager.clearAllPeerSprites();
+                }
+
+                const syncModal = document.getElementById('syncModal');
+                if (syncModal && syncModal.style.display === 'block') {
+                    try {
+                        initializeSyncModal();
+                    } catch (error) {
+                        console.warn('RECOVERY: Failed to refresh sync modal after turbo mode change', error);
+                    }
                 }
             });
             window.turboModeListenerAttached = true;
