@@ -5917,8 +5917,20 @@ if (chartInstances[`dotplot-${questionId}`]) {
                     if (unitResources && lessonNum !== 'PC') {
                         const topicId = `${currentUnit}-${lessonNum}`;
                         const topic = unitResources.topics.find(t => t.id === topicId);
-                        if (topic && topic.videos && topic.videos.length > 0) {
-                            resourceInfo = `<span style="color: #4CAF50;">📹 ${topic.videos.length} video${topic.videos.length > 1 ? 's' : ''}</span>`;
+                        if (topic) {
+                            const resources = [];
+                            if (Array.isArray(topic.pdfs) && topic.pdfs.length > 0) {
+                                resources.push(`📄 ${topic.pdfs.length} PDF${topic.pdfs.length > 1 ? 's' : ''}`);
+                            }
+                            if (topic.videos && topic.videos.length > 0) {
+                                resources.push(`📹 ${topic.videos.length} video${topic.videos.length > 1 ? 's' : ''}`);
+                            }
+                            if (topic.blookets && topic.blookets.length > 0) {
+                                resources.push(`🎮 ${topic.blookets.length} game${topic.blookets.length > 1 ? 's' : ''}`);
+                            }
+                            if (resources.length > 0) {
+                                resourceInfo = `<span style="color: #4CAF50;">${resources.join(' • ')}</span>`;
+                            }
                         }
                     }
 
@@ -5982,12 +5994,31 @@ if (chartInstances[`dotplot-${questionId}`]) {
                     if (topic) {
                         const hasVideos = Array.isArray(topic.videos) && topic.videos.length > 0;
                         const hasBlookets = Array.isArray(topic.blookets) && topic.blookets.length > 0;
+                        const hasPdfs = Array.isArray(topic.pdfs) && topic.pdfs.length > 0;
 
-                        if (hasVideos || hasBlookets) {
+                        if (hasVideos || hasBlookets || hasPdfs) {
                             videoSection = `
                                 <div class="resources-section">
                                     <h3>📚 Lesson Resources: ${topic.description}</h3>
                             `;
+
+                            if (hasPdfs) {
+                                videoSection += '<div class="pdf-resources">';
+                                topic.pdfs.forEach((pdf, index) => {
+                                    const worksheetLabel = topic.pdfs.length > 1 
+                                        ? `📄 Follow-Along Worksheet ${index + 1}:` 
+                                        : '📄 Follow-Along Worksheet:';
+                                    videoSection += `
+                                        <div class="pdf-item">
+                                            <span class="pdf-label">${worksheetLabel}</span>
+                                            <a href="${pdf}" target="_blank" class="pdf-link">
+                                                View/Download PDF
+                                            </a>
+                                        </div>
+                                    `;
+                                });
+                                videoSection += '</div>';
+                            }
 
                             if (hasVideos) {
                                 videoSection += '<div class="video-resources">';

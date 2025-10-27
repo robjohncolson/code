@@ -210,6 +210,13 @@ const ALL_UNITS_DATA = [
                 altUrl: "https://drive.google.com/file/d/170yFl1LoVYwYZ8a6coNhfQkfkFiHD1gg/view?usp=drive_link"
             }
         ],
+        blookets: [
+            {
+                url: "https://dashboard.blooket.com/set/68f6f23494f8196314f10603",
+                title: "u2l2blooket"
+            }
+        ],
+        pdfs: ["pdf/u2l2.pdf"]
       },
       {
         id: "2-3",
@@ -221,6 +228,14 @@ const ALL_UNITS_DATA = [
                 altUrl: "https://drive.google.com/file/d/1IZIAXWtHsQfr1o7GZIJ2nnYXaQZt6Xyh/view?usp=drive_link"
             }
         ],
+        
+        blookets: [
+            {
+                url: "https://dashboard.blooket.com/set/68f83be7f75399500ade8fe4",
+                title: "u2l3blooket"
+            }
+        ],
+        pdfs: ["pdf/u2l3.pdf"]
       },
       {
         id: "2-4",
@@ -236,6 +251,18 @@ const ALL_UNITS_DATA = [
                 altUrl: "https://drive.google.com/file/d/1ZpPac1ofe4Bot2yrLgwLPvSHdMUHvK4J/view?usp=drive_link"
             }
         ],
+                
+        blookets: [
+            {
+                url: "https://dashboard.blooket.com/set/68feeda5f82ea228f5880730",
+                title: "u2l4_1blooket"
+            },
+            {
+                url: "https://dashboard.blooket.com/set/68feeac79dcd782f18b6300d",
+                title: "u2l4_2blooket"
+            }
+        ],
+        pdfs: ["pdf/u2l4_1.pdf", "pdf/u2l4_2.pdf"]
       },
       {
         id: "2-5",

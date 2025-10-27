@@ -29,10 +29,19 @@ The application is a client-side web app with optional server-side synchronizati
    - **Turbo Mode** (Supabase): Direct connection to Supabase for real-time sync
    - **Railway Server**: Caching proxy that reduces Supabase queries by 95%
    - Configuration in `supabase_config.js` and `railway_config.js`
+   - Data management handled by `js/data_manager.js` (import/export, merging, persistence)
 
-3. **Sprite Animation System** (`js/sprite_*.js`, `js/canvas_engine.js`)
+3. **Chart Wizard** (`js/chart_wizard.js`, `data/chart_questions.js`)
+   - Interactive chart creation for Free Response Questions (FRQs)
+   - Supports 14 chart types: bar, line, scatter, bubble, radar, polar area, pie, doughnut, histogram, dotplot, boxplot, normal curve, chi-square curve, number line
+   - Charts stored in Standard Internal Format (SIF) in localStorage
+   - Chart registry defined in `js/chart_registry.js`
+   - See `docs/chart-wizard-usage.md` for detailed usage guide
+
+4. **Sprite Animation System** (`js/sprite_*.js`, `js/canvas_engine.js`)
    - Interactive sprite characters for user representation
    - Real-time multiplayer sprite visualization
+   - Canvas-based rendering engine
 
 ## Development Commands
 
@@ -103,22 +112,35 @@ curl http://localhost:3000/api/question-stats/U1-L3-Q01
 
 ```
 /
-├── index.html                 # Main application entry point
-├── css/styles.css            # Application styles
+├── index.html                      # Main application entry point
+├── css/styles.css                 # Application styles
 ├── data/
-│   ├── curriculum.js         # Quiz questions database
-│   └── units.js             # Course units structure
+│   ├── curriculum.js              # Quiz questions database
+│   ├── units.js                   # Course units structure
+│   └── chart_questions.js         # FRQ chart configuration
 ├── js/
-│   ├── auth.js              # User authentication and session management
-│   ├── data_manager.js      # Data persistence and synchronization
-│   ├── charts.js            # Chart.js visualizations
-│   ├── canvas_engine.js     # Sprite animation engine
-│   └── sprite_*.js          # Sprite-related modules
-├── railway-server/          # Node.js caching server
-│   ├── server.js           # Express + WebSocket server
-│   └── package.json        # Node dependencies
-├── supabase_config.js      # Supabase credentials
-└── railway_config.js       # Railway server toggle
+│   ├── auth.js                    # User authentication and session management
+│   ├── data_manager.js            # Data persistence, import/export, merging
+│   ├── charts.js                  # Chart.js visualization helpers
+│   ├── charthelper.js             # Chart color/theme utilities
+│   ├── chart_wizard.js            # Interactive chart creation modal
+│   ├── chart_registry.js          # Chart type definitions and renderers
+│   ├── canvas_engine.js           # Sprite animation engine
+│   ├── sprite_manager.js          # Sprite lifecycle management
+│   ├── sprite_sheet.js            # Sprite asset loading
+│   └── entities/
+│       ├── player_sprite.js       # Current user sprite logic
+│       └── peer_sprite.js         # Peer user sprite logic
+├── railway-server/                # Node.js caching server
+│   ├── server.js                  # Express + WebSocket server
+│   └── package.json               # Node dependencies
+├── docs/
+│   ├── supabase_schema.sql        # Database schema reference
+│   ├── chart-wizard-usage.md      # Chart wizard documentation
+│   └── sync_diagnostics.js        # Sync debugging utilities
+├── supabase_config.js             # Supabase credentials
+├── railway_config.js              # Railway server toggle
+└── railway_client.js              # Client-side Railway connection
 ```
 
 ## Important Considerations
@@ -131,10 +153,53 @@ curl http://localhost:3000/api/question-stats/U1-L3-Q01
 
 ## Database Schema
 
-When using Supabase, the app expects these tables (created by `supabase_schema.sql`):
-- `answers`: Student quiz responses
-- `class_data`: Aggregated class statistics
+When using Supabase, the app expects these tables (see `docs/supabase_schema.sql`):
+- `answers`: Student quiz responses (primary key: username, question_id)
+- `badges`: Achievement tracking
+- `user_activity`: Real-time activity state tracking
+- `votes`: Peer voting system
 - Real-time subscriptions enabled for instant updates
+
+## Data Management Architecture
+
+The app uses a two-tier storage strategy:
+
+1. **LocalStorage Structure** (`classData` object):
+   ```javascript
+   {
+     users: {
+       [username]: {
+         answers: {},      // Question responses
+         reasons: {},      // FRQ reasoning text
+         timestamps: {},   // Answer submission times
+         attempts: {},     // Attempt counters
+         charts: {},       // Chart wizard data in SIF format
+         currentActivity: {
+           state: 'idle',      // idle, viewing, answering, submitted
+           questionId: null,
+           lastUpdate: timestamp
+         }
+       }
+     }
+   }
+   ```
+
+2. **Chart Storage**: Charts are stored in both `answers[questionId]` (for sync compatibility) and `charts[questionId]` (for quick access). The Standard Internal Format (SIF) includes common fields (`type`, `xLabel`, `yLabel`, `title`, `description`, `meta`) plus type-specific data structures.
+
+3. **Sync Flow**:
+   - User answers → localStorage → Railway client → Railway server → Supabase
+   - Peer data flows in reverse with caching at Railway server
+   - Import/export functions in `data_manager.js` handle backup/restore
+
+## Working with Charts
+
+When adding new chart types:
+1. Update `js/chart_registry.js` with the new chart definition
+2. Implement the renderer function (e.g., `renderBarChart()`)
+3. Add schema definition for data validation
+4. The wizard automatically picks up registered types
+
+Chart data follows the SIF structure. See `docs/chart-wizard-usage.md` for format specifications for each chart type.
 
 ## Deployment
 
