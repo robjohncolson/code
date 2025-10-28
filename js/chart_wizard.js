@@ -18,6 +18,34 @@
     let lastFocusedElement = null;
     let outboxWatcherInitialized = false;
 
+    const warnedKeys = new Set();
+    function warnOnce(key, message) {
+        if (!warnedKeys.has(key)) {
+            console.warn(`[Chart Wizard] ${message}`);
+            warnedKeys.add(key);
+        }
+    }
+
+    function guardedQuerySelector(root, selector) {
+        if (!root) return null;
+        try {
+            return root.querySelector(selector);
+        } catch (e) {
+            warnOnce(`query-${selector}`, `Invalid selector: ${selector}`);
+            return null;
+        }
+    }
+
+    function guardedQuerySelectorAll(root, selector) {
+        if (!root) return [];
+        try {
+            return Array.from(root.querySelectorAll(selector));
+        } catch (e) {
+            warnOnce(`queryAll-${selector}`, `Invalid selector: ${selector}`);
+            return [];
+        }
+    }
+
     function getChartTypeList() {
         if (Array.isArray(window.CHART_TYPE_LIST) && window.CHART_TYPE_LIST.length > 0) {
             return window.CHART_TYPE_LIST;
@@ -316,6 +344,92 @@
                 padding: 10px;
                 border-radius: 8px;
                 margin-bottom: 12px;
+            }
+            .column-search-input {
+                width: 100%;
+                padding: 8px 12px;
+                margin-bottom: 8px;
+                border: 1px solid rgba(0,0,0,0.2);
+                border-radius: 6px;
+                font-size: 0.95rem;
+            }
+            .column-picker-list {
+                max-height: 300px;
+                overflow-y: auto;
+                border: 1px solid rgba(0,0,0,0.1);
+                border-radius: 8px;
+                padding: 4px;
+            }
+            .column-option {
+                padding: 10px;
+                margin: 4px 0;
+                border: 2px solid transparent;
+                border-radius: 6px;
+                background: rgba(0,0,0,0.03);
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .column-option:hover {
+                background: rgba(75, 123, 236, 0.08);
+                border-color: rgba(75, 123, 236, 0.3);
+            }
+            .column-option.selected {
+                background: rgba(75, 123, 236, 0.15);
+                border-color: #4b7bec;
+            }
+            .column-option-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 4px;
+            }
+            .column-role-icon {
+                font-size: 1.1rem;
+            }
+            .column-badge {
+                margin-left: auto;
+                font-size: 0.75rem;
+                background: rgba(0,0,0,0.08);
+                padding: 2px 8px;
+                border-radius: 999px;
+            }
+            .column-option-meta {
+                font-size: 0.8rem;
+                color: rgba(0,0,0,0.6);
+                padding-left: 28px;
+            }
+            .data-preview-container {
+                max-height: 250px;
+                overflow-y: auto;
+                border: 1px solid rgba(0,0,0,0.1);
+                border-radius: 6px;
+                background: rgba(0,0,0,0.02);
+            }
+            .data-preview-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+            }
+            .data-preview-table th {
+                position: sticky;
+                top: 0;
+                background: rgba(75, 123, 236, 0.1);
+                border-bottom: 2px solid #4b7bec;
+                padding: 8px;
+                text-align: left;
+                font-weight: 600;
+            }
+            .data-preview-table td {
+                padding: 6px 8px;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+            }
+            .data-preview-table tbody tr:hover {
+                background: rgba(0,0,0,0.02);
+            }
+            .preview-more-row {
+                font-style: italic;
+                color: rgba(0,0,0,0.5);
+                text-align: center;
             }
             @media (prefers-color-scheme: dark) {
                 .chart-wizard-modal {
@@ -1310,7 +1424,7 @@
                     }
                     focusTarget.focus();
                 } catch (error) {
-                    console.warn('Unable to restore focus after closing chart wizard:', error);
+                    warnOnce('focus-restore', `Unable to restore focus after closing wizard: ${error.message}`);
                 }
             }, 0);
         }
@@ -1321,16 +1435,19 @@
         const overlay = document.getElementById(OVERLAY_ID);
         if (!overlay || !wizardState) return;
 
-        const modal = overlay.querySelector(`#${MODAL_ID}`);
+        const modal = guardedQuerySelector(overlay, `#${MODAL_ID}`);
+        if (!modal) {
+            warnOnce('modal-missing', 'Chart wizard modal element not found');
+            return;
+        }
+
         const header = document.createElement('div');
         header.className = 'chart-wizard-header';
         header.innerHTML = `
             <div class="chart-wizard-title" id="chart-wizard-title">Chart Wizard · ${wizardState.questionId}</div>
             <button class="chart-wizard-close" aria-label="Close chart wizard">&times;</button>
         `;
-        if (modal) {
-            modal.setAttribute('aria-labelledby', 'chart-wizard-title');
-        }
+        modal.setAttribute('aria-labelledby', 'chart-wizard-title');
 
         const body = document.createElement('div');
         body.className = 'chart-wizard-body';
@@ -1346,7 +1463,10 @@
         modal.appendChild(body);
         modal.appendChild(footer);
 
-        header.querySelector('button').addEventListener('click', closeWizard);
+        const closeButton = guardedQuerySelector(header, 'button');
+        if (closeButton) {
+            closeButton.addEventListener('click', closeWizard);
+        }
         attachEventHandlers(body, footer);
 
         if (wizardState.shouldFocusChartType && wizardState.step === 0) {
@@ -1562,14 +1682,31 @@
     }
 
     function attachDataEntryHandlers(body) {
-        const csvTextarea = body.querySelector('[data-chart-csv]');
+        const columnSearchInput = guardedQuerySelector(body, '[data-action="search-columns"]');
+        if (columnSearchInput) {
+            columnSearchInput.addEventListener('input', (event) => {
+                wizardState.columnSearchTerm = event.target.value;
+                renderWizard();
+            });
+        }
+
+        guardedQuerySelectorAll(body, '.column-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const columnName = option.getAttribute('data-column-name');
+                if (columnName) {
+                    handleColumnSelection(columnName);
+                }
+            });
+        });
+
+        const csvTextarea = guardedQuerySelector(body, '[data-chart-csv]');
         if (csvTextarea) {
             csvTextarea.addEventListener('input', (event) => {
                 wizardState.csvText = event.target.value;
             });
         }
 
-        body.querySelectorAll('[data-chart-input]').forEach(input => {
+        guardedQuerySelectorAll(body, '[data-chart-input]').forEach(input => {
             input.addEventListener('input', (event) => {
                 const target = event.target;
                 const field = target.getAttribute('data-chart-input');
@@ -2285,6 +2422,7 @@
         }
 
         if (chartType === 'bar') {
+            const columnPickerHtml = renderColumnPicker('bar', 'categorical');
             const rows = wizardState.bar.map((row, index) => `
                 <tr>
                     <td><input data-chart-input="label" data-group="bar" data-index="${index}" value="${row.label || ''}" placeholder="Category"></td>
@@ -2295,6 +2433,7 @@
             const defaultSeries = typeConfig.defaults?.seriesName || 'Series 1';
             return `
                 ${axisSection}
+                ${columnPickerHtml}
                 <div class="chart-form-group">
                     <label>Series name</label>
                     <input type="text" data-role="barSeriesName" value="${wizardState.barSeriesName || ''}" placeholder="${defaultSeries}">
@@ -2307,7 +2446,7 @@
                     </select>
                 </div>
                 <div class="chart-form-group">
-                    <label>Bar categories</label>
+                    <label>Manual data entry (or use column selection above)</label>
                     <table class="chart-data-table">
                         <thead><tr><th>Category</th><th>Value</th><th></th></tr></thead>
                         <tbody>${rows}</tbody>
@@ -2563,7 +2702,8 @@
         }
 
         if (chartType === 'boxplot') {
-            const { min, q1, median, q3, max } = wizardState.boxplot;
+            const boxplot = wizardState.boxplot || {};
+            const { min, q1, median, q3, max } = boxplot;
             return `
                 ${axisSection}
                 <div class="chart-form-group">
@@ -2738,12 +2878,507 @@
         container.classList.remove('empty');
         container.innerHTML = window.charts.getChartHtml(chartConfig, canvasId);
         setTimeout(() => {
+            if (typeof window.charts?.renderChartNow !== 'function') {
+                warnOnce('charts-missing', 'window.charts.renderChartNow is not available');
+                return;
+            }
             try {
                 window.charts.renderChartNow(chartConfig, canvasId);
             } catch (error) {
-                console.warn('Chart preview failed:', error);
+                warnOnce(`preview-render-${canvasId}`, `Chart preview failed: ${error.message}`);
             }
         }, 50);
+    }
+
+    function safeParseNumber(value, options = {}) {
+        const { allowEmpty = false, min = -Infinity, max = Infinity } = options;
+
+        if (value === '' || value === null || value === undefined) {
+            return allowEmpty ? null : NaN;
+        }
+
+        const cleanValue = typeof value === 'string'
+            ? value.replace(/[$,%]/g, '').replace(/,/g, '')
+            : value;
+
+        const num = parseFloat(cleanValue);
+
+        if (isNaN(num)) {
+            return NaN;
+        }
+
+        if (num < min || num > max) {
+            return NaN;
+        }
+
+        return num;
+    }
+
+    function validateColumn(values, columnName) {
+        let invalidCount = 0;
+        let nullCount = 0;
+        const notes = [];
+        const invalidExamples = [];
+
+        values.forEach((value, index) => {
+            if (value === null || value === undefined || value === '') {
+                nullCount++;
+                return;
+            }
+
+            const normalized = String(value).trim().toLowerCase();
+            const invalidMarkers = ['n/a', 'na', 'null', 'none', '--', '---', '?', 'unknown'];
+
+            if (invalidMarkers.includes(normalized)) {
+                invalidCount++;
+                if (invalidExamples.length < 3) {
+                    invalidExamples.push(`Row ${index + 1}: "${value}"`);
+                }
+            }
+        });
+
+        const totalCells = values.length;
+        const validCount = totalCells - invalidCount - nullCount;
+        const validFraction = totalCells > 0 ? validCount / totalCells : 0;
+
+        if (nullCount > 0) {
+            const nullPercent = Math.round((nullCount / totalCells) * 100);
+            notes.push(`${nullPercent}% empty (${nullCount}/${totalCells})`);
+        }
+
+        if (invalidCount > 0) {
+            notes.push(`${invalidCount} invalid: ${invalidExamples.join(', ')}`);
+        }
+
+        return {
+            invalidCount,
+            nullCount,
+            validFraction,
+            notes
+        };
+    }
+
+    function createValidationReport(tableData) {
+        if (!Array.isArray(tableData) || tableData.length < 2) {
+            return {
+                valid: false,
+                rowCount: 0,
+                byColumn: {},
+                errors: ['Table must have at least one header row and one data row']
+            };
+        }
+
+        const headers = tableData[0];
+        const rows = tableData.slice(1);
+        const rowCount = rows.length;
+        const byColumn = {};
+
+        headers.forEach((header, colIndex) => {
+            const values = rows.map(row => row[colIndex]);
+            const validation = validateColumn(values, header);
+
+            byColumn[header] = {
+                index: colIndex,
+                invalid: validation.invalidCount,
+                nulls: validation.nullCount,
+                notes: validation.notes,
+                validFraction: validation.validFraction
+            };
+        });
+
+        const totalInvalid = Object.values(byColumn).reduce((sum, col) => sum + col.invalid, 0);
+        const totalNulls = Object.values(byColumn).reduce((sum, col) => sum + col.nulls, 0);
+        const hasIssues = totalInvalid > 0 || totalNulls > rowCount * headers.length * 0.2;
+
+        return {
+            valid: !hasIssues,
+            rowCount,
+            byColumn,
+            totalInvalid,
+            totalNulls,
+            errors: hasIssues ? [`Found ${totalInvalid} invalid cells and ${totalNulls} empty cells`] : []
+        };
+    }
+
+    function isColumnChartable(columnValidation, minValidFraction = 0.8) {
+        if (!columnValidation) return false;
+        return columnValidation.validFraction >= minValidFraction;
+    }
+
+    function inferColumnRole(values, columnName) {
+        const cleanValues = values.filter(v => v !== null && v !== undefined && v !== '');
+
+        if (cleanValues.length === 0) {
+            return {
+                name: columnName,
+                role: 'text',
+                confidence: 0,
+                cardinality: 0,
+                nullFraction: 1.0,
+                sampleValues: [],
+                example: null
+            };
+        }
+
+        const totalCount = values.length;
+        const validCount = cleanValues.length;
+        const nullFraction = 1 - (validCount / totalCount);
+        const uniqueValues = new Set(cleanValues);
+        const cardinality = uniqueValues.size;
+        const sampleValues = Array.from(uniqueValues).slice(0, 5);
+        const example = cleanValues[0];
+
+        let numericCount = 0;
+        let dateCount = 0;
+        let booleanCount = 0;
+        const numericValues = [];
+
+        cleanValues.forEach(val => {
+            const num = safeParseNumber(val);
+            if (!isNaN(num)) {
+                numericCount++;
+                numericValues.push(num);
+            }
+
+            if (isDateLike(val)) {
+                dateCount++;
+            }
+
+            if (isBooleanLike(val)) {
+                booleanCount++;
+            }
+        });
+
+        const numericFraction = numericCount / validCount;
+        const dateFraction = dateCount / validCount;
+        const booleanFraction = booleanCount / validCount;
+
+        if (booleanFraction >= 0.9) {
+            return {
+                name: columnName,
+                role: 'boolean',
+                confidence: booleanFraction,
+                cardinality,
+                nullFraction,
+                sampleValues,
+                example
+            };
+        }
+
+        if (dateFraction >= 0.8) {
+            return {
+                name: columnName,
+                role: 'date',
+                confidence: dateFraction,
+                cardinality,
+                nullFraction,
+                sampleValues,
+                example
+            };
+        }
+
+        if (numericFraction >= 0.9) {
+            const minCardinality = Math.min(20, validCount * 0.1);
+
+            if (cardinality <= 20 || cardinality / validCount <= 0.05) {
+                return {
+                    name: columnName,
+                    role: 'categorical',
+                    confidence: 0.9,
+                    cardinality,
+                    nullFraction,
+                    sampleValues,
+                    example,
+                    note: 'Numeric codes with low cardinality'
+                };
+            }
+
+            return {
+                name: columnName,
+                role: 'quantitative',
+                confidence: numericFraction,
+                cardinality,
+                nullFraction,
+                sampleValues,
+                example
+            };
+        }
+
+        const avgLength = cleanValues.reduce((sum, v) => sum + String(v).length, 0) / validCount;
+        if (avgLength >= 20 && cardinality / validCount >= 0.8) {
+            return {
+                name: columnName,
+                role: 'text',
+                confidence: 0.8,
+                cardinality,
+                nullFraction,
+                sampleValues,
+                example
+            };
+        }
+
+        return {
+            name: columnName,
+            role: 'categorical',
+            confidence: Math.max(0.7, 1 - numericFraction),
+            cardinality,
+            nullFraction,
+            sampleValues,
+            example
+        };
+    }
+
+    function isDateLike(value) {
+        if (!value) return false;
+        const str = String(value).trim();
+
+        if (Date.parse(str)) {
+            return true;
+        }
+
+        const datePatterns = [
+            /^\d{4}-\d{2}-\d{2}$/,
+            /^\d{1,2}\/\d{1,2}\/\d{2,4}$/,
+            /^\d{1,2}-\d{1,2}-\d{2,4}$/,
+            /^\d{4}$/
+        ];
+
+        return datePatterns.some(pattern => pattern.test(str));
+    }
+
+    function isBooleanLike(value) {
+        if (typeof value === 'boolean') return true;
+        const str = String(value).trim().toLowerCase();
+        const booleanValues = ['true', 'false', 'yes', 'no', 'y', 'n', '1', '0', 't', 'f'];
+        return booleanValues.includes(str);
+    }
+
+    function createDatasetProfile(tableData) {
+        if (!Array.isArray(tableData) || tableData.length < 2) {
+            return null;
+        }
+
+        const headers = tableData[0];
+        const rows = tableData.slice(1);
+        const columns = [];
+
+        headers.forEach((header, colIndex) => {
+            const values = rows.map(row => row[colIndex]);
+            const columnMeta = inferColumnRole(values, header);
+            const validation = validateColumn(values, header);
+
+            columns.push({
+                ...columnMeta,
+                validation
+            });
+        });
+
+        const validationReport = createValidationReport(tableData);
+
+        return {
+            rowCount: rows.length,
+            columns,
+            validation: validationReport
+        };
+    }
+
+    function getEmbeddedTableData(questionId) {
+        if (!questionId || !Array.isArray(window.EMBEDDED_CURRICULUM)) {
+            return null;
+        }
+
+        const question = window.EMBEDDED_CURRICULUM.find(q => q.id === questionId);
+        if (!question || !question.attachments || !question.attachments.table) {
+            return null;
+        }
+
+        return question.attachments.table;
+    }
+
+    function computeCounts(values, options = {}) {
+        const { topN = 12, includeMissing = false } = options;
+        const counts = {};
+
+        values.forEach(val => {
+            if (val === null || val === undefined || val === '') {
+                if (includeMissing) {
+                    counts['(empty)'] = (counts['(empty)'] || 0) + 1;
+                }
+                return;
+            }
+
+            const key = String(val);
+            counts[key] = (counts[key] || 0) + 1;
+        });
+
+        let entries = Object.entries(counts).map(([key, count]) => ({ key, count }));
+        entries.sort((a, b) => b.count - a.count);
+
+        if (entries.length > topN) {
+            const topEntries = entries.slice(0, topN);
+            const otherCount = entries.slice(topN).reduce((sum, entry) => sum + entry.count, 0);
+            if (otherCount > 0) {
+                topEntries.push({ key: 'Other', count: otherCount });
+            }
+            entries = topEntries;
+        }
+
+        return entries;
+    }
+
+    function handleColumnSelection(columnName) {
+        if (!wizardState) return;
+
+        wizardState.selectedColumn = columnName;
+
+        const tableData = getEmbeddedTableData(wizardState.questionId);
+        if (!tableData) return;
+
+        const headers = tableData[0];
+        const rows = tableData.slice(1);
+        const colIndex = headers.indexOf(columnName);
+
+        if (colIndex === -1) return;
+
+        const values = rows.map(row => row[colIndex]);
+
+        if (wizardState.chartType === 'bar') {
+            const counts = computeCounts(values, { topN: 12 });
+            wizardState.bar = counts.map(entry => ({
+                label: entry.key,
+                value: String(entry.count)
+            }));
+        }
+
+        renderWizard();
+    }
+
+    function renderColumnPicker(chartType, requiredRole) {
+        if (!wizardState || !wizardState.questionId) {
+            return '';
+        }
+
+        const tableData = getEmbeddedTableData(wizardState.questionId);
+        if (!tableData) {
+            return '';
+        }
+
+        const profile = createDatasetProfile(tableData);
+        if (!profile) {
+            return '';
+        }
+
+        const compatibleColumns = profile.columns.filter(col => {
+            if (requiredRole === 'categorical') {
+                return col.role === 'categorical' || col.role === 'boolean';
+            }
+            if (requiredRole === 'quantitative') {
+                return col.role === 'quantitative';
+            }
+            return true;
+        });
+
+        if (compatibleColumns.length === 0) {
+            return '<div class="chart-inline-message">No suitable columns found in question data.</div>';
+        }
+
+        const selectedColumn = wizardState.selectedColumn || '';
+        const searchTerm = wizardState.columnSearchTerm || '';
+
+        const filteredColumns = compatibleColumns.filter(col => {
+            if (!searchTerm) return true;
+            return col.name.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+
+        const columnOptions = filteredColumns.map(col => {
+            const roleIcon = col.role === 'categorical' ? '📊' : col.role === 'quantitative' ? '🔢' : '📄';
+            const isSelected = col.name === selectedColumn;
+            const validationNote = col.validation && col.validation.notes.length > 0
+                ? ` (${col.validation.notes[0]})`
+                : '';
+
+            return `
+                <div class="column-option ${isSelected ? 'selected' : ''}" data-column-name="${col.name}">
+                    <div class="column-option-header">
+                        <span class="column-role-icon">${roleIcon}</span>
+                        <strong>${col.name}</strong>
+                        <span class="column-badge">${col.cardinality} unique</span>
+                    </div>
+                    <div class="column-option-meta">
+                        ${col.role} | ${Math.round(col.confidence * 100)}% confidence${validationNote}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const previewHtml = renderDataPreview(selectedColumn, tableData);
+
+        return `
+            <div class="chart-form-group">
+                <label>Select column from question data</label>
+                <input type="text"
+                       class="column-search-input"
+                       placeholder="Search columns..."
+                       data-action="search-columns"
+                       value="${searchTerm}">
+                <div class="column-picker-list">
+                    ${columnOptions || '<div class="chart-inline-message">No matching columns</div>'}
+                </div>
+                <div class="chart-inline-message" style="margin-top: 8px;">
+                    💡 Tip: Select a categorical column to auto-fill the chart with counts
+                </div>
+            </div>
+            ${previewHtml}
+            <div style="margin: 16px 0; text-align: center; color: rgba(0,0,0,0.5);">
+                <strong>— OR —</strong>
+            </div>
+        `;
+    }
+
+    function renderDataPreview(selectedColumn, tableData) {
+        if (!selectedColumn || !tableData) {
+            return '';
+        }
+
+        const headers = tableData[0];
+        const rows = tableData.slice(1);
+        const colIndex = headers.indexOf(selectedColumn);
+
+        if (colIndex === -1) return '';
+
+        const previewRows = rows.slice(0, 10);
+        const hasMore = rows.length > 10;
+
+        const tableHtml = `
+            <table class="data-preview-table">
+                <thead>
+                    <tr>
+                        <th class="preview-col-selected">${selectedColumn}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${previewRows.map(row => `
+                        <tr>
+                            <td>${row[colIndex] || '<em>empty</em>'}</td>
+                        </tr>
+                    `).join('')}
+                    ${hasMore ? `
+                        <tr class="preview-more-row">
+                            <td><em>... ${rows.length - 10} more rows</em></td>
+                        </tr>
+                    ` : ''}
+                </tbody>
+            </table>
+        `;
+
+        return `
+            <div class="chart-form-group">
+                <label>Data preview (${rows.length} rows)</label>
+                <div class="data-preview-container">
+                    ${tableHtml}
+                </div>
+            </div>
+        `;
     }
 
     function buildSIF(showError = true) {
@@ -3044,7 +3679,7 @@
                 }
                 return null;
             }
-            const settings = wizardState.chisquareSettings;
+            const settings = wizardState.chisquareSettings || {};
             const chartConfig = {};
             if (settings.xMin !== '') chartConfig.xMin = parseFloat(settings.xMin);
             if (settings.xMax !== '') chartConfig.xMax = parseFloat(settings.xMax);
@@ -3072,7 +3707,7 @@
                 }
                 return null;
             }
-            const range = wizardState.numberlineRange;
+            const range = wizardState.numberlineRange || {};
             const data = { ticks };
             if (range.min !== '') data.xMin = parseFloat(range.min);
             if (range.max !== '') data.xMax = parseFloat(range.max);
@@ -3568,10 +4203,14 @@
             button.textContent = 'Edit Chart';
         }
         setTimeout(() => {
+            if (typeof window.charts?.renderChartNow !== 'function') {
+                warnOnce('charts-missing', 'window.charts.renderChartNow is not available');
+                return;
+            }
             try {
                 window.charts.renderChartNow(chartData, canvasId);
             } catch (error) {
-                console.warn('Unable to render chart preview:', error);
+                warnOnce(`preview-render-${canvasId}`, `Chart preview failed: ${error.message}`);
             }
         }, 50);
     }
