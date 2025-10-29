@@ -11,10 +11,14 @@
 /**
  * Initializes or loads class data structure from localStorage
  * Creates user entry if it doesn't exist for current username
+ * Ensures window.classData references the same object as the local classData variable
  */
 function initClassData() {
     let classDataStr = localStorage.getItem('classData');
     classData = classDataStr ? JSON.parse(classDataStr) : {users: {}};
+
+    // Ensure window.classData points to the same object
+    window.classData = classData;
 
     if (!classData.users[currentUsername]) {
         classData.users[currentUsername] = {
@@ -50,10 +54,14 @@ function initClassData() {
 
 /**
  * Saves class data to localStorage with error handling
+ * Uses window.classData to ensure we save the globally accessible reference
+ * that other modules (like chart_wizard.js) modify
  */
 function saveClassData() {
     try {
-        localStorage.setItem('classData', JSON.stringify(classData));
+        // Use window.classData if available (preferred), fallback to classData variable
+        const dataToSave = window.classData || classData;
+        localStorage.setItem('classData', JSON.stringify(dataToSave));
     } catch(e) {
         console.log("Storage quota exceeded");
         showMessage("Warning: Local storage is full. Some data may not be saved.", 'error');

@@ -9,7 +9,11 @@
       "Bash(chmod:*)",
       "Bash(./create-all-materials.sh:*)",
       "Read(///**)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(test:*)",
+      "Bash(npm install)",
+      "Bash(npx playwright install chromium firefox)",
+      "Bash(npm run test:chart:*)"
     ],
     "deny": [],
     "ask": []
