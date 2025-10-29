@@ -847,18 +847,44 @@
                         classData.users[username].timestamps[questionId] = answerData.timestamp;
                         // Detect charts and cache parsed SIF under charts[questionId]
                         try {
-                            const val = answerData.value;
+                            let val = answerData.value;
+
+                            // Handle nested value structure (e.g., {value: {...}, timestamp: ...})
+                            if (val && typeof val === 'object' && val.value !== undefined) {
+                                val = val.value;
+                            }
+
                             let parsed = null;
-                            if (val && typeof val === 'string' && val.trim().startsWith('{')) {
-                                parsed = JSON.parse(val);
+                            if (val && typeof val === 'string') {
+                                // Try to parse as JSON
+                                try {
+                                    parsed = JSON.parse(val);
+                                } catch (parseErr) {
+                                    // Not JSON, might be plain text answer - store as reasoning
+                                    if (val.trim()) {
+                                        classData.users[username].reasons[questionId] = val;
+                                    }
+                                }
                             } else if (val && typeof val === 'object') {
                                 parsed = val;
                             }
-                            if (parsed && parsed.chartType) {
+
+                            // Check for both 'type' and 'chartType' to support SIF format
+                            if (parsed && (parsed.type || parsed.chartType)) {
                                 classData.users[username].charts[questionId] = parsed;
+                                // Also preserve any reasoning/description from the chart
+                                if (parsed.description) {
+                                    classData.users[username].reasons[questionId] = parsed.description;
+                                }
+                            } else if (parsed && !parsed.type && !parsed.chartType) {
+                                // Not a chart, might be wrapped text answer
+                                const textVal = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+                                if (textVal && textVal.trim()) {
+                                    classData.users[username].reasons[questionId] = textVal;
+                                }
                             }
                         } catch (e) {
-                            // ignore parse errors
+                            console.warn(`Error processing peer answer for ${username}/${questionId}:`, e);
                         }
                     }
                 }
@@ -873,6 +899,50 @@
             if (qid && typeof refreshQuestionIfVisible === 'function') {
                 refreshQuestionIfVisible(qid);
             }
+        }
+
+        // Load all peer data from localStorage (for file:// protocol and offline use)
+        function loadAllPeerDataFromLocalStorage() {
+            const peerData = {};
+            const currentUser = localStorage.getItem('consensusUsername');
+            if (!currentUser) return null;
+
+            console.log('📂 Loading peer data from localStorage (offline mode)...');
+
+            // Find all answer keys in localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('answers_') && !key.endsWith(currentUser)) {
+                    const username = key.replace('answers_', '');
+
+                    // Skip if this is the current user
+                    if (username === currentUser) continue;
+
+                    try {
+                        const answersStr = localStorage.getItem(key);
+                        if (!answersStr) continue;
+
+                        const answers = JSON.parse(answersStr);
+                        peerData[username] = { answers: {} };
+
+                        // Process each answer
+                        for (const [questionId, answerData] of Object.entries(answers)) {
+                            peerData[username].answers[questionId] = answerData;
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to parse answers for ${username}:`, e);
+                    }
+                }
+            }
+
+            const peerCount = Object.keys(peerData).length;
+            if (peerCount > 0) {
+                console.log(`✅ Loaded data from ${peerCount} peer(s) from localStorage`);
+            } else {
+                console.log('📭 No peer data found in localStorage');
+            }
+
+            return peerCount > 0 ? peerData : null;
         }
 
         // Smart sync - only sync new or updated answers (current user only)
@@ -1040,6 +1110,13 @@ function refreshQuestionIfVisible(questionId) {
             renderFRQResponses(questionId);
         } else if (typeof populatePeerResponses === 'function') {
             populatePeerResponses(questionId, question.type);
+        }
+        // Refresh peer charts for FRQ questions that support charts
+        if (question.type === 'free-response' && typeof window.renderPeerCharts === 'function') {
+            const chartMetadata = window.CHART_QUESTIONS?.[questionId];
+            if (chartMetadata) {
+                window.renderPeerCharts(questionId);
+            }
         }
     } catch (error) {
         console.error(`[UI Refresh] Error during refresh for question ${questionId}:`, error);
@@ -3221,10 +3298,15 @@ function renderLessonSelector(unitInfo) {
                 if (typeof window.renderChartWizardPreview === 'function') {
                     currentQuestions.forEach(question => {
                         if (question.type === 'free-response') {
+                            const chartMetadata = window.CHART_QUESTIONS?.[question.id];
                             const savedChart = classData?.users?.[currentUsername]?.charts?.[question.id];
                             if (savedChart) {
                                 console.log(`Rendering saved chart for ${question.id}`);
                                 window.renderChartWizardPreview(question.id);
+                            }
+                            // Only render peer charts for questions that support charts
+                            if (chartMetadata && typeof window.renderPeerCharts === 'function') {
+                                window.renderPeerCharts(question.id);
                             }
                         }
                     });
@@ -3407,43 +3489,119 @@ function renderLessonSelector(unitInfo) {
                     }
                 } catch (e) {}
 
-                if (question.requiresGraph === 'histogram') {
-                    // Graph-based FRQ: Show histogram input UI
+                if (question.requiresGraph) {
+                    // Graph-based FRQ: Show inline chart creator UI
+                    const chartType = Array.isArray(question.requiresGraph) ? question.requiresGraph[0] : question.requiresGraph;
+                    const chartTypeLabel = chartType.charAt(0).toUpperCase() + chartType.slice(1);
+
+                    // Load saved chart data if exists
                     let graphData = [];
-                    if (savedAnswer) {
-                        try {
-                            const parsed = JSON.parse(savedAnswer.value || savedAnswer);
-                            if (parsed.xLabels && parsed.series) {
-                                graphData = parsed.xLabels.map((label, i) => ({
-                                    label: label,
-                                    value: parsed.series[0].values[i] || 0
-                                }));
-                            }
-                        } catch(e) {
-                            // Not valid JSON, ignore
+                    if (savedChart) {
+                        // Extract data from saved SIF format chart
+                        if (savedChart.data?.bins) {
+                            // Histogram format
+                            graphData = savedChart.data.bins.map(bin => ({
+                                label: bin.label,
+                                value: bin.value
+                            }));
+                        } else if (savedChart.categories && savedChart.series) {
+                            // Bar chart format
+                            graphData = savedChart.categories.map((cat, i) => ({
+                                label: cat,
+                                value: savedChart.series[0]?.values[i] || 0
+                            }));
                         }
                     }
 
-                    html += `
-                        <div class="answer-section">
-                            <label><strong>Create your histogram:</strong></label>
+                    // Generate UI based on chart type
+                    let chartInputUI = '';
+
+                    if (chartType === 'histogram' || chartType === 'bar') {
+                        // Row-based input for histogram and bar charts
+                        chartInputUI = `
                             <div id="graph-input-${question.id}" class="graph-input">
                                 ${graphData.length > 0 ?
                                     graphData.map((row, i) => `
                                         <div class="graph-row" data-index="${i}">
-                                            <input type="text" class="label" placeholder="Bar Label" value="${row.label}" ${isDisabled ? 'disabled' : ''}>
-                                            <input type="number" class="value" placeholder="Frequency" value="${row.value}" ${isDisabled ? 'disabled' : ''}>
+                                            <input type="text" class="label" placeholder="${chartType === 'histogram' ? 'Range' : 'Category'}" value="${row.label}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                            <input type="number" class="value" placeholder="${chartType === 'histogram' ? 'Frequency' : 'Value'}" value="${row.value}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
                                             ${!isDisabled ? `<button type="button" class="remove-row" onclick="removeGraphRow('${question.id}', ${i})">Remove</button>` : ''}
                                         </div>
                                     `).join('') :
                                     `<div class="graph-row" data-index="0">
-                                        <input type="text" class="label" placeholder="Bar Label" ${isDisabled ? 'disabled' : ''}>
-                                        <input type="number" class="value" placeholder="Frequency" ${isDisabled ? 'disabled' : ''}>
+                                        <input type="text" class="label" placeholder="${chartType === 'histogram' ? 'Range' : 'Category'}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                        <input type="number" class="value" placeholder="${chartType === 'histogram' ? 'Frequency' : 'Value'}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
                                         ${!isDisabled ? '<button type="button" class="remove-row" onclick="removeGraphRow(\'' + question.id + '\', 0)">Remove</button>' : ''}
                                     </div>`
                                 }
                             </div>
-                            ${!isDisabled ? `<button type="button" onclick="addGraphRow('${question.id}')" class="add-bar-btn">Add Bar</button>` : ''}
+                            ${!isDisabled ? `<button type="button" onclick="addGraphRow('${question.id}')" class="add-bar-btn">Add ${chartType === 'histogram' ? 'Bar' : 'Category'}</button>` : ''}
+                        `;
+                    } else if (chartType === 'scatter') {
+                        // Scatter plot: X,Y coordinate pairs
+                        chartInputUI = `
+                            <div id="graph-input-${question.id}" class="graph-input scatter-input">
+                                <div class="input-header">
+                                    <span>X Value</span>
+                                    <span>Y Value</span>
+                                    <span></span>
+                                </div>
+                                ${savedChart?.points?.length > 0 ?
+                                    savedChart.points.map((point, i) => `
+                                        <div class="graph-row" data-index="${i}">
+                                            <input type="number" class="x-value" placeholder="X" value="${point.x}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                            <input type="number" class="y-value" placeholder="Y" value="${point.y}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                            ${!isDisabled ? `<button type="button" class="remove-row" onclick="removeGraphRow('${question.id}', ${i})">Remove</button>` : ''}
+                                        </div>
+                                    `).join('') :
+                                    `<div class="graph-row" data-index="0">
+                                        <input type="number" class="x-value" placeholder="X" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                        <input type="number" class="y-value" placeholder="Y" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                        ${!isDisabled ? '<button type="button" class="remove-row" onclick="removeGraphRow(\'' + question.id + '\', 0)">Remove</button>' : ''}
+                                    </div>`
+                                }
+                            </div>
+                            ${!isDisabled ? `<button type="button" onclick="addScatterPoint('${question.id}')" class="add-bar-btn">Add Point</button>` : ''}
+                        `;
+                    } else if (chartType === 'normal' || chartType === 'chisquare') {
+                        // Parameter-based charts
+                        chartInputUI = `
+                            <div id="graph-input-${question.id}" class="graph-input param-input">
+                                ${chartType === 'normal' ? `
+                                    <div class="param-row">
+                                        <label>Mean (μ):</label>
+                                        <input type="number" id="normal-mean-${question.id}" placeholder="0" value="${savedChart?.data?.mean || 0}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                    </div>
+                                    <div class="param-row">
+                                        <label>Standard Deviation (σ):</label>
+                                        <input type="number" id="normal-sd-${question.id}" placeholder="1" value="${savedChart?.data?.sd || 1}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                    </div>
+                                    <div class="param-row">
+                                        <label>Shading:</label>
+                                        <select id="normal-shade-${question.id}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                            <option value="none" ${savedChart?.data?.shade === 'none' ? 'selected' : ''}>None</option>
+                                            <option value="left" ${savedChart?.data?.shade === 'left' ? 'selected' : ''}>Left tail</option>
+                                            <option value="right" ${savedChart?.data?.shade === 'right' ? 'selected' : ''}>Right tail</option>
+                                            <option value="both" ${savedChart?.data?.shade === 'both' ? 'selected' : ''}>Both tails</option>
+                                        </select>
+                                    </div>
+                                ` : `
+                                    <div class="param-row">
+                                        <label>Degrees of Freedom:</label>
+                                        <input type="number" id="chisquare-df-${question.id}" placeholder="1" value="${savedChart?.data?.dfList?.[0] || 1}" min="1" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
+                                    </div>
+                                `}
+                            </div>
+                        `;
+                    } else {
+                        // Fallback to text input for unsupported chart types
+                        chartInputUI = `<div class="chart-type-notice">Chart type "${chartType}" coming soon. Use the Chart Wizard button below.</div>`;
+                    }
+
+                    html += `
+                        <div class="answer-section">
+                            <label><strong>Create your ${chartTypeLabel}:</strong></label>
+                            ${chartInputUI}
                             ${chartMetadata ? `
                                 <div class="chart-wizard-controls" style="margin-top: 16px;">
                                     <button
@@ -3455,6 +3613,7 @@ function renderLessonSelector(unitInfo) {
                                     ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
                                 </div>
                                 <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
+                                <div id="peer-charts-${question.id}" class="peer-charts-container" style="display: none;"></div>
                             ` : ''}
                         </div>
                     `;
@@ -3481,6 +3640,7 @@ function renderLessonSelector(unitInfo) {
                                 ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
                             </div>
                             <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
+                            <div id="peer-charts-${question.id}" class="peer-charts-container" style="display: none;"></div>
                         ` : ''}
                     `;
                 }
@@ -4002,44 +4162,49 @@ function renderLessonSelector(unitInfo) {
             } else {
                 // Check if this is a graph-based FRQ
                 const question = EMBEDDED_CURRICULUM.find(q => q.id === questionId);
-                if (question && question.requiresGraph === 'histogram') {
-                    // Graph FRQ: Extract data from graph input UI
-                    const graphContainer = document.getElementById(`graph-input-${questionId}`);
-                    const rows = graphContainer.querySelectorAll('.graph-row');
-                    const labels = [];
-                    const values = [];
+                if (question && question.requiresGraph) {
+                    // Graph FRQ: Extract data from inline chart creator
+                    let chartType = question.requiresGraph;
+                    // Handle multi-type charts - use the first type
+                    if (Array.isArray(chartType)) {
+                        chartType = chartType[0];
+                    }
+                    const chartData = window.extractInlineChartDataEnhanced ?
+                                    window.extractInlineChartDataEnhanced(questionId, chartType) :
+                                    extractInlineChartData(questionId, chartType);
 
-                    rows.forEach(row => {
-                        const label = row.querySelector('.label').value.trim();
-                        const valueInput = row.querySelector('.value').value;
-                        const parsedValue = parseFloat(valueInput) || 0;
-                        if (label) {
-                            labels.push(label);
-                            values.push(parsedValue);
+                    // Validate chart data based on type
+                    let isValidChart = false;
+                    if (chartData) {
+                        if (chartType === 'histogram' || chartType === 'bar') {
+                            isValidChart = chartData.data?.bins?.length > 0 || chartData.categories?.length > 0;
+                        } else if (chartType === 'scatter') {
+                            isValidChart = chartData.points?.length > 0;
+                        } else if (chartType === 'normal' || chartType === 'chisquare') {
+                            isValidChart = true; // Parameter-based charts are always valid
                         }
-                    });
+                    }
 
-                    if (labels.length === 0) {
+                    if (!isValidChart) {
                         if (errorSpan) {
-                            errorSpan.textContent = 'Please add at least one bar to your histogram.';
+                            errorSpan.textContent = `Please add at least one data point to your ${chartType}.`;
                             errorSpan.classList.add('show');
                         }
                         return;
                     }
 
-                    // Build chart JSON
-                    value = JSON.stringify({
-                        chartType: "histogram",
-                        xLabels: labels,
-                        series: [{
-                            name: "Frequency",
-                            values: values
-                        }],
-                        chartConfig: {
-                            yAxis: { title: "Frequency" },
-                            xAxis: { title: "Category" }
-                        }
-                    });
+                    // Store chart in SIF format
+                    value = JSON.stringify(chartData);
+
+                    // Also store in charts collection for quick access
+                    classData.users[currentUsername].charts[questionId] = chartData;
+
+                    // Get any text reasoning from textarea if present
+                    const textarea = document.getElementById(`frq-${questionId}`);
+                    if (textarea && textarea.value.trim()) {
+                        // Store text reasoning separately
+                        classData.users[currentUsername].reasons[questionId] = textarea.value.trim();
+                    }
                 } else {
                     // Regular FRQ: Get from textarea
                     const textarea = document.getElementById(`frq-${questionId}`);
@@ -4275,11 +4440,14 @@ function renderLessonSelector(unitInfo) {
             row.className = 'graph-row';
             row.dataset.index = index;
             row.innerHTML = `
-                <input type="text" class="label" placeholder="Bar Label">
-                <input type="number" class="value" placeholder="Frequency">
+                <input type="text" class="label" placeholder="Bar Label" onchange="updateInlineChartPreview('${questionId}')">
+                <input type="number" class="value" placeholder="Frequency" onchange="updateInlineChartPreview('${questionId}')">
                 <button type="button" class="remove-row" onclick="removeGraphRow('${questionId}', ${index})">Remove</button>
             `;
             container.appendChild(row);
+
+            // Update preview after adding row
+            updateInlineChartPreview(questionId);
         };
 
         // Graph input helper: Remove a row from histogram data entry
@@ -4288,6 +4456,227 @@ function renderLessonSelector(unitInfo) {
             const row = container.querySelector(`[data-index="${index}"]`);
             if (row && container.children.length > 1) {
                 row.remove();
+                // Reindex remaining rows
+                Array.from(container.children).forEach((child, idx) => {
+                    child.dataset.index = idx;
+                });
+                // Update preview after removing row
+                updateInlineChartPreview(questionId);
+            }
+        };
+
+        // Extract data from inline chart creator
+        window.extractInlineChartData = function(questionId, chartType) {
+            const container = document.getElementById(`graph-input-${questionId}`);
+            if (!container) return null;
+
+            const rows = container.querySelectorAll('.graph-row');
+            const data = {
+                labels: [],
+                values: []
+            };
+
+            rows.forEach(row => {
+                const label = row.querySelector('.label').value.trim();
+                const value = parseFloat(row.querySelector('.value').value) || 0;
+                if (label) {
+                    data.labels.push(label);
+                    data.values.push(value);
+                }
+            });
+
+            // Return in chart wizard SIF format
+            if (chartType === 'histogram') {
+                return {
+                    type: 'histogram',
+                    xLabel: 'Category',
+                    yLabel: 'Frequency',
+                    title: 'Distribution',
+                    data: {
+                        bins: data.labels.map((label, i) => ({
+                            label: label,
+                            value: data.values[i]
+                        })),
+                        seriesName: 'Frequency'
+                    }
+                };
+            } else if (chartType === 'bar') {
+                return {
+                    type: 'bar',
+                    xLabel: 'Category',
+                    yLabel: 'Value',
+                    title: 'Bar Chart',
+                    orientation: 'vertical',
+                    categories: data.labels,
+                    series: [{
+                        name: 'Values',
+                        values: data.values
+                    }]
+                };
+            }
+
+            return null;
+        };
+
+        // Update inline chart preview in real-time
+        window.updateInlineChartPreview = function(questionId) {
+            const previewContainer = document.getElementById(`chart-preview-${questionId}`);
+            if (!previewContainer) return;
+
+            // Get question metadata to determine chart type
+            const question = EMBEDDED_CURRICULUM.find(q => q.id === questionId);
+            let chartType = question?.requiresGraph || 'histogram';
+
+            // Handle multi-type charts - use the first type
+            if (Array.isArray(chartType)) {
+                chartType = chartType[0];
+            }
+
+            // Extract current data using enhanced extractor
+            const chartData = window.extractInlineChartDataEnhanced ?
+                            window.extractInlineChartDataEnhanced(questionId, chartType) :
+                            extractInlineChartData(questionId, chartType);
+            if (!chartData || chartData.data?.bins?.length === 0) {
+                previewContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Enter data to see chart preview</div>';
+                return;
+            }
+
+            // Create canvas for chart
+            const canvasId = `inline-chart-canvas-${questionId}`;
+            previewContainer.innerHTML = `
+                <div style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">
+                    <h4 style="margin-top: 0;">Chart Preview</h4>
+                    <canvas id="${canvasId}" style="max-width: 100%; height: 300px;"></canvas>
+                </div>
+            `;
+
+            // Render chart using chart wizard's converter
+            setTimeout(() => {
+                if (typeof window.sifToChartConfig === 'function' && typeof window.charts?.renderChartNow === 'function') {
+                    const chartConfig = window.sifToChartConfig(chartData);
+                    if (chartConfig) {
+                        try {
+                            // Use chart.js to render
+                            const canvas = document.getElementById(canvasId);
+                            if (canvas) {
+                                const ctx = canvas.getContext('2d');
+                                // Destroy existing chart if any
+                                if (window.inlineChartInstances && window.inlineChartInstances[canvasId]) {
+                                    window.inlineChartInstances[canvasId].destroy();
+                                }
+                                // Create new chart
+                                if (!window.inlineChartInstances) window.inlineChartInstances = {};
+                                window.inlineChartInstances[canvasId] = new Chart(ctx, chartConfig);
+                            }
+                        } catch (error) {
+                            console.error('Failed to render inline chart preview:', error);
+                            previewContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #e74c3c;">Error rendering chart</div>';
+                        }
+                    }
+                } else {
+                    // Fallback to simple HTML chart representation
+                    renderSimpleHTMLChart(previewContainer, chartData);
+                }
+            }, 100);
+        };
+
+        // Simple HTML chart fallback
+        window.renderSimpleHTMLChart = function(container, chartData) {
+            if (chartData.type === 'histogram' && chartData.data?.bins) {
+                const maxValue = Math.max(...chartData.data.bins.map(b => b.value));
+                let html = '<div style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px;">';
+                html += '<h4>Chart Preview (Simple View)</h4>';
+                html += '<div style="display: flex; align-items: flex-end; height: 200px; gap: 10px;">';
+
+                chartData.data.bins.forEach(bin => {
+                    const height = maxValue > 0 ? (bin.value / maxValue) * 180 : 0;
+                    html += `
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <div style="background: #3498db; width: 100%; height: ${height}px; border-radius: 4px 4px 0 0;"></div>
+                            <div style="text-align: center; margin-top: 5px; font-size: 12px;">${bin.label}</div>
+                            <div style="text-align: center; font-size: 14px; font-weight: bold;">${bin.value}</div>
+                        </div>
+                    `;
+                });
+
+                html += '</div></div>';
+                container.innerHTML = html;
+            }
+        };
+
+        // Add scatter point for scatter plot input
+        window.addScatterPoint = function(questionId) {
+            const container = document.getElementById(`graph-input-${questionId}`);
+            const rows = container.querySelectorAll('.graph-row');
+            const index = rows.length;
+
+            const row = document.createElement('div');
+            row.className = 'graph-row';
+            row.dataset.index = index;
+            row.innerHTML = `
+                <input type="number" class="x-value" placeholder="X" onchange="updateInlineChartPreview('${questionId}')">
+                <input type="number" class="y-value" placeholder="Y" onchange="updateInlineChartPreview('${questionId}')">
+                <button type="button" class="remove-row" onclick="removeGraphRow('${questionId}', ${index})">Remove</button>
+            `;
+            container.appendChild(row);
+
+            // Update preview after adding point
+            updateInlineChartPreview(questionId);
+        };
+
+        // Enhanced extractInlineChartData to support all chart types
+        window.extractInlineChartDataEnhanced = function(questionId, chartType) {
+            const container = document.getElementById(`graph-input-${questionId}`);
+            if (!container) return null;
+
+            if (chartType === 'scatter') {
+                const rows = container.querySelectorAll('.graph-row');
+                const points = [];
+
+                rows.forEach(row => {
+                    const x = parseFloat(row.querySelector('.x-value')?.value) || 0;
+                    const y = parseFloat(row.querySelector('.y-value')?.value) || 0;
+                    points.push({ x, y });
+                });
+
+                return {
+                    type: 'scatter',
+                    xLabel: 'X Axis',
+                    yLabel: 'Y Axis',
+                    title: 'Scatter Plot',
+                    points: points
+                };
+            } else if (chartType === 'normal') {
+                const mean = parseFloat(document.getElementById(`normal-mean-${questionId}`)?.value) || 0;
+                const sd = parseFloat(document.getElementById(`normal-sd-${questionId}`)?.value) || 1;
+                const shade = document.getElementById(`normal-shade-${questionId}`)?.value || 'none';
+
+                return {
+                    type: 'normal',
+                    title: 'Normal Distribution',
+                    data: {
+                        mean: mean,
+                        sd: sd,
+                        shade: shade,
+                        xMin: mean - 4 * sd,
+                        xMax: mean + 4 * sd,
+                        tickInterval: sd
+                    }
+                };
+            } else if (chartType === 'chisquare') {
+                const df = parseFloat(document.getElementById(`chisquare-df-${questionId}`)?.value) || 1;
+
+                return {
+                    type: 'chisquare',
+                    title: 'Chi-Square Distribution',
+                    data: {
+                        dfList: [df],
+                        labels: [`df=${df}`]
+                    }
+                };
+            } else {
+                // Fall back to original extraction for histogram/bar
+                return window.extractInlineChartData(questionId, chartType);
             }
         };
 
@@ -7340,6 +7729,15 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }).catch(error => {
                 console.log('Turbo mode initialization error:', error);
             });
+
+            // Load peer data from localStorage for offline/file:// protocol support
+            // This runs regardless of turbo mode status
+            setTimeout(() => {
+                const localPeerData = loadAllPeerDataFromLocalStorage();
+                if (localPeerData) {
+                    mergePeerDataIntoStores(localPeerData);
+                }
+            }, 2000);
 
             // Set up sync button
             const syncBtn = document.getElementById('syncBtn');

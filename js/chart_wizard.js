@@ -4317,10 +4317,145 @@
         }, 50);
     }
 
+    /**
+     * Render peer charts for a given question
+     * Shows charts created by other users in a grid layout
+     */
+    function renderPeerCharts(questionId) {
+        const container = document.getElementById(`peer-charts-${questionId}`);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        const currentUser = window.currentUsername || localStorage.getItem('consensusUsername');
+        if (!currentUser) return;
+
+        // Get classData reference
+        const classDataRef = window.classData || (typeof classData !== 'undefined' ? classData : null);
+        if (!classDataRef || !classDataRef.users) return;
+
+        // Find all peers with charts for this question
+        const peersWithCharts = [];
+        for (const [username, userData] of Object.entries(classDataRef.users)) {
+            // Only include charts from OTHER users (not current user)
+            if (username !== currentUser && userData.charts && userData.charts[questionId]) {
+                peersWithCharts.push({ username, chart: userData.charts[questionId] });
+            }
+        }
+
+        console.log(`[Peer Charts] Question ${questionId}: Current user = "${currentUser}", Found ${peersWithCharts.length} peer chart(s)`);
+
+        // If no peer charts, show empty state
+        if (peersWithCharts.length === 0) {
+            container.innerHTML = '<div class="peer-charts-empty">No peer charts yet. Check back after classmates submit their charts!</div>';
+            container.style.display = 'block';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        // Render each peer chart
+        peersWithCharts.forEach(({ username, chart }) => {
+            const peerChartDiv = document.createElement('div');
+            peerChartDiv.className = 'peer-chart-item';
+
+            // Get reasoning text if available
+            const reasoning = classDataRef.users[username]?.reasons?.[questionId];
+
+            const canvasId = `peer-chart-canvas-${questionId}-${username.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+            // Build HTML with optional reasoning section
+            let htmlContent = `
+                <div class="peer-chart-header">
+                    <span class="peer-username">${escapeHtml(username)}</span>
+                    <span class="peer-chart-type">${escapeHtml(chart.type || chart.chartType || 'chart')}</span>
+                </div>
+                <div class="peer-chart-content" id="peer-chart-content-${canvasId}">
+                    <div class="chart-loading">Loading chart...</div>
+                </div>
+            `;
+
+            // Add reasoning section if it exists
+            if (reasoning && reasoning.trim()) {
+                htmlContent += `
+                    <div class="peer-chart-reasoning">
+                        <div class="peer-reasoning-label">Reasoning:</div>
+                        <div class="peer-reasoning-text">${escapeHtml(reasoning)}</div>
+                    </div>
+                `;
+            }
+
+            peerChartDiv.innerHTML = htmlContent;
+            container.appendChild(peerChartDiv);
+
+            // Render the actual chart
+            setTimeout(() => {
+                const contentDiv = document.getElementById(`peer-chart-content-${canvasId}`);
+                if (!contentDiv) return;
+
+                try {
+                    // Ensure chart is an object, not a string
+                    let chartObj = chart;
+                    if (typeof chart === 'string') {
+                        try {
+                            chartObj = JSON.parse(chart);
+                            console.log(`[Peer Charts] Parsed string chart for ${username}`);
+                        } catch (parseErr) {
+                            console.error(`[Peer Charts] Failed to parse chart JSON for ${username}:`, parseErr);
+                            contentDiv.innerHTML = '<div class="chart-error">Invalid chart data (JSON parse failed)</div>';
+                            return;
+                        }
+                    }
+
+                    const chartConfig = sifToChartConfig(chartObj);
+                    if (!chartConfig) {
+                        console.warn(`[Peer Charts] sifToChartConfig returned null for ${username}`);
+                        contentDiv.innerHTML = '<div class="chart-error">Unable to convert chart data</div>';
+                        return;
+                    }
+
+                    if (typeof window.charts?.getChartHtml !== 'function') {
+                        contentDiv.innerHTML = '<div class="chart-error">Chart renderer not available</div>';
+                        return;
+                    }
+
+                    // Insert chart HTML
+                    contentDiv.innerHTML = window.charts.getChartHtml(chartConfig, canvasId);
+
+                    // Render chart to canvas
+                    setTimeout(() => {
+                        if (typeof window.charts?.renderChartNow === 'function') {
+                            try {
+                                window.charts.renderChartNow(chartConfig, canvasId);
+                                console.log(`[Peer Charts] ✅ Rendered chart for ${username}`);
+                            } catch (error) {
+                                console.error(`[Peer Charts] Failed to render chart for ${username}:`, error);
+                                contentDiv.innerHTML = '<div class="chart-error">Chart render failed</div>';
+                            }
+                        }
+                    }, 50);
+                } catch (error) {
+                    console.error(`[Peer Charts] Failed to process chart for ${username}:`, error);
+                    contentDiv.innerHTML = '<div class="chart-error">Chart processing failed</div>';
+                }
+            }, 100);
+        });
+    }
+
+    /**
+     * Helper to escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     initializeOutboxWatcher();
 
     window.openChartWizard = openChartWizard;
     window.renderChartWizardPreview = renderChartWizardPreview;
+    window.renderPeerCharts = renderPeerCharts;
     window.deleteChartForQuestion = function(questionId) {
         deleteChartForQuestion(questionId, false);
     };

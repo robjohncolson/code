@@ -4870,3 +4870,365 @@ body.dark-theme .video-link.alt {
 body.dark-theme .blooket-link {
     color: #ffd700;
 }
+
+/* ========================================
+   PEER CHARTS STYLING
+   ======================================== */
+
+.peer-charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-secondary);
+}
+
+.peer-charts-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.peer-chart-item {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-secondary);
+    border-radius: 8px;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.peer-chart-item:hover {
+    border-color: var(--border-primary);
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    transform: translateY(-2px);
+}
+
+.peer-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.peer-username {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+}
+
+.peer-chart-type {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
+.peer-chart-content {
+    padding: 1rem;
+    min-height: 220px;
+    max-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.peer-chart-content canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    height: auto !important;
+}
+
+.chart-loading {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.chart-error {
+    color: var(--accent-danger);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .peer-charts-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .peer-chart-content {
+        min-height: 180px;
+        max-height: 240px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .peer-charts-container {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}
+
+/* Dark theme specific adjustments */
+body.dark-theme .peer-chart-item {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-theme .peer-chart-item:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+}
+
+/* Peer chart reasoning text */
+.peer-chart-reasoning {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border-secondary);
+    background: var(--bg-tertiary);
+    font-size: 0.875rem;
+}
+
+.peer-reasoning-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.peer-reasoning-text {
+    color: var(--text-primary);
+    line-height: 1.5;
+    max-height: 120px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.peer-reasoning-text::-webkit-scrollbar {
+    width: 6px;
+}
+
+.peer-reasoning-text::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.peer-reasoning-text::-webkit-scrollbar-thumb {
+    background: var(--border-secondary);
+    border-radius: 3px;
+}
+
+.peer-reasoning-text::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+/* ============================================
+   Inline Chart Creator Styles
+   ============================================ */
+
+.graph-input {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    border: 1px solid var(--border-secondary);
+}
+
+.graph-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.graph-row:last-child {
+    margin-bottom: 0;
+}
+
+.graph-row input[type="text"],
+.graph-row input[type="number"] {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.graph-row input[type="text"]:focus,
+.graph-row input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.graph-row .remove-row {
+    padding: 8px 16px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.graph-row .remove-row:hover {
+    background: #c0392b;
+}
+
+.add-bar-btn {
+    padding: 12px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.add-bar-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Scatter plot specific styles */
+.scatter-input .input-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.scatter-input .input-header span {
+    flex: 1;
+    padding: 0 10px;
+}
+
+.scatter-input .input-header span:last-child {
+    flex: 0 0 auto;
+    width: 80px;
+}
+
+.scatter-input .x-value,
+.scatter-input .y-value {
+    flex: 1;
+}
+
+/* Parameter-based chart styles */
+.param-input .param-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.param-input .param-row:last-child {
+    margin-bottom: 0;
+}
+
+.param-input .param-row label {
+    flex: 0 0 180px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.param-input .param-row input,
+.param-input .param-row select {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.param-input .param-row input:focus,
+.param-input .param-row select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Chart type notice */
+.chart-type-notice {
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-left: 4px solid var(--warning);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    margin: 16px 0;
+}
+
+/* Chart preview animations */
+@keyframes chartFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-preview-container > div {
+    animation: chartFadeIn 0.3s ease;
+}
+
+/* Responsive adjustments for inline chart creators */
+@media (max-width: 768px) {
+    .param-input .param-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .param-input .param-row label {
+        flex: none;
+        margin-bottom: 8px;
+    }
+
+    .scatter-input .input-header {
+        font-size: 14px;
+    }
+
+    .graph-row {
+        flex-wrap: wrap;
+    }
+
+    .graph-row .remove-row {
+        width: 100%;
+        margin-top: 8px;
+    }
+}
