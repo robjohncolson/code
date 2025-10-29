@@ -476,7 +476,8 @@
         frqInventoryPromise = (async () => {
             let data = null;
             let fetchError = null;
-            const canFetch = typeof fetch === 'function';
+            const isFileProtocol = typeof window !== 'undefined' && window.location && window.location.protocol === 'file:';
+            const canFetch = typeof fetch === 'function' && !isFileProtocol;
 
             if (canFetch) {
                 try {
@@ -492,6 +493,25 @@
 
             if (!data && typeof window !== 'undefined' && window.FRQ_CHART_INVENTORY) {
                 data = window.FRQ_CHART_INVENTORY;
+            }
+
+            // As a last resort in file:// mode, try injecting the JS inventory file dynamically
+            if (!data && isFileProtocol && typeof document !== 'undefined') {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'docs/analysis/frq_chart_inventory.js';
+                        script.defer = true;
+                        script.onload = () => resolve();
+                        script.onerror = () => reject(new Error('Inventory JS load failed'));
+                        document.head.appendChild(script);
+                    });
+                    if (window.FRQ_CHART_INVENTORY) {
+                        data = window.FRQ_CHART_INVENTORY;
+                    }
+                } catch (e) {
+                    // Silent fallback; we'll mark inventory as unavailable below
+                }
             }
 
             if (data && typeof data === 'object') {
@@ -780,7 +800,7 @@
     function setStoredChartSIF(questionId, sif, timestampOverride) {
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return;
-        const timestamp = timestampOverride || new Date().toISOString();
+        const timestamp = typeof timestampOverride === 'number' ? timestampOverride : Date.now();
         try {
             user.answers[questionId] = {
                 value: sif,
@@ -4083,10 +4103,24 @@
         }
 
         const questionId = wizardState.questionId;
-        const timestamp = new Date().toISOString();
+        const timestamp = Date.now();
         setStoredChartSIF(questionId, sif, timestamp);
         if (typeof window.saveClassData === 'function') {
             window.saveClassData();
+        }
+
+        // Also persist to legacy answers_[username] localStorage for robust startup hydration
+        try {
+            const userAnswersKey = `answers_${username}`;
+            const userAnswers = JSON.parse(localStorage.getItem(userAnswersKey) || '{}');
+            const stringified = JSON.stringify(sif);
+            userAnswers[questionId] = {
+                value: stringified,
+                timestamp
+            };
+            localStorage.setItem(userAnswersKey, JSON.stringify(userAnswers));
+        } catch (e) {
+            console.warn('Unable to persist chart to legacy answers store:', e);
         }
 
         const sifJson = JSON.stringify(sif);

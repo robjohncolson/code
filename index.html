@@ -17,6 +17,10 @@
     <script src="js/charts.js"></script>
     <script src="docs/sync_diagnostics.js"></script>
     <script src="railway_client.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/session_fallback.js"></script>
+    <script src="js/railway_hydration.js"></script>
+    <script src="js/sif_deserializer.js"></script>
 
     <!-- Sprite system -->
     <script src="js/sprite_sheet.js"></script>
@@ -841,6 +845,21 @@
                     if (!existingAnswer || (answerData.timestamp || 0) > existingTimestamp) {
                         classData.users[username].answers[questionId] = { value: answerData.value, timestamp: answerData.timestamp };
                         classData.users[username].timestamps[questionId] = answerData.timestamp;
+                        // Detect charts and cache parsed SIF under charts[questionId]
+                        try {
+                            const val = answerData.value;
+                            let parsed = null;
+                            if (val && typeof val === 'string' && val.trim().startsWith('{')) {
+                                parsed = JSON.parse(val);
+                            } else if (val && typeof val === 'object') {
+                                parsed = val;
+                            }
+                            if (parsed && parsed.chartType) {
+                                classData.users[username].charts[questionId] = parsed;
+                            }
+                        } catch (e) {
+                            // ignore parse errors
+                        }
                     }
                 }
             }
@@ -962,18 +981,39 @@ function mergePeerAnswer(detail) {
     }
 
     const existingAnswer = classData.users[username].answers[question_id];
-    const existingTimestamp = classData.users[username].timestamps[question_id] || existingAnswer?.timestamp || 0;
+    const existingTimestampRaw = classData.users[username].timestamps[question_id] || existingAnswer?.timestamp || 0;
+    const existingTimestamp = typeof existingTimestampRaw === 'string'
+        ? (isFinite(+existingTimestampRaw) ? +existingTimestampRaw : new Date(existingTimestampRaw).getTime() || 0)
+        : (+existingTimestampRaw || 0);
+    const incomingTimestamp = typeof timestamp === 'string'
+        ? (isFinite(+timestamp) ? +timestamp : new Date(timestamp).getTime() || 0)
+        : (+timestamp || 0);
 
-    if (timestamp > existingTimestamp) {
+    if (incomingTimestamp > existingTimestamp) {
         // 1. Update in-memory `classData`
-        classData.users[username].answers[question_id] = { value: answer_value, timestamp: timestamp };
-        classData.users[username].timestamps[question_id] = timestamp;
+        classData.users[username].answers[question_id] = { value: answer_value, timestamp: incomingTimestamp };
+        classData.users[username].timestamps[question_id] = incomingTimestamp;
+        // Detect and cache chart SIF for quick access (non-destructive)
+        try {
+            const val = answer_value;
+            let parsed = null;
+            if (val && typeof val === 'string' && val.trim().startsWith('{')) {
+                parsed = JSON.parse(val);
+            } else if (val && typeof val === 'object') {
+                parsed = val;
+            }
+            if (parsed && parsed.chartType) {
+                classData.users[username].charts[question_id] = parsed;
+            }
+        } catch (e) {
+            // ignore parse errors
+        }
         saveClassData(); // Persists the whole classData object
 
         // 2. Update legacy `answers_[username]` key for backward compatibility
         const legacyKey = `answers_${username}`;
         const legacyAnswers = JSON.parse(localStorage.getItem(legacyKey) || '{}');
-        legacyAnswers[question_id] = { value: answer_value, timestamp: timestamp };
+        legacyAnswers[question_id] = { value: answer_value, timestamp: incomingTimestamp };
         localStorage.setItem(legacyKey, JSON.stringify(legacyAnswers));
 
         console.log(`[State Update] Merged new answer for ${username} on ${question_id}`);
@@ -1018,6 +1058,72 @@ function refreshQuestionIfVisible(questionId) {
                 const initialPeerData = await pullPeerDataFromSupabase();
                 if (initialPeerData) {
                     mergePeerDataIntoStores(initialPeerData);
+                }
+
+                // Hydrate CURRENT user's own answers from cloud (covers file:// or denied persistence)
+                try {
+                    const currentUser = (window.currentUsername || localStorage.getItem('consensusUsername') || '').trim();
+                    if (currentUser && supabase) {
+                        const { data: myAnswers, error: myErr } = await supabase
+                            .from('answers')
+                            .select('question_id,answer_value,timestamp')
+                            .eq('username', currentUser)
+                            .order('timestamp', { ascending: false });
+                        if (!myErr && Array.isArray(myAnswers)) {
+                            ensureClassDataInitialized();
+                            if (!classData.users[currentUser]) {
+                                classData.users[currentUser] = { answers: {}, reasons: {}, timestamps: {}, attempts: {}, charts: {} };
+                            }
+                            const key = `answers_${currentUser}`;
+                            const existing = JSON.parse(localStorage.getItem(key) || '{}');
+                            myAnswers.forEach(row => {
+                                const ts = parseInt(row.timestamp);
+                                const qid = row.question_id;
+                                const localTs = classData.users[currentUser].timestamps[qid] || existing[qid]?.timestamp || 0;
+                                if (!localTs || ts > localTs) {
+                                    // Update classData
+                                    classData.users[currentUser].answers[qid] = { value: row.answer_value, timestamp: ts };
+                                    classData.users[currentUser].timestamps[qid] = ts;
+                                    // Update legacy local storage
+                                    existing[qid] = { value: row.answer_value, timestamp: ts };
+                                    // Detect charts for quick access
+                                    try {
+                                        const val = row.answer_value;
+                                        let parsed = null;
+                                        if (val && typeof val === 'string' && val.trim().startsWith('{')) {
+                                            parsed = JSON.parse(val);
+                                        } else if (val && typeof val === 'object') {
+                                            parsed = val;
+                                        }
+                                        if (parsed && parsed.chartType) {
+                                            classData.users[currentUser].charts[qid] = parsed;
+                                        }
+                                    } catch (_) {}
+                                }
+                            });
+                            localStorage.setItem(key, JSON.stringify(existing));
+                            if (typeof saveClassData === 'function') {
+                                saveClassData();
+                            }
+                            // Refresh any visible questions to reflect hydrated charts
+                            try {
+                                const curQ = typeof getCurrentQuestionId === 'function' ? getCurrentQuestionId() : null;
+                                if (curQ && typeof refreshQuestionIfVisible === 'function') {
+                                    refreshQuestionIfVisible(curQ);
+                                } else {
+                                    const nodes = document.querySelectorAll('[data-question-id]');
+                                    nodes.forEach(node => {
+                                        const qid = node.getAttribute('data-question-id');
+                                        if (qid && typeof refreshQuestionIfVisible === 'function') {
+                                            refreshQuestionIfVisible(qid);
+                                        }
+                                    });
+                                }
+                            } catch (_) {}
+                        }
+                    }
+                } catch (hydrateErr) {
+                    console.warn('Current-user hydrate skipped:', hydrateErr?.message || hydrateErr);
                 }
 
                 // Update timestamp display
@@ -3274,6 +3380,17 @@ function renderLessonSelector(unitInfo) {
                 const chartMetadata = window.CHART_QUESTIONS?.[question.id];
                 const savedChart = classData?.users?.[currentUsername]?.charts?.[question.id] || null;
                 const chartButtonLabel = savedChart ? 'Edit Chart' : 'Create Chart';
+                // Determine if saved answer is a chart JSON; if so, keep textarea clean (text only)
+                const rawSaved = savedAnswer?.value || savedAnswer || '';
+                let isChartAnswer = false;
+                try {
+                    if (rawSaved && typeof rawSaved === 'object' && rawSaved.chartType) {
+                        isChartAnswer = true;
+                    } else if (typeof rawSaved === 'string' && rawSaved.trim().startsWith('{')) {
+                        const parsedVal = JSON.parse(rawSaved);
+                        if (parsedVal && parsedVal.chartType) isChartAnswer = true;
+                    }
+                } catch (e) {}
 
                 if (question.requiresGraph === 'histogram') {
                     // Graph-based FRQ: Show histogram input UI
@@ -3336,7 +3453,7 @@ function renderLessonSelector(unitInfo) {
                                 placeholder="Enter your complete response here..."
                                 ${isDisabled ? 'disabled' : ''}
                                 style="width: 100%; min-height: 200px; padding: 10px; border: 2px solid #ddd;"
-                            >${savedAnswer?.value || savedAnswer || ''}</textarea>
+                            >${isChartAnswer ? '' : (typeof rawSaved === 'string' ? rawSaved : '')}</textarea>
                         </div>
                         ${chartMetadata ? `
                             <div class="chart-wizard-controls">
@@ -3448,6 +3565,7 @@ function renderLessonSelector(unitInfo) {
                 if (typeof window.renderChartWizardPreview === 'function') {
                     window.renderChartWizardPreview(question.id);
                 }
+                
                 if (isAnswered) {
                     populatePeerResponses(question.id, question.type);
 
@@ -4480,36 +4598,42 @@ if (chartInstances[`dotplot-${questionId}`]) {
                     // Enhanced FRQ display
                     let answerHtml = '';
 
-                    // Try to parse response as chart JSON
-                    try {
-                        const parsed = JSON.parse(peer.response);
-                        if (parsed.chartType) {
-                            // It's a chart - use two-phase rendering
-                            const canvasId = `peer-${questionId}-${peer.username.replace(/\s+/g, '-')}`;
-                            if (typeof window.charts?.getChartHtml === 'function') {
-                                // NEW: Two-phase rendering
-                                answerHtml = `<div class="peer-chart-container">${window.charts.getChartHtml(parsed, canvasId)}</div>`;
-                                // Schedule Phase 2 (drawing) after DOM injection
-                                requestAnimationFrame(() => {
-                                    window.charts.renderChartNow(parsed, canvasId);
-                                });
-                            } else {
-                                // FALLBACK: Old approach
-                                answerHtml = `<div id="chart-container-${canvasId}" class="peer-chart-container"></div>`;
-                                setTimeout(() => {
-                                    const container = document.querySelector(`#chart-container-${canvasId}`);
-                                    if (container && typeof renderChart === 'function') {
-                                        container.innerHTML = renderChart(parsed, canvasId);
-                                    }
-                                }, 100);
-                            }
+                    // Handle charts whether response is an object or a stringified JSON
+                    const resp = peer.response;
+                    const renderChartPreview = (chartObj) => {
+                        const canvasId = `peer-${questionId}-${peer.username.replace(/\s+/g, '-')}`;
+                        if (typeof window.charts?.getChartHtml === 'function') {
+                            answerHtml = `<div class="peer-chart-container">${window.charts.getChartHtml(chartObj, canvasId)}</div>`;
+                            requestAnimationFrame(() => {
+                                window.charts.renderChartNow(chartObj, canvasId);
+                            });
                         } else {
-                            // JSON but not a chart
-                            answerHtml = peer.response;
+                            answerHtml = `<div id="chart-container-${canvasId}" class="peer-chart-container"></div>`;
+                            setTimeout(() => {
+                                const container = document.querySelector(`#chart-container-${canvasId}`);
+                                if (container && typeof renderChart === 'function') {
+                                    container.innerHTML = renderChart(chartObj, canvasId);
+                                }
+                            }, 100);
                         }
-                    } catch(e) {
-                        // Not JSON - regular text response
-                        answerHtml = peer.response;
+                    };
+
+                    if (resp && typeof resp === 'object' && resp.chartType) {
+                        // Already parsed chart object
+                        renderChartPreview(resp);
+                    } else {
+                        // Try to parse string as JSON chart
+                        try {
+                            const parsed = typeof resp === 'string' ? JSON.parse(resp) : null;
+                            if (parsed && parsed.chartType) {
+                                renderChartPreview(parsed);
+                            } else {
+                                answerHtml = resp ?? '';
+                            }
+                        } catch (e) {
+                            // Not JSON - regular text response
+                            answerHtml = resp ?? '';
+                        }
                     }
 
                     html += `

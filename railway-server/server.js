@@ -123,6 +123,43 @@ app.get('/api/peer-data', async (req, res) => {
   }
 });
 
+// Get specific user's answers (for hydration on page load)
+app.get('/api/user-answers/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.status(400).json({ error: 'Username required' });
+    }
+
+    // Fetch from Supabase
+    const { data, error } = await supabase
+      .from('answers')
+      .select('*')
+      .eq('username', username)
+      .order('timestamp', { ascending: false });
+
+    if (error) throw error;
+
+    // Normalize timestamps
+    const normalizedData = data.map(answer => ({
+      ...answer,
+      timestamp: normalizeTimestamp(answer.timestamp)
+    }));
+
+    res.json({
+      data: normalizedData,
+      username: username,
+      count: normalizedData.length,
+      timestamp: Date.now()
+    });
+
+  } catch (error) {
+    console.error(`Error fetching answers for ${req.params.username}:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get question statistics
 app.get('/api/question-stats/:questionId', async (req, res) => {
   try {

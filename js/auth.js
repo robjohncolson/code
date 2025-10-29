@@ -69,14 +69,30 @@ function generateRandomUsername() {
  * Main entry point for username workflow
  * Checks for saved username or shows prompt
  */
-function promptUsername() {
+async function promptUsername() {
     const savedUsername = localStorage.getItem('consensusUsername');
     if (savedUsername) {
         currentUsername = savedUsername;
         initClassData();
         initializeProgressTracking(); // Initialize progress tracking for returning user
-        showUsernameWelcome();
-        initializeFromEmbeddedData(); // Initialize from embedded data
+
+        // Hydrate user's answers from cloud (Railway or Supabase)
+        if (window.railwayHydration && window.USE_RAILWAY) {
+            console.log('🚂 Starting Railway hydration for', savedUsername);
+            await window.railwayHydration.hydrateFromRailway(savedUsername);
+        } else if (window.supabase) {
+            // Fallback to direct Supabase if Railway not available
+            console.log('☁️ Falling back to direct Supabase hydration');
+            // Note: Supabase hydration should already be handled by existing code
+        }
+
+        // Call these functions if they exist (they may not be implemented yet)
+        if (typeof showUsernameWelcome === 'function') {
+            showUsernameWelcome();
+        }
+        if (typeof initializeFromEmbeddedData === 'function') {
+            initializeFromEmbeddedData(); // Initialize from embedded data
+        }
         updateCurrentUsernameDisplay();
     } else {
         showUsernamePrompt();
