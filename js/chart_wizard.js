@@ -798,29 +798,48 @@
                 if (value && typeof value === 'object') {
                     return value;
                 }
-                if (typeof value === 'string') {
+                // Only parse strings that look like chart JSON
+                if (typeof value === 'string' && isLikelyChartJSON(value)) {
                     try {
-                        return JSON.parse(value);
+                        const parsed = JSON.parse(value);
+                        if (parsed && (parsed.type || parsed.chartType)) {
+                            return parsed;
+                        }
                     } catch (error) {
-                        console.warn('Unable to parse stored chart SIF string:', error);
+                        // Not a valid chart JSON, silently return null
+                        return null;
                     }
                 }
             }
 
-            // If it's a string, try to parse it
-            if (typeof answerEntry === 'string' && answerEntry.startsWith('{')) {
+            // If it's a string, check if it looks like a chart before parsing
+            if (typeof answerEntry === 'string' && isLikelyChartJSON(answerEntry)) {
                 try {
                     const parsed = JSON.parse(answerEntry);
                     if (parsed && (parsed.type || parsed.chartType)) {
                         return parsed;
                     }
                 } catch (error) {
-                    console.warn('Unable to parse answer as chart:', error);
+                    // Not a valid chart JSON, silently return null
+                    return null;
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Helper function to determine if a string is likely a chart SIF JSON
+     * Checks for chart-specific properties before attempting to parse
+     */
+    function isLikelyChartJSON(str) {
+        if (!str || typeof str !== 'string') return false;
+        if (!str.startsWith('{')) return false;
+
+        // Check for chart-specific keywords
+        const chartKeywords = ['"type":', '"chartType":', '"binning":', '"series":', '"points":', '"segments":'];
+        return chartKeywords.some(keyword => str.includes(keyword));
     }
 
     function setStoredChartSIF(questionId, sif, timestampOverride) {

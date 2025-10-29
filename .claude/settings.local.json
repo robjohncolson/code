@@ -13,7 +13,9 @@
       "Bash(test:*)",
       "Bash(npm install)",
       "Bash(npx playwright install chromium firefox)",
-      "Bash(npm run test:chart:*)"
+      "Bash(npm run test:chart:*)",
+      "Bash(npm run test:chart:persistence:*)",
+      "Bash(npx playwright test:*)"
     ],
     "deny": [],
     "ask": []
