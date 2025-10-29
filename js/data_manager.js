@@ -870,3 +870,7 @@ function importMasterData(data, targetUsername = null) {
         }
     }
 }
+
+// Expose critical functions to window for use by other modules
+window.saveClassData = saveClassData;
+window.initClassData = initClassData;

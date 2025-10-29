@@ -3217,6 +3217,21 @@ function renderLessonSelector(unitInfo) {
                 // Charts will be rendered by individual renderQuestion calls
                 // (removed legacy renderVisibleCharts call)
 
+                // Render saved chart previews for FRQ questions
+                if (typeof window.renderChartWizardPreview === 'function') {
+                    currentQuestions.forEach(question => {
+                        if (question.type === 'free-response') {
+                            const savedChart = classData?.users?.[currentUsername]?.charts?.[question.id];
+                            if (savedChart) {
+                                console.log(`Rendering saved chart for ${question.id}`);
+                                window.renderChartWizardPreview(question.id);
+                            }
+                        }
+                    });
+                } else {
+                    console.warn('renderChartWizardPreview not available - charts may not display');
+                }
+
                 // TASK 3.3: Set up activity tracking for question interactions
                 setTimeout(setupQuestionActivityTracking, 150);
             }, 100);

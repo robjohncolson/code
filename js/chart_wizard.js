@@ -777,23 +777,49 @@
     function getStoredChartSIF(questionId) {
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return null;
-        const answerEntry = user.answers?.[questionId];
-        if (answerEntry && answerEntry.value) {
-            const value = answerEntry.value;
-            if (value && typeof value === 'object') {
-                return value;
-            }
-            if (typeof value === 'string') {
-                try {
-                    return JSON.parse(value);
-                } catch (error) {
-                    console.warn('Unable to parse stored chart SIF string:', error);
-                }
-            }
-        }
+
+        // Check charts collection first for quick access
         if (user.charts && user.charts[questionId]) {
             return user.charts[questionId];
         }
+
+        // Check answers collection
+        const answerEntry = user.answers?.[questionId];
+        if (answerEntry) {
+            // If it's already an object with a type property (chart SIF)
+            if (answerEntry && typeof answerEntry === 'object' &&
+                (answerEntry.type || answerEntry.chartType)) {
+                return answerEntry;
+            }
+
+            // Handle legacy format (wrapped in {value: ...})
+            if (answerEntry.value) {
+                const value = answerEntry.value;
+                if (value && typeof value === 'object') {
+                    return value;
+                }
+                if (typeof value === 'string') {
+                    try {
+                        return JSON.parse(value);
+                    } catch (error) {
+                        console.warn('Unable to parse stored chart SIF string:', error);
+                    }
+                }
+            }
+
+            // If it's a string, try to parse it
+            if (typeof answerEntry === 'string' && answerEntry.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(answerEntry);
+                    if (parsed && (parsed.type || parsed.chartType)) {
+                        return parsed;
+                    }
+                } catch (error) {
+                    console.warn('Unable to parse answer as chart:', error);
+                }
+            }
+        }
+
         return null;
     }
 
@@ -801,32 +827,55 @@
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return;
         const timestamp = typeof timestampOverride === 'number' ? timestampOverride : Date.now();
-        try {
-            user.answers[questionId] = {
-                value: sif,
-                timestamp
-            };
-        } catch (error) {
-            console.warn('Unable to set chart answer entry:', error);
+
+        // Initialize data structures if they don't exist
+        if (!user.answers) {
+            user.answers = {};
         }
         if (!user.charts) {
             user.charts = {};
         }
+        if (!user.timestamps) {
+            user.timestamps = {};
+        }
+
+        // Store the chart SIF object directly in answers
+        // This matches the expected format for charts (parsed object, not wrapped)
+        user.answers[questionId] = sif;
+
+        // Also store in charts collection for quick access
         user.charts[questionId] = sif;
+
+        // Store timestamp separately
+        user.timestamps[questionId] = timestamp;
+
         return timestamp;
     }
 
     function deleteStoredChartSIF(questionId) {
         const { username, user } = getCurrentUserRecord();
         if (!username || !user) return;
+
+        // Check if the answer is a chart (object with type property)
         if (user.answers && user.answers[questionId]) {
             const entry = user.answers[questionId];
-            if (entry && entry.value && typeof entry.value === 'object' && entry.value.type) {
+
+            // Delete if it's a chart object
+            if (entry && typeof entry === 'object' &&
+                (entry.type || entry.chartType ||
+                 (entry.value && typeof entry.value === 'object' && entry.value.type))) {
                 delete user.answers[questionId];
             }
         }
+
+        // Always delete from charts collection if present
         if (user.charts && user.charts[questionId]) {
             delete user.charts[questionId];
+        }
+
+        // Also clear the timestamp for this question
+        if (user.timestamps && user.timestamps[questionId]) {
+            delete user.timestamps[questionId];
         }
     }
 
