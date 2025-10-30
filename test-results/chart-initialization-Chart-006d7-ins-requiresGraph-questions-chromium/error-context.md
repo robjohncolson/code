@@ -3,11 +3,11 @@
 ```yaml
 - generic [active] [ref=e1]:
   - generic [ref=e2]:
-    - generic [ref=e3]: Welcome Test_User_1761792604034!
+    - generic [ref=e3]: Welcome Test_User_1761792561757!
     - heading "🧮 AP Statistics Consensus Quiz" [level=1] [ref=e4]
     - generic [ref=e6]:
       - text: "📊 Peer data current as of:"
-      - strong [ref=e7]: 1 minute ago
+      - strong [ref=e7]: Just now
       - text: 🚀
     - generic [ref=e9]:
       - heading "📚 AP Statistics Curriculum" [level=2] [ref=e10]

@@ -1,0 +1,1398 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: Welcome Test_User_1761792691847!
+    - heading "🧮 AP Statistics Consensus Quiz" [level=1] [ref=e4]
+    - generic [ref=e6]:
+      - text: "📊 Peer data current as of:"
+      - strong [ref=e7]: 3 minutes ago
+      - text: 🚀
+    - generic [ref=e8]:
+      - button "← Back to Lessons" [ref=e9] [cursor=pointer]
+      - generic [ref=e11]:
+        - strong [ref=e12]: Unit 1, Lesson 10
+        - text: "- 8 questions"
+      - generic [ref=e13]:
+        - 'heading "📚 Lesson Resources: The Normal Distribution" [level=3] [ref=e14]'
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - generic [ref=e17]: "Video 1:"
+            - link "AP Classroom Video 📹" [ref=e18] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/0ps3pcvbfn?sui=33,1
+            - link "Alternative Link 🔗" [ref=e19] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1vTOitP631CGaZJMJjE6VVw53kiOa0zGv/view?usp=drive_link
+          - generic [ref=e20]:
+            - generic [ref=e21]: "Video 2:"
+            - link "AP Classroom Video 📹" [ref=e22] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/wualxc69hl?sui=33,1
+            - link "Alternative Link 🔗" [ref=e23] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1UF7VafU4agY3JcxHnp61EEjpOv959wZ8/view?usp=drive_link
+          - generic [ref=e24]:
+            - generic [ref=e25]: "Video 3:"
+            - link "AP Classroom Video 📹" [ref=e26] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/3fev7ihoms?sui=33,1
+            - link "Alternative Link 🔗" [ref=e27] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1aYbhplXukoDHOpWYCNG5OOTGVYZOcyCV/view?usp=drive_link
+        - generic [ref=e29]:
+          - generic [ref=e30]: "Game 1:"
+          - link "🎮 u1l10blooket_Review" [ref=e31] [cursor=pointer]:
+            - /url: https://dashboard.blooket.com/set/68e880c739c5e77ef8b35076
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e36]: Question 1
+            - generic [ref=e37]: "ID: U1-L10-Q01"
+            - generic [ref=e38]: The distribution of the number of transactions per day at a certain automated teller machine (ATM) is approximately normal with a mean of 80 transactions and a standard deviation of 10 transactions. Which of the following represents the parameters of the distribution?
+            - generic [ref=e39]:
+              - generic [ref=e41] [cursor=pointer]:
+                - radio "A. x̄ = 80; s = 10" [ref=e42]
+                - generic [ref=e43]: A.
+                - generic [ref=e44]: x̄ = 80; s = 10
+              - generic [ref=e46] [cursor=pointer]:
+                - radio "B. x̄ = 80; s² = 10" [ref=e47]
+                - generic [ref=e48]: B.
+                - generic [ref=e49]: x̄ = 80; s² = 10
+              - generic [ref=e51] [cursor=pointer]:
+                - radio "C. x̄ = 80; σ = 10" [ref=e52]
+                - generic [ref=e53]: C.
+                - generic [ref=e54]: x̄ = 80; σ = 10
+              - generic [ref=e56] [cursor=pointer]:
+                - radio "D. μ = 80; σ = 10" [ref=e57]
+                - generic [ref=e58]: D.
+                - generic [ref=e59]: μ = 80; σ = 10
+              - generic [ref=e61] [cursor=pointer]:
+                - radio "E. μ = 80; s = 10" [ref=e62]
+                - generic [ref=e63]: E.
+                - generic [ref=e64]: μ = 80; s = 10
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e68]
+              - button "Submit Answer" [ref=e70] [cursor=pointer]
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e75]
+              - generic [ref=e76]: Loading...
+            - generic [ref=e78]: Answer the question to see peer responses
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - generic [ref=e82]: Question 2
+            - generic [ref=e83]: "ID: U1-L10-Q02"
+            - generic [ref=e84]: At a small coffee shop, the distribution of the number of seconds it takes for a cashier to process an order is approximately normal with mean 276 seconds and standard deviation 38 seconds. Which of the following is closest to the proportion of orders that are processed in less than 240 seconds?
+            - generic [ref=e85]:
+              - generic [ref=e87] [cursor=pointer]:
+                - radio "A. 0.17" [ref=e88]
+                - generic [ref=e89]: A.
+                - generic [ref=e90]: "0.17"
+              - generic [ref=e92] [cursor=pointer]:
+                - radio "B. 0.25" [ref=e93]
+                - generic [ref=e94]: B.
+                - generic [ref=e95]: "0.25"
+              - generic [ref=e97] [cursor=pointer]:
+                - radio "C. 0.36" [ref=e98]
+                - generic [ref=e99]: C.
+                - generic [ref=e100]: "0.36"
+              - generic [ref=e102] [cursor=pointer]:
+                - radio "D. 0.83" [ref=e103]
+                - generic [ref=e104]: D.
+                - generic [ref=e105]: "0.83"
+              - generic [ref=e107] [cursor=pointer]:
+                - radio "E. 0.95" [ref=e108]
+                - generic [ref=e109]: E.
+                - generic [ref=e110]: "0.95"
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e114]
+              - button "Submit Answer" [ref=e116] [cursor=pointer]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e121]
+              - generic [ref=e122]: Loading...
+            - generic [ref=e124]: Answer the question to see peer responses
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - generic [ref=e128]: Question 3
+            - generic [ref=e129]: "ID: U1-L10-Q03"
+            - generic [ref=e130]: A researcher is studying a group of field mice. The distribution of the weight of field mice is approximately normal with mean 25 grams and standard deviation 4 grams. Which of the following is closest to the proportion of field mice with a weight greater than 33 grams?
+            - generic [ref=e131]:
+              - generic [ref=e133] [cursor=pointer]:
+                - radio "A. 0.023" [ref=e134]
+                - generic [ref=e135]: A.
+                - generic [ref=e136]: "0.023"
+              - generic [ref=e138] [cursor=pointer]:
+                - radio "B. 0.046" [ref=e139]
+                - generic [ref=e140]: B.
+                - generic [ref=e141]: "0.046"
+              - generic [ref=e143] [cursor=pointer]:
+                - radio "C. 0.954" [ref=e144]
+                - generic [ref=e145]: C.
+                - generic [ref=e146]: "0.954"
+              - generic [ref=e148] [cursor=pointer]:
+                - radio "D. 0.977" [ref=e149]
+                - generic [ref=e150]: D.
+                - generic [ref=e151]: "0.977"
+              - generic [ref=e153] [cursor=pointer]:
+                - radio "E. 1.000" [ref=e154]
+                - generic [ref=e155]: E.
+                - generic [ref=e156]: "1.000"
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e159]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e160]
+              - button "Submit Answer" [ref=e162] [cursor=pointer]
+          - generic [ref=e165]:
+            - generic [ref=e166]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e167]
+              - generic [ref=e168]: Loading...
+            - generic [ref=e170]: Answer the question to see peer responses
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e174]: Question 4
+            - generic [ref=e175]: "ID: U1-L10-Q04"
+            - generic [ref=e176]: Show all your work. Indicate clearly the methods you use, because you will be scored on the correctness of your methods as well as on the accuracy and completeness of your results and explanations. The following frequency table summarizes the total amounts, in dollars, for 91 orders from a food truck during a certain day. (a-i) Use the data in the table to create a histogram showing the distribution of the amounts of the orders. (a-ii) Describe the shape of the distribution of amounts. (b) Identify a possible amount for the median of the distribution. Justify your answer.
+            - table [ref=e178]:
+              - rowgroup [ref=e179]:
+                - row "Amount Frequency" [ref=e180]:
+                  - cell "Amount" [ref=e181]
+                  - cell "Frequency" [ref=e182]
+              - rowgroup [ref=e183]:
+                - row "$0 up to but not including $5 8" [ref=e184]:
+                  - cell "$0 up to but not including $5" [ref=e185]
+                  - cell "8" [ref=e186]
+                - row "$5 up to but not including $10 14" [ref=e187]:
+                  - cell "$5 up to but not including $10" [ref=e188]
+                  - cell "14" [ref=e189]
+                - row "$10 up to but not including $15 25" [ref=e190]:
+                  - cell "$10 up to but not including $15" [ref=e191]
+                  - cell "25" [ref=e192]
+                - row "$15 up to but not including $20 27" [ref=e193]:
+                  - cell "$15 up to but not including $20" [ref=e194]
+                  - cell "27" [ref=e195]
+                - row "$20 up to but not including $25 12" [ref=e196]:
+                  - cell "$20 up to but not including $25" [ref=e197]
+                  - cell "12" [ref=e198]
+                - row "$25 up to but not including $30 5" [ref=e199]:
+                  - cell "$25 up to but not including $30" [ref=e200]
+                  - cell "5" [ref=e201]
+            - generic [ref=e202]:
+              - strong [ref=e204]: "Create your Histogram:"
+              - generic [ref=e206]:
+                - textbox "Range" [ref=e207]
+                - spinbutton [ref=e208]
+                - button "Remove" [ref=e209] [cursor=pointer]
+              - button "Add Bar" [ref=e210] [cursor=pointer]
+              - generic [ref=e211]:
+                - button "Create Chart" [ref=e212] [cursor=pointer]
+                - generic [ref=e213]: Use the frequency table to build a histogram of order totals.
+              - generic [ref=e214]: No chart saved yet. Use the wizard to add one.
+              - generic [ref=e215]:
+                - generic [ref=e216]:
+                  - generic [ref=e217]:
+                    - generic [ref=e218]: Honeydew_Crocodile
+                    - generic [ref=e219]: histogram
+                  - generic [ref=e221]:
+                    - generic [ref=e222]: d
+                    - generic [ref=e223]: d
+                  - generic [ref=e226]:
+                    - generic [ref=e227]: "Reasoning:"
+                    - generic [ref=e228]: d
+                - generic [ref=e229]:
+                  - generic [ref=e230]:
+                    - generic [ref=e231]: Test_User_1761706854937
+                    - generic [ref=e232]: histogram
+                  - generic [ref=e235]: 📊 HISTOGRAM CHART
+                - generic [ref=e238]:
+                  - generic [ref=e239]:
+                    - generic [ref=e240]: Test_User_1761706799586
+                    - generic [ref=e241]: histogram
+                  - generic [ref=e244]: 📊 HISTOGRAM CHART
+                - generic [ref=e247]:
+                  - generic [ref=e248]:
+                    - generic [ref=e249]: Test_User_1761705932170
+                    - generic [ref=e250]: histogram
+                  - generic [ref=e253]: 📊 HISTOGRAM CHART
+                - generic [ref=e256]:
+                  - generic [ref=e257]:
+                    - generic [ref=e258]: Test_User_1761705902571
+                    - generic [ref=e259]: histogram
+                  - generic [ref=e262]: 📊 HISTOGRAM CHART
+                - generic [ref=e265]:
+                  - generic [ref=e266]:
+                    - generic [ref=e267]: Test_User_1761705878988
+                    - generic [ref=e268]: histogram
+                  - generic [ref=e271]: 📊 HISTOGRAM CHART
+                - generic [ref=e274]:
+                  - generic [ref=e275]:
+                    - generic [ref=e276]: Test_User_1761705855172
+                    - generic [ref=e277]: histogram
+                  - generic [ref=e280]: 📊 HISTOGRAM CHART
+                - generic [ref=e283]:
+                  - generic [ref=e284]:
+                    - generic [ref=e285]: Test_User_1761705788757
+                    - generic [ref=e286]: histogram
+                  - generic [ref=e289]: 📊 HISTOGRAM CHART
+                - generic [ref=e292]:
+                  - generic [ref=e293]:
+                    - generic [ref=e294]: Test_User_1761705780282
+                    - generic [ref=e295]: histogram
+                  - generic [ref=e298]: 📊 HISTOGRAM CHART
+                - generic [ref=e301]:
+                  - generic [ref=e302]:
+                    - generic [ref=e303]: Test_User_1761705775719
+                    - generic [ref=e304]: histogram
+                  - generic [ref=e307]: 📊 HISTOGRAM CHART
+                - generic [ref=e310]:
+                  - generic [ref=e311]:
+                    - generic [ref=e312]: Test_User_1761705769356
+                    - generic [ref=e313]: histogram
+                  - generic [ref=e316]: 📊 HISTOGRAM CHART
+                - generic [ref=e319]:
+                  - generic [ref=e320]:
+                    - generic [ref=e321]: Test_User_1761705765899
+                    - generic [ref=e322]: histogram
+                  - generic [ref=e325]: 📊 HISTOGRAM CHART
+                - generic [ref=e328]:
+                  - generic [ref=e329]:
+                    - generic [ref=e330]: Test_User_1761705760776
+                    - generic [ref=e331]: histogram
+                  - generic [ref=e334]: 📊 HISTOGRAM CHART
+                - generic [ref=e337]:
+                  - generic [ref=e338]:
+                    - generic [ref=e339]: Test_User_1761705748299
+                    - generic [ref=e340]: histogram
+                  - generic [ref=e343]: 📊 HISTOGRAM CHART
+                - generic [ref=e346]:
+                  - generic [ref=e347]:
+                    - generic [ref=e348]: Test_User_1761705747074
+                    - generic [ref=e349]: histogram
+                  - generic [ref=e352]: 📊 HISTOGRAM CHART
+                - generic [ref=e355]:
+                  - generic [ref=e356]:
+                    - generic [ref=e357]: Test_User_1761705737324
+                    - generic [ref=e358]: histogram
+                  - generic [ref=e361]: 📊 HISTOGRAM CHART
+                - generic [ref=e364]:
+                  - generic [ref=e365]:
+                    - generic [ref=e366]: Test_User_1761705736832
+                    - generic [ref=e367]: histogram
+                  - generic [ref=e370]: 📊 HISTOGRAM CHART
+                - generic [ref=e373]:
+                  - generic [ref=e374]:
+                    - generic [ref=e375]: Test_User_1761705700501
+                    - generic [ref=e376]: histogram
+                  - generic [ref=e379]: 📊 HISTOGRAM CHART
+                - generic [ref=e382]:
+                  - generic [ref=e383]:
+                    - generic [ref=e384]: Test_User_1761705697733
+                    - generic [ref=e385]: histogram
+                  - generic [ref=e388]: 📊 HISTOGRAM CHART
+                - generic [ref=e391]:
+                  - generic [ref=e392]:
+                    - generic [ref=e393]: Test_User_1761705352216
+                    - generic [ref=e394]: histogram
+                  - generic [ref=e397]: 📊 HISTOGRAM CHART
+                - generic [ref=e400]:
+                  - generic [ref=e401]:
+                    - generic [ref=e402]: Test_User_1761705340391
+                    - generic [ref=e403]: histogram
+                  - generic [ref=e406]: 📊 HISTOGRAM CHART
+                - generic [ref=e409]:
+                  - generic [ref=e410]:
+                    - generic [ref=e411]: Test_User_1761705338259
+                    - generic [ref=e412]: histogram
+                  - generic [ref=e415]: 📊 HISTOGRAM CHART
+                - generic [ref=e418]:
+                  - generic [ref=e419]:
+                    - generic [ref=e420]: Test_User_1761705329264
+                    - generic [ref=e421]: histogram
+                  - generic [ref=e424]: 📊 HISTOGRAM CHART
+                - generic [ref=e427]:
+                  - generic [ref=e428]:
+                    - generic [ref=e429]: Test_User_1761705324239
+                    - generic [ref=e430]: histogram
+                  - generic [ref=e433]: 📊 HISTOGRAM CHART
+                - generic [ref=e436]:
+                  - generic [ref=e437]:
+                    - generic [ref=e438]: Test_User_1761705320009
+                    - generic [ref=e439]: histogram
+                  - generic [ref=e442]: 📊 HISTOGRAM CHART
+                - generic [ref=e445]:
+                  - generic [ref=e446]:
+                    - generic [ref=e447]: Test_User_1761705306204
+                    - generic [ref=e448]: histogram
+                  - generic [ref=e451]: 📊 HISTOGRAM CHART
+                - generic [ref=e454]:
+                  - generic [ref=e455]:
+                    - generic [ref=e456]: Test_User_1761705305565
+                    - generic [ref=e457]: histogram
+                  - generic [ref=e460]: 📊 HISTOGRAM CHART
+                - generic [ref=e463]:
+                  - generic [ref=e464]:
+                    - generic [ref=e465]: Test_User_1761705296077
+                    - generic [ref=e466]: histogram
+                  - generic [ref=e469]: 📊 HISTOGRAM CHART
+                - generic [ref=e472]:
+                  - generic [ref=e473]:
+                    - generic [ref=e474]: Test_User_1761705295705
+                    - generic [ref=e475]: histogram
+                  - generic [ref=e478]: 📊 HISTOGRAM CHART
+                - generic [ref=e481]:
+                  - generic [ref=e482]:
+                    - generic [ref=e483]: Test_User_1761703950491
+                    - generic [ref=e484]: histogram
+                  - generic [ref=e487]: 📊 HISTOGRAM CHART
+                - generic [ref=e490]:
+                  - generic [ref=e491]:
+                    - generic [ref=e492]: Test_User_1761703920596
+                    - generic [ref=e493]: histogram
+                  - generic [ref=e496]: 📊 HISTOGRAM CHART
+                - generic [ref=e499]:
+                  - generic [ref=e500]:
+                    - generic [ref=e501]: Test_User_1761703893257
+                    - generic [ref=e502]: histogram
+                  - generic [ref=e505]: 📊 HISTOGRAM CHART
+                - generic [ref=e508]:
+                  - generic [ref=e509]:
+                    - generic [ref=e510]: Test_User_1761703862077
+                    - generic [ref=e511]: histogram
+                  - generic [ref=e514]: 📊 HISTOGRAM CHART
+                - generic [ref=e517]:
+                  - generic [ref=e518]:
+                    - generic [ref=e519]: Test_User_1761703816130
+                    - generic [ref=e520]: histogram
+                  - generic [ref=e523]: 📊 HISTOGRAM CHART
+                - generic [ref=e526]:
+                  - generic [ref=e527]:
+                    - generic [ref=e528]: Test_User_1761703756603
+                    - generic [ref=e529]: histogram
+                  - generic [ref=e532]: 📊 HISTOGRAM CHART
+                - generic [ref=e535]:
+                  - generic [ref=e536]:
+                    - generic [ref=e537]: Test_User_1761703722101
+                    - generic [ref=e538]: histogram
+                  - generic [ref=e541]: 📊 HISTOGRAM CHART
+                - generic [ref=e544]:
+                  - generic [ref=e545]:
+                    - generic [ref=e546]: Test_User_1761703637619
+                    - generic [ref=e547]: histogram
+                  - generic [ref=e550]: 📊 HISTOGRAM CHART
+            - button "Submit Answer" [ref=e555] [cursor=pointer]
+          - generic [ref=e558]:
+            - generic [ref=e559]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e560]
+              - generic [ref=e561]: 47 peers
+            - generic [ref=e562]:
+              - generic [ref=e563]:
+                - generic [ref=e564]: Apple_Rabbit 👥 Conformist 💬 Debater
+                - generic [ref=e565]: this is on paper
+                - generic [ref=e566]:
+                  - generic "1 star" [ref=e567] [cursor=pointer]:
+                    - generic [ref=e568]: 
+                  - generic "2 stars" [ref=e569] [cursor=pointer]:
+                    - generic [ref=e570]: 
+                  - generic "3 stars" [ref=e571] [cursor=pointer]:
+                    - generic [ref=e572]: 
+                  - generic "4 stars" [ref=e573] [cursor=pointer]:
+                    - generic [ref=e574]: 
+                  - generic "5 stars" [ref=e575] [cursor=pointer]:
+                    - generic [ref=e576]: 
+                  - generic [ref=e577]: "Average: N/A (0 votes)"
+              - generic [ref=e578]:
+                - generic [ref=e579]: Apricot_Fox 💬 Debater
+                - generic [ref=e580]: The distribution of the Food Truck Order Amounts, is unimodal and slightly skewed to the right. The typical amount of money was around $10-$20. The minimum amount of payments were $25-$30 and the max was $15-$20.
+                - generic [ref=e581]:
+                  - generic "1 star" [ref=e582] [cursor=pointer]:
+                    - generic [ref=e583]: 
+                  - generic "2 stars" [ref=e584] [cursor=pointer]:
+                    - generic [ref=e585]: 
+                  - generic "3 stars" [ref=e586] [cursor=pointer]:
+                    - generic [ref=e587]: 
+                  - generic "4 stars" [ref=e588] [cursor=pointer]:
+                    - generic [ref=e589]: 
+                  - generic "5 stars" [ref=e590] [cursor=pointer]:
+                    - generic [ref=e591]: 
+                  - generic [ref=e592]: "Average: N/A (0 votes)"
+              - generic [ref=e593]:
+                - generic [ref=e594]: Apricot_Horse 💬 Debater
+                - generic [ref=e595]: A-i) done on paper A-II) IT sort of resembles a bell curve shape. B)The median would be $10 not including 15 because 91/2 = 45.5 and that falls within the range of 10-15 dollars for the amount.
+                - generic [ref=e596]:
+                  - generic "1 star" [ref=e597] [cursor=pointer]:
+                    - generic [ref=e598]: 
+                  - generic "2 stars" [ref=e599] [cursor=pointer]:
+                    - generic [ref=e600]: 
+                  - generic "3 stars" [ref=e601] [cursor=pointer]:
+                    - generic [ref=e602]: 
+                  - generic "4 stars" [ref=e603] [cursor=pointer]:
+                    - generic [ref=e604]: 
+                  - generic "5 stars" [ref=e605] [cursor=pointer]:
+                    - generic [ref=e606]: 
+                  - generic [ref=e607]: "Average: N/A (0 votes)"
+              - generic [ref=e608]:
+                - generic [ref=e609]: Honeydew_Crocodile 🎯 Outlier
+                - generic [ref=e610]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"d\",\"value\":5}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\",\"title\":\"d\",\"description\":\"d\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T01:46:15.659Z\",\"updatedAt\":\"2025-10-29T01:46:15.659Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\",\"title\":\"d\",\"description\":\"d\"}"
+                - generic [ref=e611]:
+                  - generic "1 star" [ref=e612] [cursor=pointer]:
+                    - generic [ref=e613]: 
+                  - generic "2 stars" [ref=e614] [cursor=pointer]:
+                    - generic [ref=e615]: 
+                  - generic "3 stars" [ref=e616] [cursor=pointer]:
+                    - generic [ref=e617]: 
+                  - generic "4 stars" [ref=e618] [cursor=pointer]:
+                    - generic [ref=e619]: 
+                  - generic "5 stars" [ref=e620] [cursor=pointer]:
+                    - generic [ref=e621]: 
+                  - generic [ref=e622]: "Average: N/A (0 votes)"
+              - generic [ref=e623]:
+                - generic [ref=e624]: Kiwi_Monkey 💬 Debater
+                - generic [ref=e625]: skew to the right
+                - generic [ref=e626]:
+                  - generic "1 star" [ref=e627] [cursor=pointer]:
+                    - generic [ref=e628]: 
+                  - generic "2 stars" [ref=e629] [cursor=pointer]:
+                    - generic [ref=e630]: 
+                  - generic "3 stars" [ref=e631] [cursor=pointer]:
+                    - generic [ref=e632]: 
+                  - generic "4 stars" [ref=e633] [cursor=pointer]:
+                    - generic [ref=e634]: 
+                  - generic "5 stars" [ref=e635] [cursor=pointer]:
+                    - generic [ref=e636]: 
+                  - generic [ref=e637]: "Average: N/A (0 votes)"
+              - generic [ref=e638]:
+                - generic [ref=e639]: Lemon_Goat 💬 Debater
+                - generic [ref=e640]: The distribution is a bell shape. I think the median of the distribution is 13 because i arranged my data from the smallest to highest number than i added the 2 numbers at the middle and divide them by 2 which equals 13.
+                - generic [ref=e641]:
+                  - generic "1 star" [ref=e642] [cursor=pointer]:
+                    - generic [ref=e643]: 
+                  - generic "2 stars" [ref=e644] [cursor=pointer]:
+                    - generic [ref=e645]: 
+                  - generic "3 stars" [ref=e646] [cursor=pointer]:
+                    - generic [ref=e647]: 
+                  - generic "4 stars" [ref=e648] [cursor=pointer]:
+                    - generic [ref=e649]: 
+                  - generic "5 stars" [ref=e650] [cursor=pointer]:
+                    - generic [ref=e651]: 
+                  - generic [ref=e652]: "Average: N/A (0 votes)"
+              - generic [ref=e653]:
+                - generic [ref=e654]: mango_panda 🎯 Outlier 💬 Debater
+                - generic [ref=e655]: The shape would be a bell curve. 91.
+                - generic [ref=e656]:
+                  - generic "1 star" [ref=e657] [cursor=pointer]:
+                    - generic [ref=e658]: 
+                  - generic "2 stars" [ref=e659] [cursor=pointer]:
+                    - generic [ref=e660]: 
+                  - generic "3 stars" [ref=e661] [cursor=pointer]:
+                    - generic [ref=e662]: 
+                  - generic "4 stars" [ref=e663] [cursor=pointer]:
+                    - generic [ref=e664]: 
+                  - generic "5 stars" [ref=e665] [cursor=pointer]:
+                    - generic [ref=e666]: 
+                  - generic [ref=e667]: "Average: N/A (0 votes)"
+              - generic [ref=e668]:
+                - generic [ref=e669]: Papaya_Eagle 🎯 Outlier 💬 Debater
+                - generic [ref=e670]: The histogram shows that most orders were between $10 and $20, with the highest number of orders in the $15 to $20 range. The shape of the data has one main peak and a few smaller values on the higher end, which means it is a bit uneven on the right side. To find the median, we looked for the middle order out of 91. It turns out the median is around $14.80, which means half of the orders cost less than this and half cost more.
+                - generic [ref=e671]:
+                  - generic "1 star" [ref=e672] [cursor=pointer]:
+                    - generic [ref=e673]: 
+                  - generic "2 stars" [ref=e674] [cursor=pointer]:
+                    - generic [ref=e675]: 
+                  - generic "3 stars" [ref=e676] [cursor=pointer]:
+                    - generic [ref=e677]: 
+                  - generic "4 stars" [ref=e678] [cursor=pointer]:
+                    - generic [ref=e679]: 
+                  - generic "5 stars" [ref=e680] [cursor=pointer]:
+                    - generic [ref=e681]: 
+                  - generic [ref=e682]: "Average: N/A (0 votes)"
+              - generic [ref=e683]:
+                - generic [ref=e684]: Tayberry_Pelican 🎯 Outlier 💬 Debater
+                - generic [ref=e685]: Heylo
+                - generic [ref=e686]:
+                  - generic "1 star" [ref=e687] [cursor=pointer]:
+                    - generic [ref=e688]: 
+                  - generic "2 stars" [ref=e689] [cursor=pointer]:
+                    - generic [ref=e690]: 
+                  - generic "3 stars" [ref=e691] [cursor=pointer]:
+                    - generic [ref=e692]: 
+                  - generic "4 stars" [ref=e693] [cursor=pointer]:
+                    - generic [ref=e694]: 
+                  - generic "5 stars" [ref=e695] [cursor=pointer]:
+                    - generic [ref=e696]: 
+                  - generic [ref=e697]: "Average: N/A (0 votes)"
+              - generic [ref=e698]:
+                - generic [ref=e699]: teacher_man 💬 Debater
+                - generic [ref=e700]: a i . histogram is unimodal, center at the number of orders $15 - $20. skewed left, with a median possibly around 15 - 20. Since n is odd, the median will be a center value within the 91 datapoints.. so.. 90/2 = 45.. the next value up from 45th from lowest should be the median. 8 + 14 + 25 = 22 + 25= 47... So the median will actually be in the 10 up but not including 20. I can't show histogram here..
+                - generic [ref=e701]:
+                  - generic "1 star" [ref=e702] [cursor=pointer]:
+                    - generic [ref=e703]: 
+                  - generic "2 stars" [ref=e704] [cursor=pointer]:
+                    - generic [ref=e705]: 
+                  - generic "3 stars" [ref=e706] [cursor=pointer]:
+                    - generic [ref=e707]: 
+                  - generic "4 stars" [ref=e708] [cursor=pointer]:
+                    - generic [ref=e709]: 
+                  - generic "5 stars" [ref=e710] [cursor=pointer]:
+                    - generic [ref=e711]: 
+                  - generic [ref=e712]: "Average: N/A (0 votes)"
+              - generic [ref=e713]:
+                - generic [ref=e714]: test_user 🎯 Outlier 💬 Debater
+                - generic [ref=e715]: Hello
+                - generic [ref=e716]:
+                  - generic "1 star" [ref=e717] [cursor=pointer]:
+                    - generic [ref=e718]: 
+                  - generic "2 stars" [ref=e719] [cursor=pointer]:
+                    - generic [ref=e720]: 
+                  - generic "3 stars" [ref=e721] [cursor=pointer]:
+                    - generic [ref=e722]: 
+                  - generic "4 stars" [ref=e723] [cursor=pointer]:
+                    - generic [ref=e724]: 
+                  - generic "5 stars" [ref=e725] [cursor=pointer]:
+                    - generic [ref=e726]: 
+                  - generic [ref=e727]: "Average: N/A (0 votes)"
+              - generic [ref=e728]:
+                - generic [ref=e729]: Test_User_1761703637619 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e730]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:07:22.276Z\",\"updatedAt\":\"2025-10-29T02:07:22.276Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e731]:
+                  - generic "1 star" [ref=e732] [cursor=pointer]:
+                    - generic [ref=e733]: 
+                  - generic "2 stars" [ref=e734] [cursor=pointer]:
+                    - generic [ref=e735]: 
+                  - generic "3 stars" [ref=e736] [cursor=pointer]:
+                    - generic [ref=e737]: 
+                  - generic "4 stars" [ref=e738] [cursor=pointer]:
+                    - generic [ref=e739]: 
+                  - generic "5 stars" [ref=e740] [cursor=pointer]:
+                    - generic [ref=e741]: 
+                  - generic [ref=e742]: "Average: N/A (0 votes)"
+              - generic [ref=e743]:
+                - generic [ref=e744]: Test_User_1761703722101 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e745]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:08:46.650Z\",\"updatedAt\":\"2025-10-29T02:08:46.650Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e746]:
+                  - generic "1 star" [ref=e747] [cursor=pointer]:
+                    - generic [ref=e748]: 
+                  - generic "2 stars" [ref=e749] [cursor=pointer]:
+                    - generic [ref=e750]: 
+                  - generic "3 stars" [ref=e751] [cursor=pointer]:
+                    - generic [ref=e752]: 
+                  - generic "4 stars" [ref=e753] [cursor=pointer]:
+                    - generic [ref=e754]: 
+                  - generic "5 stars" [ref=e755] [cursor=pointer]:
+                    - generic [ref=e756]: 
+                  - generic [ref=e757]: "Average: N/A (0 votes)"
+              - generic [ref=e758]:
+                - generic [ref=e759]: Test_User_1761703756603 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e760]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:09:21.501Z\",\"updatedAt\":\"2025-10-29T02:09:21.501Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e761]:
+                  - generic "1 star" [ref=e762] [cursor=pointer]:
+                    - generic [ref=e763]: 
+                  - generic "2 stars" [ref=e764] [cursor=pointer]:
+                    - generic [ref=e765]: 
+                  - generic "3 stars" [ref=e766] [cursor=pointer]:
+                    - generic [ref=e767]: 
+                  - generic "4 stars" [ref=e768] [cursor=pointer]:
+                    - generic [ref=e769]: 
+                  - generic "5 stars" [ref=e770] [cursor=pointer]:
+                    - generic [ref=e771]: 
+                  - generic [ref=e772]: "Average: N/A (0 votes)"
+              - generic [ref=e773]:
+                - generic [ref=e774]: Test_User_1761703816130 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e775]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:10:20.917Z\",\"updatedAt\":\"2025-10-29T02:10:20.917Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e776]:
+                  - generic "1 star" [ref=e777] [cursor=pointer]:
+                    - generic [ref=e778]: 
+                  - generic "2 stars" [ref=e779] [cursor=pointer]:
+                    - generic [ref=e780]: 
+                  - generic "3 stars" [ref=e781] [cursor=pointer]:
+                    - generic [ref=e782]: 
+                  - generic "4 stars" [ref=e783] [cursor=pointer]:
+                    - generic [ref=e784]: 
+                  - generic "5 stars" [ref=e785] [cursor=pointer]:
+                    - generic [ref=e786]: 
+                  - generic [ref=e787]: "Average: N/A (0 votes)"
+              - generic [ref=e788]:
+                - generic [ref=e789]: Test_User_1761703862077 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e790]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:11:06.802Z\",\"updatedAt\":\"2025-10-29T02:11:06.802Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e791]:
+                  - generic "1 star" [ref=e792] [cursor=pointer]:
+                    - generic [ref=e793]: 
+                  - generic "2 stars" [ref=e794] [cursor=pointer]:
+                    - generic [ref=e795]: 
+                  - generic "3 stars" [ref=e796] [cursor=pointer]:
+                    - generic [ref=e797]: 
+                  - generic "4 stars" [ref=e798] [cursor=pointer]:
+                    - generic [ref=e799]: 
+                  - generic "5 stars" [ref=e800] [cursor=pointer]:
+                    - generic [ref=e801]: 
+                  - generic [ref=e802]: "Average: N/A (0 votes)"
+              - generic [ref=e803]:
+                - generic [ref=e804]: Test_User_1761703893257 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e805]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:11:37.642Z\",\"updatedAt\":\"2025-10-29T02:11:37.642Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e806]:
+                  - generic "1 star" [ref=e807] [cursor=pointer]:
+                    - generic [ref=e808]: 
+                  - generic "2 stars" [ref=e809] [cursor=pointer]:
+                    - generic [ref=e810]: 
+                  - generic "3 stars" [ref=e811] [cursor=pointer]:
+                    - generic [ref=e812]: 
+                  - generic "4 stars" [ref=e813] [cursor=pointer]:
+                    - generic [ref=e814]: 
+                  - generic "5 stars" [ref=e815] [cursor=pointer]:
+                    - generic [ref=e816]: 
+                  - generic [ref=e817]: "Average: N/A (0 votes)"
+              - generic [ref=e818]:
+                - generic [ref=e819]: Test_User_1761703920596 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e820]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:12:05.294Z\",\"updatedAt\":\"2025-10-29T02:12:05.294Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e821]:
+                  - generic "1 star" [ref=e822] [cursor=pointer]:
+                    - generic [ref=e823]: 
+                  - generic "2 stars" [ref=e824] [cursor=pointer]:
+                    - generic [ref=e825]: 
+                  - generic "3 stars" [ref=e826] [cursor=pointer]:
+                    - generic [ref=e827]: 
+                  - generic "4 stars" [ref=e828] [cursor=pointer]:
+                    - generic [ref=e829]: 
+                  - generic "5 stars" [ref=e830] [cursor=pointer]:
+                    - generic [ref=e831]: 
+                  - generic [ref=e832]: "Average: N/A (0 votes)"
+              - generic [ref=e833]:
+                - generic [ref=e834]: Test_User_1761703950491 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e835]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:12:34.989Z\",\"updatedAt\":\"2025-10-29T02:12:34.989Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e836]:
+                  - generic "1 star" [ref=e837] [cursor=pointer]:
+                    - generic [ref=e838]: 
+                  - generic "2 stars" [ref=e839] [cursor=pointer]:
+                    - generic [ref=e840]: 
+                  - generic "3 stars" [ref=e841] [cursor=pointer]:
+                    - generic [ref=e842]: 
+                  - generic "4 stars" [ref=e843] [cursor=pointer]:
+                    - generic [ref=e844]: 
+                  - generic "5 stars" [ref=e845] [cursor=pointer]:
+                    - generic [ref=e846]: 
+                  - generic [ref=e847]: "Average: N/A (0 votes)"
+              - generic [ref=e848]:
+                - generic [ref=e849]: Test_User_1761705295705 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e850]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:00.772Z\",\"updatedAt\":\"2025-10-29T02:35:00.772Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e851]:
+                  - generic "1 star" [ref=e852] [cursor=pointer]:
+                    - generic [ref=e853]: 
+                  - generic "2 stars" [ref=e854] [cursor=pointer]:
+                    - generic [ref=e855]: 
+                  - generic "3 stars" [ref=e856] [cursor=pointer]:
+                    - generic [ref=e857]: 
+                  - generic "4 stars" [ref=e858] [cursor=pointer]:
+                    - generic [ref=e859]: 
+                  - generic "5 stars" [ref=e860] [cursor=pointer]:
+                    - generic [ref=e861]: 
+                  - generic [ref=e862]: "Average: N/A (0 votes)"
+              - generic [ref=e863]:
+                - generic [ref=e864]: Test_User_1761705296077 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e865]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:01.781Z\",\"updatedAt\":\"2025-10-29T02:35:01.781Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e866]:
+                  - generic "1 star" [ref=e867] [cursor=pointer]:
+                    - generic [ref=e868]: 
+                  - generic "2 stars" [ref=e869] [cursor=pointer]:
+                    - generic [ref=e870]: 
+                  - generic "3 stars" [ref=e871] [cursor=pointer]:
+                    - generic [ref=e872]: 
+                  - generic "4 stars" [ref=e873] [cursor=pointer]:
+                    - generic [ref=e874]: 
+                  - generic "5 stars" [ref=e875] [cursor=pointer]:
+                    - generic [ref=e876]: 
+                  - generic [ref=e877]: "Average: N/A (0 votes)"
+              - generic [ref=e878]:
+                - generic [ref=e879]: Test_User_1761705305565 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e880]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:10.519Z\",\"updatedAt\":\"2025-10-29T02:35:10.519Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e881]:
+                  - generic "1 star" [ref=e882] [cursor=pointer]:
+                    - generic [ref=e883]: 
+                  - generic "2 stars" [ref=e884] [cursor=pointer]:
+                    - generic [ref=e885]: 
+                  - generic "3 stars" [ref=e886] [cursor=pointer]:
+                    - generic [ref=e887]: 
+                  - generic "4 stars" [ref=e888] [cursor=pointer]:
+                    - generic [ref=e889]: 
+                  - generic "5 stars" [ref=e890] [cursor=pointer]:
+                    - generic [ref=e891]: 
+                  - generic [ref=e892]: "Average: N/A (0 votes)"
+              - generic [ref=e893]:
+                - generic [ref=e894]: Test_User_1761705306204 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e895]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:11.843Z\",\"updatedAt\":\"2025-10-29T02:35:11.843Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e896]:
+                  - generic "1 star" [ref=e897] [cursor=pointer]:
+                    - generic [ref=e898]: 
+                  - generic "2 stars" [ref=e899] [cursor=pointer]:
+                    - generic [ref=e900]: 
+                  - generic "3 stars" [ref=e901] [cursor=pointer]:
+                    - generic [ref=e902]: 
+                  - generic "4 stars" [ref=e903] [cursor=pointer]:
+                    - generic [ref=e904]: 
+                  - generic "5 stars" [ref=e905] [cursor=pointer]:
+                    - generic [ref=e906]: 
+                  - generic [ref=e907]: "Average: N/A (0 votes)"
+              - generic [ref=e908]:
+                - generic [ref=e909]: Test_User_1761705320009 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e910]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:24.810Z\",\"updatedAt\":\"2025-10-29T02:35:24.810Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e911]:
+                  - generic "1 star" [ref=e912] [cursor=pointer]:
+                    - generic [ref=e913]: 
+                  - generic "2 stars" [ref=e914] [cursor=pointer]:
+                    - generic [ref=e915]: 
+                  - generic "3 stars" [ref=e916] [cursor=pointer]:
+                    - generic [ref=e917]: 
+                  - generic "4 stars" [ref=e918] [cursor=pointer]:
+                    - generic [ref=e919]: 
+                  - generic "5 stars" [ref=e920] [cursor=pointer]:
+                    - generic [ref=e921]: 
+                  - generic [ref=e922]: "Average: N/A (0 votes)"
+              - generic [ref=e923]:
+                - generic [ref=e924]: Test_User_1761705324239 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e925]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:29.452Z\",\"updatedAt\":\"2025-10-29T02:35:29.452Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e926]:
+                  - generic "1 star" [ref=e927] [cursor=pointer]:
+                    - generic [ref=e928]: 
+                  - generic "2 stars" [ref=e929] [cursor=pointer]:
+                    - generic [ref=e930]: 
+                  - generic "3 stars" [ref=e931] [cursor=pointer]:
+                    - generic [ref=e932]: 
+                  - generic "4 stars" [ref=e933] [cursor=pointer]:
+                    - generic [ref=e934]: 
+                  - generic "5 stars" [ref=e935] [cursor=pointer]:
+                    - generic [ref=e936]: 
+                  - generic [ref=e937]: "Average: N/A (0 votes)"
+              - generic [ref=e938]:
+                - generic [ref=e939]: Test_User_1761705329264 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e940]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:35.104Z\",\"updatedAt\":\"2025-10-29T02:35:35.104Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e941]:
+                  - generic "1 star" [ref=e942] [cursor=pointer]:
+                    - generic [ref=e943]: 
+                  - generic "2 stars" [ref=e944] [cursor=pointer]:
+                    - generic [ref=e945]: 
+                  - generic "3 stars" [ref=e946] [cursor=pointer]:
+                    - generic [ref=e947]: 
+                  - generic "4 stars" [ref=e948] [cursor=pointer]:
+                    - generic [ref=e949]: 
+                  - generic "5 stars" [ref=e950] [cursor=pointer]:
+                    - generic [ref=e951]: 
+                  - generic [ref=e952]: "Average: N/A (0 votes)"
+              - generic [ref=e953]:
+                - generic [ref=e954]: Test_User_1761705338259 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e955]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:43.597Z\",\"updatedAt\":\"2025-10-29T02:35:43.597Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e956]:
+                  - generic "1 star" [ref=e957] [cursor=pointer]:
+                    - generic [ref=e958]: 
+                  - generic "2 stars" [ref=e959] [cursor=pointer]:
+                    - generic [ref=e960]: 
+                  - generic "3 stars" [ref=e961] [cursor=pointer]:
+                    - generic [ref=e962]: 
+                  - generic "4 stars" [ref=e963] [cursor=pointer]:
+                    - generic [ref=e964]: 
+                  - generic "5 stars" [ref=e965] [cursor=pointer]:
+                    - generic [ref=e966]: 
+                  - generic [ref=e967]: "Average: N/A (0 votes)"
+              - generic [ref=e968]:
+                - generic [ref=e969]: Test_User_1761705340391 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e970]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:46.248Z\",\"updatedAt\":\"2025-10-29T02:35:46.248Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e971]:
+                  - generic "1 star" [ref=e972] [cursor=pointer]:
+                    - generic [ref=e973]: 
+                  - generic "2 stars" [ref=e974] [cursor=pointer]:
+                    - generic [ref=e975]: 
+                  - generic "3 stars" [ref=e976] [cursor=pointer]:
+                    - generic [ref=e977]: 
+                  - generic "4 stars" [ref=e978] [cursor=pointer]:
+                    - generic [ref=e979]: 
+                  - generic "5 stars" [ref=e980] [cursor=pointer]:
+                    - generic [ref=e981]: 
+                  - generic [ref=e982]: "Average: N/A (0 votes)"
+              - generic [ref=e983]:
+                - generic [ref=e984]: Test_User_1761705352216 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e985]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:35:57.494Z\",\"updatedAt\":\"2025-10-29T02:35:57.494Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e986]:
+                  - generic "1 star" [ref=e987] [cursor=pointer]:
+                    - generic [ref=e988]: 
+                  - generic "2 stars" [ref=e989] [cursor=pointer]:
+                    - generic [ref=e990]: 
+                  - generic "3 stars" [ref=e991] [cursor=pointer]:
+                    - generic [ref=e992]: 
+                  - generic "4 stars" [ref=e993] [cursor=pointer]:
+                    - generic [ref=e994]: 
+                  - generic "5 stars" [ref=e995] [cursor=pointer]:
+                    - generic [ref=e996]: 
+                  - generic [ref=e997]: "Average: N/A (0 votes)"
+              - generic [ref=e998]:
+                - generic [ref=e999]: Test_User_1761705697733 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1000]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:41:42.239Z\",\"updatedAt\":\"2025-10-29T02:41:42.239Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1001]:
+                  - generic "1 star" [ref=e1002] [cursor=pointer]:
+                    - generic [ref=e1003]: 
+                  - generic "2 stars" [ref=e1004] [cursor=pointer]:
+                    - generic [ref=e1005]: 
+                  - generic "3 stars" [ref=e1006] [cursor=pointer]:
+                    - generic [ref=e1007]: 
+                  - generic "4 stars" [ref=e1008] [cursor=pointer]:
+                    - generic [ref=e1009]: 
+                  - generic "5 stars" [ref=e1010] [cursor=pointer]:
+                    - generic [ref=e1011]: 
+                  - generic [ref=e1012]: "Average: N/A (0 votes)"
+              - generic [ref=e1013]:
+                - generic [ref=e1014]: Test_User_1761705700501 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1015]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:41:46.433Z\",\"updatedAt\":\"2025-10-29T02:41:46.433Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1016]:
+                  - generic "1 star" [ref=e1017] [cursor=pointer]:
+                    - generic [ref=e1018]: 
+                  - generic "2 stars" [ref=e1019] [cursor=pointer]:
+                    - generic [ref=e1020]: 
+                  - generic "3 stars" [ref=e1021] [cursor=pointer]:
+                    - generic [ref=e1022]: 
+                  - generic "4 stars" [ref=e1023] [cursor=pointer]:
+                    - generic [ref=e1024]: 
+                  - generic "5 stars" [ref=e1025] [cursor=pointer]:
+                    - generic [ref=e1026]: 
+                  - generic [ref=e1027]: "Average: N/A (0 votes)"
+              - generic [ref=e1028]:
+                - generic [ref=e1029]: Test_User_1761705736832 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1030]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:22.249Z\",\"updatedAt\":\"2025-10-29T02:42:22.249Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1031]:
+                  - generic "1 star" [ref=e1032] [cursor=pointer]:
+                    - generic [ref=e1033]: 
+                  - generic "2 stars" [ref=e1034] [cursor=pointer]:
+                    - generic [ref=e1035]: 
+                  - generic "3 stars" [ref=e1036] [cursor=pointer]:
+                    - generic [ref=e1037]: 
+                  - generic "4 stars" [ref=e1038] [cursor=pointer]:
+                    - generic [ref=e1039]: 
+                  - generic "5 stars" [ref=e1040] [cursor=pointer]:
+                    - generic [ref=e1041]: 
+                  - generic [ref=e1042]: "Average: N/A (0 votes)"
+              - generic [ref=e1043]:
+                - generic [ref=e1044]: Test_User_1761705737324 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1045]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:23.808Z\",\"updatedAt\":\"2025-10-29T02:42:23.808Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1046]:
+                  - generic "1 star" [ref=e1047] [cursor=pointer]:
+                    - generic [ref=e1048]: 
+                  - generic "2 stars" [ref=e1049] [cursor=pointer]:
+                    - generic [ref=e1050]: 
+                  - generic "3 stars" [ref=e1051] [cursor=pointer]:
+                    - generic [ref=e1052]: 
+                  - generic "4 stars" [ref=e1053] [cursor=pointer]:
+                    - generic [ref=e1054]: 
+                  - generic "5 stars" [ref=e1055] [cursor=pointer]:
+                    - generic [ref=e1056]: 
+                  - generic [ref=e1057]: "Average: N/A (0 votes)"
+              - generic [ref=e1058]:
+                - generic [ref=e1059]: Test_User_1761705747074 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1060]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:32.096Z\",\"updatedAt\":\"2025-10-29T02:42:32.096Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1061]:
+                  - generic "1 star" [ref=e1062] [cursor=pointer]:
+                    - generic [ref=e1063]: 
+                  - generic "2 stars" [ref=e1064] [cursor=pointer]:
+                    - generic [ref=e1065]: 
+                  - generic "3 stars" [ref=e1066] [cursor=pointer]:
+                    - generic [ref=e1067]: 
+                  - generic "4 stars" [ref=e1068] [cursor=pointer]:
+                    - generic [ref=e1069]: 
+                  - generic "5 stars" [ref=e1070] [cursor=pointer]:
+                    - generic [ref=e1071]: 
+                  - generic [ref=e1072]: "Average: N/A (0 votes)"
+              - generic [ref=e1073]:
+                - generic [ref=e1074]: Test_User_1761705748299 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1075]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:32.973Z\",\"updatedAt\":\"2025-10-29T02:42:32.973Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1076]:
+                  - generic "1 star" [ref=e1077] [cursor=pointer]:
+                    - generic [ref=e1078]: 
+                  - generic "2 stars" [ref=e1079] [cursor=pointer]:
+                    - generic [ref=e1080]: 
+                  - generic "3 stars" [ref=e1081] [cursor=pointer]:
+                    - generic [ref=e1082]: 
+                  - generic "4 stars" [ref=e1083] [cursor=pointer]:
+                    - generic [ref=e1084]: 
+                  - generic "5 stars" [ref=e1085] [cursor=pointer]:
+                    - generic [ref=e1086]: 
+                  - generic [ref=e1087]: "Average: N/A (0 votes)"
+              - generic [ref=e1088]:
+                - generic [ref=e1089]: Test_User_1761705760776 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1090]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:45.049Z\",\"updatedAt\":\"2025-10-29T02:42:45.049Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1091]:
+                  - generic "1 star" [ref=e1092] [cursor=pointer]:
+                    - generic [ref=e1093]: 
+                  - generic "2 stars" [ref=e1094] [cursor=pointer]:
+                    - generic [ref=e1095]: 
+                  - generic "3 stars" [ref=e1096] [cursor=pointer]:
+                    - generic [ref=e1097]: 
+                  - generic "4 stars" [ref=e1098] [cursor=pointer]:
+                    - generic [ref=e1099]: 
+                  - generic "5 stars" [ref=e1100] [cursor=pointer]:
+                    - generic [ref=e1101]: 
+                  - generic [ref=e1102]: "Average: N/A (0 votes)"
+              - generic [ref=e1103]:
+                - generic [ref=e1104]: Test_User_1761705765899 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1105]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:50.943Z\",\"updatedAt\":\"2025-10-29T02:42:50.943Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1106]:
+                  - generic "1 star" [ref=e1107] [cursor=pointer]:
+                    - generic [ref=e1108]: 
+                  - generic "2 stars" [ref=e1109] [cursor=pointer]:
+                    - generic [ref=e1110]: 
+                  - generic "3 stars" [ref=e1111] [cursor=pointer]:
+                    - generic [ref=e1112]: 
+                  - generic "4 stars" [ref=e1113] [cursor=pointer]:
+                    - generic [ref=e1114]: 
+                  - generic "5 stars" [ref=e1115] [cursor=pointer]:
+                    - generic [ref=e1116]: 
+                  - generic [ref=e1117]: "Average: N/A (0 votes)"
+              - generic [ref=e1118]:
+                - generic [ref=e1119]: Test_User_1761705769356 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1120]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:42:55.403Z\",\"updatedAt\":\"2025-10-29T02:42:55.403Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1121]:
+                  - generic "1 star" [ref=e1122] [cursor=pointer]:
+                    - generic [ref=e1123]: 
+                  - generic "2 stars" [ref=e1124] [cursor=pointer]:
+                    - generic [ref=e1125]: 
+                  - generic "3 stars" [ref=e1126] [cursor=pointer]:
+                    - generic [ref=e1127]: 
+                  - generic "4 stars" [ref=e1128] [cursor=pointer]:
+                    - generic [ref=e1129]: 
+                  - generic "5 stars" [ref=e1130] [cursor=pointer]:
+                    - generic [ref=e1131]: 
+                  - generic [ref=e1132]: "Average: N/A (0 votes)"
+              - generic [ref=e1133]:
+                - generic [ref=e1134]: Test_User_1761705775719 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1135]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:43:00.793Z\",\"updatedAt\":\"2025-10-29T02:43:00.793Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1136]:
+                  - generic "1 star" [ref=e1137] [cursor=pointer]:
+                    - generic [ref=e1138]: 
+                  - generic "2 stars" [ref=e1139] [cursor=pointer]:
+                    - generic [ref=e1140]: 
+                  - generic "3 stars" [ref=e1141] [cursor=pointer]:
+                    - generic [ref=e1142]: 
+                  - generic "4 stars" [ref=e1143] [cursor=pointer]:
+                    - generic [ref=e1144]: 
+                  - generic "5 stars" [ref=e1145] [cursor=pointer]:
+                    - generic [ref=e1146]: 
+                  - generic [ref=e1147]: "Average: N/A (0 votes)"
+              - generic [ref=e1148]:
+                - generic [ref=e1149]: Test_User_1761705780282 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1150]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:43:06.276Z\",\"updatedAt\":\"2025-10-29T02:43:06.276Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1151]:
+                  - generic "1 star" [ref=e1152] [cursor=pointer]:
+                    - generic [ref=e1153]: 
+                  - generic "2 stars" [ref=e1154] [cursor=pointer]:
+                    - generic [ref=e1155]: 
+                  - generic "3 stars" [ref=e1156] [cursor=pointer]:
+                    - generic [ref=e1157]: 
+                  - generic "4 stars" [ref=e1158] [cursor=pointer]:
+                    - generic [ref=e1159]: 
+                  - generic "5 stars" [ref=e1160] [cursor=pointer]:
+                    - generic [ref=e1161]: 
+                  - generic [ref=e1162]: "Average: N/A (0 votes)"
+              - generic [ref=e1163]:
+                - generic [ref=e1164]: Test_User_1761705788757 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1165]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:43:14.139Z\",\"updatedAt\":\"2025-10-29T02:43:14.139Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1166]:
+                  - generic "1 star" [ref=e1167] [cursor=pointer]:
+                    - generic [ref=e1168]: 
+                  - generic "2 stars" [ref=e1169] [cursor=pointer]:
+                    - generic [ref=e1170]: 
+                  - generic "3 stars" [ref=e1171] [cursor=pointer]:
+                    - generic [ref=e1172]: 
+                  - generic "4 stars" [ref=e1173] [cursor=pointer]:
+                    - generic [ref=e1174]: 
+                  - generic "5 stars" [ref=e1175] [cursor=pointer]:
+                    - generic [ref=e1176]: 
+                  - generic [ref=e1177]: "Average: N/A (0 votes)"
+              - generic [ref=e1178]:
+                - generic [ref=e1179]: Test_User_1761705855172 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1180]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:44:19.462Z\",\"updatedAt\":\"2025-10-29T02:44:19.462Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1181]:
+                  - generic "1 star" [ref=e1182] [cursor=pointer]:
+                    - generic [ref=e1183]: 
+                  - generic "2 stars" [ref=e1184] [cursor=pointer]:
+                    - generic [ref=e1185]: 
+                  - generic "3 stars" [ref=e1186] [cursor=pointer]:
+                    - generic [ref=e1187]: 
+                  - generic "4 stars" [ref=e1188] [cursor=pointer]:
+                    - generic [ref=e1189]: 
+                  - generic "5 stars" [ref=e1190] [cursor=pointer]:
+                    - generic [ref=e1191]: 
+                  - generic [ref=e1192]: "Average: N/A (0 votes)"
+              - generic [ref=e1193]:
+                - generic [ref=e1194]: Test_User_1761705878988 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1195]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:44:43.160Z\",\"updatedAt\":\"2025-10-29T02:44:43.160Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1196]:
+                  - generic "1 star" [ref=e1197] [cursor=pointer]:
+                    - generic [ref=e1198]: 
+                  - generic "2 stars" [ref=e1199] [cursor=pointer]:
+                    - generic [ref=e1200]: 
+                  - generic "3 stars" [ref=e1201] [cursor=pointer]:
+                    - generic [ref=e1202]: 
+                  - generic "4 stars" [ref=e1203] [cursor=pointer]:
+                    - generic [ref=e1204]: 
+                  - generic "5 stars" [ref=e1205] [cursor=pointer]:
+                    - generic [ref=e1206]: 
+                  - generic [ref=e1207]: "Average: N/A (0 votes)"
+              - generic [ref=e1208]:
+                - generic [ref=e1209]: Test_User_1761705902571 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1210]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:45:07.136Z\",\"updatedAt\":\"2025-10-29T02:45:07.136Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1211]:
+                  - generic "1 star" [ref=e1212] [cursor=pointer]:
+                    - generic [ref=e1213]: 
+                  - generic "2 stars" [ref=e1214] [cursor=pointer]:
+                    - generic [ref=e1215]: 
+                  - generic "3 stars" [ref=e1216] [cursor=pointer]:
+                    - generic [ref=e1217]: 
+                  - generic "4 stars" [ref=e1218] [cursor=pointer]:
+                    - generic [ref=e1219]: 
+                  - generic "5 stars" [ref=e1220] [cursor=pointer]:
+                    - generic [ref=e1221]: 
+                  - generic [ref=e1222]: "Average: N/A (0 votes)"
+              - generic [ref=e1223]:
+                - generic [ref=e1224]: Test_User_1761705932170 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1225]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:45:36.275Z\",\"updatedAt\":\"2025-10-29T02:45:36.275Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1226]:
+                  - generic "1 star" [ref=e1227] [cursor=pointer]:
+                    - generic [ref=e1228]: 
+                  - generic "2 stars" [ref=e1229] [cursor=pointer]:
+                    - generic [ref=e1230]: 
+                  - generic "3 stars" [ref=e1231] [cursor=pointer]:
+                    - generic [ref=e1232]: 
+                  - generic "4 stars" [ref=e1233] [cursor=pointer]:
+                    - generic [ref=e1234]: 
+                  - generic "5 stars" [ref=e1235] [cursor=pointer]:
+                    - generic [ref=e1236]: 
+                  - generic [ref=e1237]: "Average: N/A (0 votes)"
+              - generic [ref=e1238]:
+                - generic [ref=e1239]: Test_User_1761706799586 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1240]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T03:00:04.985Z\",\"updatedAt\":\"2025-10-29T03:00:04.985Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1241]:
+                  - generic "1 star" [ref=e1242] [cursor=pointer]:
+                    - generic [ref=e1243]: 
+                  - generic "2 stars" [ref=e1244] [cursor=pointer]:
+                    - generic [ref=e1245]: 
+                  - generic "3 stars" [ref=e1246] [cursor=pointer]:
+                    - generic [ref=e1247]: 
+                  - generic "4 stars" [ref=e1248] [cursor=pointer]:
+                    - generic [ref=e1249]: 
+                  - generic "5 stars" [ref=e1250] [cursor=pointer]:
+                    - generic [ref=e1251]: 
+                  - generic [ref=e1252]: "Average: N/A (0 votes)"
+              - generic [ref=e1253]:
+                - generic [ref=e1254]: Test_User_1761706854937 🎯 Outlier 🤐 Silent Type
+                - generic [ref=e1255]: "{\"type\":\"histogram\",\"seriesName\":\"Frequency\",\"binning\":{\"mode\":\"auto\",\"bins\":[{\"label\":\"A\",\"value\":5},{\"label\":\"B\",\"value\":10}]},\"options\":{\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T03:00:59.813Z\",\"updatedAt\":\"2025-10-29T03:00:59.813Z\"},\"xLabel\":\"Interval\",\"yLabel\":\"Frequency\"}"
+                - generic [ref=e1256]:
+                  - generic "1 star" [ref=e1257] [cursor=pointer]:
+                    - generic [ref=e1258]: 
+                  - generic "2 stars" [ref=e1259] [cursor=pointer]:
+                    - generic [ref=e1260]: 
+                  - generic "3 stars" [ref=e1261] [cursor=pointer]:
+                    - generic [ref=e1262]: 
+                  - generic "4 stars" [ref=e1263] [cursor=pointer]:
+                    - generic [ref=e1264]: 
+                  - generic "5 stars" [ref=e1265] [cursor=pointer]:
+                    - generic [ref=e1266]: 
+                  - generic [ref=e1267]: "Average: N/A (0 votes)"
+        - generic [ref=e1268]:
+          - generic [ref=e1269]:
+            - generic [ref=e1271]: Question 5
+            - generic [ref=e1272]: "ID: U1-L10-Q05"
+            - generic [ref=e1273]: Shalise competed in a jigsaw puzzle competition where participants are timed on how long they take to complete puzzles of various sizes. Shalise completed a small puzzle in 75 minutes and a large jigsaw puzzle in 140 minutes. For all participants, the distribution of completion time for the small puzzle was approximately normal with mean 60 minutes and standard deviation 15 minutes. The distribution of completion time for the large puzzle was approximately normal with mean 180 minutes and standard deviation 40 minutes. Approximately what percent of the participants had finishing times greater than Shalise's for each puzzle?
+            - generic [ref=e1274]:
+              - generic [ref=e1276] [cursor=pointer]:
+                - radio "A. 16% on the small puzzle and 16% on the large puzzle" [ref=e1277]
+                - generic [ref=e1278]: A.
+                - generic [ref=e1279]: 16% on the small puzzle and 16% on the large puzzle
+              - generic [ref=e1281] [cursor=pointer]:
+                - radio "B. 16% on the small puzzle and 84% on the large puzzle" [ref=e1282]
+                - generic [ref=e1283]: B.
+                - generic [ref=e1284]: 16% on the small puzzle and 84% on the large puzzle
+              - generic [ref=e1286] [cursor=pointer]:
+                - radio "C. 32% on the small puzzle and 68% on the large puzzle" [ref=e1287]
+                - generic [ref=e1288]: C.
+                - generic [ref=e1289]: 32% on the small puzzle and 68% on the large puzzle
+              - generic [ref=e1291] [cursor=pointer]:
+                - radio "D. 84% on the small puzzle and 84% on the large puzzle" [ref=e1292]
+                - generic [ref=e1293]: D.
+                - generic [ref=e1294]: 84% on the small puzzle and 84% on the large puzzle
+              - generic [ref=e1296] [cursor=pointer]:
+                - radio "E. 84% on the small puzzle and 16% on the large puzzle" [ref=e1297]
+                - generic [ref=e1298]: E.
+                - generic [ref=e1299]: 84% on the small puzzle and 16% on the large puzzle
+            - generic [ref=e1300]:
+              - generic [ref=e1301]:
+                - generic [ref=e1302]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e1303]
+              - button "Submit Answer" [ref=e1305] [cursor=pointer]
+          - generic [ref=e1308]:
+            - generic [ref=e1309]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e1310]
+              - generic [ref=e1311]: Loading...
+            - generic [ref=e1313]: Answer the question to see peer responses
+        - generic [ref=e1314]:
+          - generic [ref=e1315]:
+            - generic [ref=e1317]: Question 6
+            - generic [ref=e1318]: "ID: U1-L10-Q06"
+            - generic [ref=e1319]: Show all your work. Indicate clearly the methods you use, because you will be scored on the correctness of your methods as well as on the accuracy and completeness of your results and explanations. Kathy and her brother Clay recently ran in a local marathon. The distribution of finishing time for women was approximately normal with mean 259 minutes and standard deviation 32 minutes. The distribution of finishing time for men was approximately normal with mean 242 minutes and standard deviation 29 minutes. (a) The finishing time for Clay was 289 minutes. Calculate and interpret the standardized score for Clay's marathon time. Show your work. (b) The finishing time for Kathy was 272 minutes. What proportion of women who ran the marathon had a finishing time less than Kathy's? Show your work. (c) The standard deviation of finishing time is greater for women than for men. What does this indicate about the finishing times of the women who ran the marathon compared to the finishing times of the men who ran the marathon?
+            - generic [ref=e1320]:
+              - strong [ref=e1322]: "Create your Normal:"
+              - generic [ref=e1323]:
+                - generic [ref=e1324]:
+                  - generic [ref=e1325]: "Mean (μ):"
+                  - spinbutton [ref=e1326]: "0"
+                - generic [ref=e1327]:
+                  - generic [ref=e1328]: "Standard Deviation (σ):"
+                  - spinbutton [ref=e1329]: "1"
+                - generic [ref=e1330]:
+                  - generic [ref=e1331]: "Shading:"
+                  - combobox [ref=e1332]:
+                    - option "None" [selected]
+                    - option "Left tail"
+                    - option "Right tail"
+                    - option "Both tails"
+              - generic [ref=e1333]:
+                - button "Create Chart" [ref=e1334] [cursor=pointer]
+                - generic [ref=e1335]: Plot marathon finishing times to compare Kathy and Clay.
+              - generic [ref=e1336]: No chart saved yet. Use the wizard to add one.
+              - generic [ref=e1338]:
+                - generic [ref=e1339]:
+                  - generic [ref=e1340]: Honeydew_Crocodile
+                  - generic [ref=e1341]: normal
+                - generic [ref=e1344]: 📊 NORMAL CHART
+            - button "Submit Answer" [ref=e1349] [cursor=pointer]
+          - generic [ref=e1352]:
+            - generic [ref=e1353]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e1354]
+              - generic [ref=e1355]: 7 peers
+            - generic [ref=e1356]:
+              - generic [ref=e1357]:
+                - generic [ref=e1358]: Apricot_Fox 💬 Debater
+                - generic [ref=e1359]: The standardized score for Clay’s marathon finishing time of 289 minutes is about 1.62. This means that Clay’s time is 1.62 standard deviations above the mean finishing time for men. The proportion of women who ran the marathon with a finishing time less than Kathy’s 272 minutes is approximately 65.77%. The greater standard deviation for women’s finishing times 32 minutes compared to men’s 29 minutes, means women’s times are more spread out around their average 259 minutes than men’s times around their average 242 minutes. (Work is shown on paper).
+                - generic [ref=e1360]:
+                  - generic "1 star" [ref=e1361] [cursor=pointer]:
+                    - generic [ref=e1362]: 
+                  - generic "2 stars" [ref=e1363] [cursor=pointer]:
+                    - generic [ref=e1364]: 
+                  - generic "3 stars" [ref=e1365] [cursor=pointer]:
+                    - generic [ref=e1366]: 
+                  - generic "4 stars" [ref=e1367] [cursor=pointer]:
+                    - generic [ref=e1368]: 
+                  - generic "5 stars" [ref=e1369] [cursor=pointer]:
+                    - generic [ref=e1370]: 
+                  - generic [ref=e1371]: "Average: N/A (0 votes)"
+              - generic [ref=e1372]:
+                - generic [ref=e1373]: Apricot_Horse 💬 Debater
+                - generic [ref=e1374]: a) (289-242)/29 = 1.62 b) (272-259)/32 = 0.41 c) a greater standard deviation for women than men indicates that the women's finish times were more spread out than men.
+                - generic [ref=e1375]:
+                  - generic "1 star" [ref=e1376] [cursor=pointer]:
+                    - generic [ref=e1377]: 
+                  - generic "2 stars" [ref=e1378] [cursor=pointer]:
+                    - generic [ref=e1379]: 
+                  - generic "3 stars" [ref=e1380] [cursor=pointer]:
+                    - generic [ref=e1381]: 
+                  - generic "4 stars" [ref=e1382] [cursor=pointer]:
+                    - generic [ref=e1383]: 
+                  - generic "5 stars" [ref=e1384] [cursor=pointer]:
+                    - generic [ref=e1385]: 
+                  - generic [ref=e1386]: "Average: N/A (0 votes)"
+              - generic [ref=e1387]:
+                - generic [ref=e1388]: Honeydew_Crocodile 🎯 Outlier
+                - generic [ref=e1389]: "{\"type\":\"normal\",\"mean\":4,\"sd\":1,\"shade\":null,\"chartConfig\":{},\"options\":{\"xLabel\":\"Value\"},\"meta\":{\"version\":1,\"createdAt\":\"2025-10-29T02:15:37.502Z\",\"updatedAt\":\"2025-10-29T02:15:37.502Z\"},\"xLabel\":\"Value\"}"
+                - generic [ref=e1390]:
+                  - generic "1 star" [ref=e1391] [cursor=pointer]:
+                    - generic [ref=e1392]: 
+                  - generic "2 stars" [ref=e1393] [cursor=pointer]:
+                    - generic [ref=e1394]: 
+                  - generic "3 stars" [ref=e1395] [cursor=pointer]:
+                    - generic [ref=e1396]: 
+                  - generic "4 stars" [ref=e1397] [cursor=pointer]:
+                    - generic [ref=e1398]: 
+                  - generic "5 stars" [ref=e1399] [cursor=pointer]:
+                    - generic [ref=e1400]: 
+                  - generic [ref=e1401]: "Average: N/A (0 votes)"
+              - generic [ref=e1402]:
+                - generic [ref=e1403]: Kiwi_Monkey 💬 Debater
+                - generic [ref=e1404]: "+1.62"
+                - generic [ref=e1405]:
+                  - generic "1 star" [ref=e1406] [cursor=pointer]:
+                    - generic [ref=e1407]: 
+                  - generic "2 stars" [ref=e1408] [cursor=pointer]:
+                    - generic [ref=e1409]: 
+                  - generic "3 stars" [ref=e1410] [cursor=pointer]:
+                    - generic [ref=e1411]: 
+                  - generic "4 stars" [ref=e1412] [cursor=pointer]:
+                    - generic [ref=e1413]: 
+                  - generic "5 stars" [ref=e1414] [cursor=pointer]:
+                    - generic [ref=e1415]: 
+                  - generic [ref=e1416]: "Average: N/A (0 votes)"
+              - generic [ref=e1417]:
+                - generic [ref=e1418]: mango_panda 🎯 Outlier 💬 Debater
+                - generic [ref=e1419]: A) 289-142/29=1.6 z score is 94%. B) 272-259/32=0.40625 1-0.40625= 0.59375 - 69% C) women have more variety in runners.
+                - generic [ref=e1420]:
+                  - generic "1 star" [ref=e1421] [cursor=pointer]:
+                    - generic [ref=e1422]: 
+                  - generic "2 stars" [ref=e1423] [cursor=pointer]:
+                    - generic [ref=e1424]: 
+                  - generic "3 stars" [ref=e1425] [cursor=pointer]:
+                    - generic [ref=e1426]: 
+                  - generic "4 stars" [ref=e1427] [cursor=pointer]:
+                    - generic [ref=e1428]: 
+                  - generic "5 stars" [ref=e1429] [cursor=pointer]:
+                    - generic [ref=e1430]: 
+                  - generic [ref=e1431]: "Average: N/A (0 votes)"
+              - generic [ref=e1432]:
+                - generic [ref=e1433]: Tayberry_Pelican 🎯 Outlier 💬 Debater
+                - generic [ref=e1434]: example
+                - generic [ref=e1435]:
+                  - generic "1 star" [ref=e1436] [cursor=pointer]:
+                    - generic [ref=e1437]: 
+                  - generic "2 stars" [ref=e1438] [cursor=pointer]:
+                    - generic [ref=e1439]: 
+                  - generic "3 stars" [ref=e1440] [cursor=pointer]:
+                    - generic [ref=e1441]: 
+                  - generic "4 stars" [ref=e1442] [cursor=pointer]:
+                    - generic [ref=e1443]: 
+                  - generic "5 stars" [ref=e1444] [cursor=pointer]:
+                    - generic [ref=e1445]: 
+                  - generic [ref=e1446]: "Average: N/A (0 votes)"
+              - generic [ref=e1447]:
+                - generic [ref=e1448]: test_user 🎯 Outlier 💬 Debater
+                - generic [ref=e1449]: Hello
+                - generic [ref=e1450]:
+                  - generic "1 star" [ref=e1451] [cursor=pointer]:
+                    - generic [ref=e1452]: 
+                  - generic "2 stars" [ref=e1453] [cursor=pointer]:
+                    - generic [ref=e1454]: 
+                  - generic "3 stars" [ref=e1455] [cursor=pointer]:
+                    - generic [ref=e1456]: 
+                  - generic "4 stars" [ref=e1457] [cursor=pointer]:
+                    - generic [ref=e1458]: 
+                  - generic "5 stars" [ref=e1459] [cursor=pointer]:
+                    - generic [ref=e1460]: 
+                  - generic [ref=e1461]: "Average: N/A (0 votes)"
+        - generic [ref=e1462]:
+          - generic [ref=e1463]:
+            - generic [ref=e1465]: Question 7
+            - generic [ref=e1466]: "ID: U1-L10-Q07"
+            - generic [ref=e1467]: For a certain online store, the distribution of number of purchases per hour is approximately normal with mean 1,200 purchases and standard deviation 200 purchases. For what proportion of hours will the number of purchases at the online store exceed 1,400?
+            - generic [ref=e1468]:
+              - generic [ref=e1470] [cursor=pointer]:
+                - radio "A. 68%" [ref=e1471]
+                - generic [ref=e1472]: A.
+                - generic [ref=e1473]: 68%
+              - generic [ref=e1475] [cursor=pointer]:
+                - radio "B. 32%" [ref=e1476]
+                - generic [ref=e1477]: B.
+                - generic [ref=e1478]: 32%
+              - generic [ref=e1480] [cursor=pointer]:
+                - radio "C. 16%" [ref=e1481]
+                - generic [ref=e1482]: C.
+                - generic [ref=e1483]: 16%
+              - generic [ref=e1485] [cursor=pointer]:
+                - radio "D. 5%" [ref=e1486]
+                - generic [ref=e1487]: D.
+                - generic [ref=e1488]: 5%
+              - generic [ref=e1490] [cursor=pointer]:
+                - radio "E. 2.5%" [ref=e1491]
+                - generic [ref=e1492]: E.
+                - generic [ref=e1493]: 2.5%
+            - generic [ref=e1494]:
+              - generic [ref=e1495]:
+                - generic [ref=e1496]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e1497]
+              - button "Submit Answer" [ref=e1499] [cursor=pointer]
+          - generic [ref=e1502]:
+            - generic [ref=e1503]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e1504]
+              - generic [ref=e1505]: Loading...
+            - generic [ref=e1507]: Answer the question to see peer responses
+        - generic [ref=e1508]:
+          - generic [ref=e1509]:
+            - generic [ref=e1511]: Question 8
+            - generic [ref=e1512]: "ID: U1-L10-Q08"
+            - generic [ref=e1513]: The distribution of lengths of salmon from a certain river is approximately normal with standard deviation 3.5 inches. If 10 percent of salmon are longer than 30 inches, which of the following is closest to the mean of the distribution?
+            - generic [ref=e1514]:
+              - generic [ref=e1516] [cursor=pointer]:
+                - radio "A. 26 inches" [ref=e1517]
+                - generic [ref=e1518]: A.
+                - generic [ref=e1519]: 26 inches
+              - generic [ref=e1521] [cursor=pointer]:
+                - radio "B. 28 inches" [ref=e1522]
+                - generic [ref=e1523]: B.
+                - generic [ref=e1524]: 28 inches
+              - generic [ref=e1526] [cursor=pointer]:
+                - radio "C. 30 inches" [ref=e1527]
+                - generic [ref=e1528]: C.
+                - generic [ref=e1529]: 30 inches
+              - generic [ref=e1531] [cursor=pointer]:
+                - radio "D. 33 inches" [ref=e1532]
+                - generic [ref=e1533]: D.
+                - generic [ref=e1534]: 33 inches
+              - generic [ref=e1536] [cursor=pointer]:
+                - radio "E. 34 inches" [ref=e1537]
+                - generic [ref=e1538]: E.
+                - generic [ref=e1539]: 34 inches
+            - generic [ref=e1540]:
+              - generic [ref=e1541]:
+                - generic [ref=e1542]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e1543]
+              - button "Submit Answer" [ref=e1545] [cursor=pointer]
+          - generic [ref=e1548]:
+            - generic [ref=e1549]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e1550]
+              - generic [ref=e1551]: Loading...
+            - generic [ref=e1553]: Answer the question to see peer responses
+  - button "☰" [ref=e1555] [cursor=pointer]:
+    - generic [ref=e1556]: ☰
+  - text:           
+  - dialog "Chart Wizard · U1-L10-Q04" [ref=e1558]:
+    - generic [ref=e1559]:
+      - generic [ref=e1560]: Chart Wizard · U1-L10-Q04
+      - button "Close chart wizard" [ref=e1561] [cursor=pointer]: ×
+    - generic [ref=e1562]:
+      - paragraph [ref=e1563]: Use the frequency table to build a histogram of order totals.
+      - generic [ref=e1564]:
+        - generic [ref=e1565]: Interval
+        - textbox "Interval" [ref=e1566]
+      - generic [ref=e1567]:
+        - generic [ref=e1568]: Frequency
+        - textbox "Frequency" [ref=e1569]
+      - generic [ref=e1570]:
+        - generic [ref=e1571]: Chart title (optional)
+        - textbox [ref=e1572]
+      - generic [ref=e1573]:
+        - generic [ref=e1574]: Description / notes (optional)
+        - textbox "Add context for reviewers..." [ref=e1575]
+      - generic [ref=e1576]:
+        - generic [ref=e1577]: Series name
+        - textbox "Frequency" [ref=e1578]
+      - generic [ref=e1579]:
+        - generic [ref=e1580]: Binning mode
+        - group "Histogram binning mode" [ref=e1581]:
+          - generic [ref=e1582]:
+            - radio "Use custom bins" [ref=e1583]
+            - text: Use custom bins
+          - generic [ref=e1584]:
+            - radio "Let the wizard choose bins" [checked] [ref=e1585]
+            - text: Let the wizard choose bins
+      - generic [ref=e1586]:
+        - generic [ref=e1587]: Histogram bins
+        - table [ref=e1588]:
+          - rowgroup [ref=e1589]:
+            - row "Label Value" [ref=e1590]:
+              - cell "Label" [ref=e1591]
+              - cell "Value" [ref=e1592]
+              - cell [ref=e1593]
+          - rowgroup [ref=e1594]:
+            - row "A 5 Remove" [ref=e1595]:
+              - cell "A" [ref=e1596]:
+                - textbox "Interval" [ref=e1597]: A
+              - cell "5" [ref=e1598]:
+                - textbox "Frequency" [active] [ref=e1599]: "5"
+              - cell "Remove" [ref=e1600]:
+                - button "Remove" [ref=e1601]
+        - generic [ref=e1602]:
+          - button "Add bin" [ref=e1603]
+          - button "Parse CSV" [ref=e1604]
+        - textbox "Paste interval,frequency rows" [ref=e1605]
+    - generic [ref=e1606]:
+      - button "Back" [ref=e1608] [cursor=pointer]
+      - button "Next" [ref=e1610] [cursor=pointer]
+```

@@ -3295,24 +3295,29 @@ function renderLessonSelector(unitInfo) {
                 // (removed legacy renderVisibleCharts call)
 
                 // Render saved chart previews for FRQ questions
-                if (typeof window.renderChartWizardPreview === 'function') {
-                    currentQuestions.forEach(question => {
-                        if (question.type === 'free-response') {
-                            const chartMetadata = window.CHART_QUESTIONS?.[question.id];
-                            const savedChart = classData?.users?.[currentUsername]?.charts?.[question.id];
-                            if (savedChart) {
-                                console.log(`Rendering saved chart for ${question.id}`);
-                                window.renderChartWizardPreview(question.id);
-                            }
-                            // Only render peer charts for questions that support charts
-                            if (chartMetadata && typeof window.renderPeerCharts === 'function') {
-                                window.renderPeerCharts(question.id);
-                            }
+                currentQuestions.forEach(question => {
+                    if (question.type === 'free-response') {
+                        const chartMetadata = window.CHART_QUESTIONS?.[question.id];
+                        const savedChart = classData?.users?.[currentUsername]?.charts?.[question.id];
+
+                        // Render user's own saved chart
+                        if (savedChart && question.requiresGraph) {
+                            setTimeout(() => {
+                                if (typeof window.renderChartWizardPreview === 'function') {
+                                    window.renderChartWizardPreview(question.id);
+                                } else if (typeof window.updateInlineChartPreview === 'function') {
+                                    // Fallback to inline chart preview
+                                    window.updateInlineChartPreview(question.id);
+                                }
+                            }, 100);
                         }
-                    });
-                } else {
-                    console.warn('renderChartWizardPreview not available - charts may not display');
-                }
+
+                        // Render peer charts for questions that support charts
+                        if (chartMetadata && typeof window.renderPeerCharts === 'function') {
+                            window.renderPeerCharts(question.id);
+                        }
+                    }
+                });
 
                 // TASK 3.3: Set up activity tracking for question interactions
                 setTimeout(setupQuestionActivityTracking, 150);

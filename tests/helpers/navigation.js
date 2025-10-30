@@ -149,24 +149,42 @@ export async function navigateToLesson(page, lessonNumber) {
 /**
  * Navigate directly to a specific question
  * @param {import('@playwright/test').Page} page
- * @param {string} questionId - Question ID (e.g., 'U1-L10-Q04')
+ * @param {string} questionId - Question ID (e.g., 'U1-L10-Q04' or 'U1-PC-FRQ-Q01')
  */
 export async function navigateToQuestion(page, questionId) {
   console.log(`🎯 Navigating to question ${questionId}...`);
 
-  // Parse question ID
-  const match = questionId.match(/U(\d+)-L(\d+)-Q(\d+)/);
-  if (!match) {
+  // Parse question ID - handle both regular (U1-L10-Q04) and PC format (U1-PC-FRQ-Q01)
+  const regularMatch = questionId.match(/U(\d+)-L(\d+)-Q(\d+)/);
+  const pcMatch = questionId.match(/U(\d+)-PC-/);
+
+  if (regularMatch) {
+    // Regular lesson question
+    const [, unit, lesson] = regularMatch;
+
+    // Navigate to unit
+    await navigateToUnit(page, parseInt(unit));
+
+    // Navigate to lesson
+    await navigateToLesson(page, parseInt(lesson));
+  } else if (pcMatch) {
+    // Practice Challenge question
+    const [, unit] = pcMatch;
+
+    // Navigate to unit
+    await navigateToUnit(page, parseInt(unit));
+
+    // Navigate to Practice Challenge (PC) lesson
+    const pcButton = page.locator('button:has-text("Practice Challenge"), button:has-text("PC")').first();
+    if (await pcButton.isVisible().catch(() => false)) {
+      await pcButton.click();
+      await page.waitForTimeout(500);
+    } else {
+      throw new Error(`Practice Challenge button not found for unit ${unit}`);
+    }
+  } else {
     throw new Error(`Invalid question ID format: ${questionId}`);
   }
-
-  const [, unit, lesson] = match;
-
-  // Navigate to unit
-  await navigateToUnit(page, parseInt(unit));
-
-  // Navigate to lesson
-  await navigateToLesson(page, parseInt(lesson));
 
   // Verify question is visible - use more specific selector
   const questionSelector = `.quiz-container[data-question-id="${questionId}"]`;

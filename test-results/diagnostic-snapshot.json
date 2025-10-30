@@ -1,0 +1,27 @@
+{
+  "timestamp": 1761792818028,
+  "localStorage": {
+    "consensusUsername": "Test_User_1761792817759",
+    "quizTheme": "light",
+    "classData": "{\"users\":{\"Test_User_1761792817759\":{\"answers\":{},\"reasons\":{},\"timestamps\":{},\"attempts\":{},\"charts\":{},\"currentActivity\":{\"state\":\"idle\",\"questionId\":null,\"lastUpdate\":1761792817868}}}}",
+    "sessionStart_Test_User_1761792817759": "2025-10-30T02:53:37.868Z"
+  },
+  "sessionStorage": {},
+  "classData": {
+    "users": {
+      "Test_User_1761792817759": {
+        "answers": {},
+        "reasons": {},
+        "timestamps": {},
+        "attempts": {},
+        "charts": {},
+        "currentActivity": {
+          "state": "idle",
+          "questionId": null,
+          "lastUpdate": 1761792817868
+        }
+      }
+    }
+  },
+  "username": "Test_User_1761792817759"
+}

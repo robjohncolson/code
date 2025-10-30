@@ -1,0 +1,392 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: Welcome Test_User_1761792632764!
+    - heading "🧮 AP Statistics Consensus Quiz" [level=1] [ref=e4]
+    - generic [ref=e6]:
+      - text: "📊 Peer data current as of:"
+      - strong [ref=e7]: 2 minutes ago
+      - text: 🚀
+    - generic [ref=e8]:
+      - button "← Back to Lessons" [ref=e9] [cursor=pointer]
+      - generic [ref=e11]:
+        - strong [ref=e12]: Unit 1, Lesson 10
+        - text: "- 8 questions"
+      - generic [ref=e13]:
+        - 'heading "📚 Lesson Resources: The Normal Distribution" [level=3] [ref=e14]'
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - generic [ref=e17]: "Video 1:"
+            - link "AP Classroom Video 📹" [ref=e18] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/0ps3pcvbfn?sui=33,1
+            - link "Alternative Link 🔗" [ref=e19] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1vTOitP631CGaZJMJjE6VVw53kiOa0zGv/view?usp=drive_link
+          - generic [ref=e20]:
+            - generic [ref=e21]: "Video 2:"
+            - link "AP Classroom Video 📹" [ref=e22] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/wualxc69hl?sui=33,1
+            - link "Alternative Link 🔗" [ref=e23] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1UF7VafU4agY3JcxHnp61EEjpOv959wZ8/view?usp=drive_link
+          - generic [ref=e24]:
+            - generic [ref=e25]: "Video 3:"
+            - link "AP Classroom Video 📹" [ref=e26] [cursor=pointer]:
+              - /url: https://apclassroom.collegeboard.org/d/3fev7ihoms?sui=33,1
+            - link "Alternative Link 🔗" [ref=e27] [cursor=pointer]:
+              - /url: https://drive.google.com/file/d/1aYbhplXukoDHOpWYCNG5OOTGVYZOcyCV/view?usp=drive_link
+        - generic [ref=e29]:
+          - generic [ref=e30]: "Game 1:"
+          - link "🎮 u1l10blooket_Review" [ref=e31] [cursor=pointer]:
+            - /url: https://dashboard.blooket.com/set/68e880c739c5e77ef8b35076
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e36]: Question 1
+            - generic [ref=e37]: "ID: U1-L10-Q01"
+            - generic [ref=e38]: The distribution of the number of transactions per day at a certain automated teller machine (ATM) is approximately normal with a mean of 80 transactions and a standard deviation of 10 transactions. Which of the following represents the parameters of the distribution?
+            - generic [ref=e39]:
+              - generic [ref=e41] [cursor=pointer]:
+                - radio "A. x̄ = 80; s = 10" [ref=e42]
+                - generic [ref=e43]: A.
+                - generic [ref=e44]: x̄ = 80; s = 10
+              - generic [ref=e46] [cursor=pointer]:
+                - radio "B. x̄ = 80; s² = 10" [ref=e47]
+                - generic [ref=e48]: B.
+                - generic [ref=e49]: x̄ = 80; s² = 10
+              - generic [ref=e51] [cursor=pointer]:
+                - radio "C. x̄ = 80; σ = 10" [ref=e52]
+                - generic [ref=e53]: C.
+                - generic [ref=e54]: x̄ = 80; σ = 10
+              - generic [ref=e56] [cursor=pointer]:
+                - radio "D. μ = 80; σ = 10" [ref=e57]
+                - generic [ref=e58]: D.
+                - generic [ref=e59]: μ = 80; σ = 10
+              - generic [ref=e61] [cursor=pointer]:
+                - radio "E. μ = 80; s = 10" [ref=e62]
+                - generic [ref=e63]: E.
+                - generic [ref=e64]: μ = 80; s = 10
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e68]
+              - button "Submit Answer" [ref=e70] [cursor=pointer]
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e75]
+              - generic [ref=e76]: Loading...
+            - generic [ref=e78]: Answer the question to see peer responses
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - generic [ref=e82]: Question 2
+            - generic [ref=e83]: "ID: U1-L10-Q02"
+            - generic [ref=e84]: At a small coffee shop, the distribution of the number of seconds it takes for a cashier to process an order is approximately normal with mean 276 seconds and standard deviation 38 seconds. Which of the following is closest to the proportion of orders that are processed in less than 240 seconds?
+            - generic [ref=e85]:
+              - generic [ref=e87] [cursor=pointer]:
+                - radio "A. 0.17" [ref=e88]
+                - generic [ref=e89]: A.
+                - generic [ref=e90]: "0.17"
+              - generic [ref=e92] [cursor=pointer]:
+                - radio "B. 0.25" [ref=e93]
+                - generic [ref=e94]: B.
+                - generic [ref=e95]: "0.25"
+              - generic [ref=e97] [cursor=pointer]:
+                - radio "C. 0.36" [ref=e98]
+                - generic [ref=e99]: C.
+                - generic [ref=e100]: "0.36"
+              - generic [ref=e102] [cursor=pointer]:
+                - radio "D. 0.83" [ref=e103]
+                - generic [ref=e104]: D.
+                - generic [ref=e105]: "0.83"
+              - generic [ref=e107] [cursor=pointer]:
+                - radio "E. 0.95" [ref=e108]
+                - generic [ref=e109]: E.
+                - generic [ref=e110]: "0.95"
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e114]
+              - button "Submit Answer" [ref=e116] [cursor=pointer]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e121]
+              - generic [ref=e122]: Loading...
+            - generic [ref=e124]: Answer the question to see peer responses
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - generic [ref=e128]: Question 3
+            - generic [ref=e129]: "ID: U1-L10-Q03"
+            - generic [ref=e130]: A researcher is studying a group of field mice. The distribution of the weight of field mice is approximately normal with mean 25 grams and standard deviation 4 grams. Which of the following is closest to the proportion of field mice with a weight greater than 33 grams?
+            - generic [ref=e131]:
+              - generic [ref=e133] [cursor=pointer]:
+                - radio "A. 0.023" [ref=e134]
+                - generic [ref=e135]: A.
+                - generic [ref=e136]: "0.023"
+              - generic [ref=e138] [cursor=pointer]:
+                - radio "B. 0.046" [ref=e139]
+                - generic [ref=e140]: B.
+                - generic [ref=e141]: "0.046"
+              - generic [ref=e143] [cursor=pointer]:
+                - radio "C. 0.954" [ref=e144]
+                - generic [ref=e145]: C.
+                - generic [ref=e146]: "0.954"
+              - generic [ref=e148] [cursor=pointer]:
+                - radio "D. 0.977" [ref=e149]
+                - generic [ref=e150]: D.
+                - generic [ref=e151]: "0.977"
+              - generic [ref=e153] [cursor=pointer]:
+                - radio "E. 1.000" [ref=e154]
+                - generic [ref=e155]: E.
+                - generic [ref=e156]: "1.000"
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - generic [ref=e159]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e160]
+              - button "Submit Answer" [ref=e162] [cursor=pointer]
+          - generic [ref=e165]:
+            - generic [ref=e166]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e167]
+              - generic [ref=e168]: Loading...
+            - generic [ref=e170]: Answer the question to see peer responses
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e174]: Question 4
+            - generic [ref=e175]: "ID: U1-L10-Q04"
+            - generic [ref=e176]: Show all your work. Indicate clearly the methods you use, because you will be scored on the correctness of your methods as well as on the accuracy and completeness of your results and explanations. The following frequency table summarizes the total amounts, in dollars, for 91 orders from a food truck during a certain day. (a-i) Use the data in the table to create a histogram showing the distribution of the amounts of the orders. (a-ii) Describe the shape of the distribution of amounts. (b) Identify a possible amount for the median of the distribution. Justify your answer.
+            - table [ref=e178]:
+              - rowgroup [ref=e179]:
+                - row "Amount Frequency" [ref=e180]:
+                  - cell "Amount" [ref=e181]
+                  - cell "Frequency" [ref=e182]
+              - rowgroup [ref=e183]:
+                - row "$0 up to but not including $5 8" [ref=e184]:
+                  - cell "$0 up to but not including $5" [ref=e185]
+                  - cell "8" [ref=e186]
+                - row "$5 up to but not including $10 14" [ref=e187]:
+                  - cell "$5 up to but not including $10" [ref=e188]
+                  - cell "14" [ref=e189]
+                - row "$10 up to but not including $15 25" [ref=e190]:
+                  - cell "$10 up to but not including $15" [ref=e191]
+                  - cell "25" [ref=e192]
+                - row "$15 up to but not including $20 27" [ref=e193]:
+                  - cell "$15 up to but not including $20" [ref=e194]
+                  - cell "27" [ref=e195]
+                - row "$20 up to but not including $25 12" [ref=e196]:
+                  - cell "$20 up to but not including $25" [ref=e197]
+                  - cell "12" [ref=e198]
+                - row "$25 up to but not including $30 5" [ref=e199]:
+                  - cell "$25 up to but not including $30" [ref=e200]
+                  - cell "5" [ref=e201]
+            - generic [ref=e202]:
+              - strong [ref=e204]: "Create your Histogram:"
+              - generic [ref=e206]:
+                - textbox "Range" [ref=e207]
+                - spinbutton [ref=e208]
+                - button "Remove" [ref=e209] [cursor=pointer]
+              - button "Add Bar" [ref=e210] [cursor=pointer]
+              - generic [ref=e211]:
+                - button "Create Chart" [ref=e212] [cursor=pointer]
+                - generic [ref=e213]: Use the frequency table to build a histogram of order totals.
+              - generic [ref=e214]: No chart saved yet. Use the wizard to add one.
+            - button "Submit Answer" [ref=e217] [cursor=pointer]
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e222]
+              - generic [ref=e223]: Loading...
+            - generic [ref=e225]: Answer the question to see peer responses
+        - generic [ref=e226]:
+          - generic [ref=e227]:
+            - generic [ref=e229]: Question 5
+            - generic [ref=e230]: "ID: U1-L10-Q05"
+            - generic [ref=e231]: Shalise competed in a jigsaw puzzle competition where participants are timed on how long they take to complete puzzles of various sizes. Shalise completed a small puzzle in 75 minutes and a large jigsaw puzzle in 140 minutes. For all participants, the distribution of completion time for the small puzzle was approximately normal with mean 60 minutes and standard deviation 15 minutes. The distribution of completion time for the large puzzle was approximately normal with mean 180 minutes and standard deviation 40 minutes. Approximately what percent of the participants had finishing times greater than Shalise's for each puzzle?
+            - generic [ref=e232]:
+              - generic [ref=e234] [cursor=pointer]:
+                - radio "A. 16% on the small puzzle and 16% on the large puzzle" [ref=e235]
+                - generic [ref=e236]: A.
+                - generic [ref=e237]: 16% on the small puzzle and 16% on the large puzzle
+              - generic [ref=e239] [cursor=pointer]:
+                - radio "B. 16% on the small puzzle and 84% on the large puzzle" [ref=e240]
+                - generic [ref=e241]: B.
+                - generic [ref=e242]: 16% on the small puzzle and 84% on the large puzzle
+              - generic [ref=e244] [cursor=pointer]:
+                - radio "C. 32% on the small puzzle and 68% on the large puzzle" [ref=e245]
+                - generic [ref=e246]: C.
+                - generic [ref=e247]: 32% on the small puzzle and 68% on the large puzzle
+              - generic [ref=e249] [cursor=pointer]:
+                - radio "D. 84% on the small puzzle and 84% on the large puzzle" [ref=e250]
+                - generic [ref=e251]: D.
+                - generic [ref=e252]: 84% on the small puzzle and 84% on the large puzzle
+              - generic [ref=e254] [cursor=pointer]:
+                - radio "E. 84% on the small puzzle and 16% on the large puzzle" [ref=e255]
+                - generic [ref=e256]: E.
+                - generic [ref=e257]: 84% on the small puzzle and 16% on the large puzzle
+            - generic [ref=e258]:
+              - generic [ref=e259]:
+                - generic [ref=e260]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e261]
+              - button "Submit Answer" [ref=e263] [cursor=pointer]
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e268]
+              - generic [ref=e269]: Loading...
+            - generic [ref=e271]: Answer the question to see peer responses
+        - generic [ref=e272]:
+          - generic [ref=e273]:
+            - generic [ref=e275]: Question 6
+            - generic [ref=e276]: "ID: U1-L10-Q06"
+            - generic [ref=e277]: Show all your work. Indicate clearly the methods you use, because you will be scored on the correctness of your methods as well as on the accuracy and completeness of your results and explanations. Kathy and her brother Clay recently ran in a local marathon. The distribution of finishing time for women was approximately normal with mean 259 minutes and standard deviation 32 minutes. The distribution of finishing time for men was approximately normal with mean 242 minutes and standard deviation 29 minutes. (a) The finishing time for Clay was 289 minutes. Calculate and interpret the standardized score for Clay's marathon time. Show your work. (b) The finishing time for Kathy was 272 minutes. What proportion of women who ran the marathon had a finishing time less than Kathy's? Show your work. (c) The standard deviation of finishing time is greater for women than for men. What does this indicate about the finishing times of the women who ran the marathon compared to the finishing times of the men who ran the marathon?
+            - generic [ref=e278]:
+              - strong [ref=e280]: "Create your Normal:"
+              - generic [ref=e281]:
+                - generic [ref=e282]:
+                  - generic [ref=e283]: "Mean (μ):"
+                  - spinbutton [ref=e284]: "0"
+                - generic [ref=e285]:
+                  - generic [ref=e286]: "Standard Deviation (σ):"
+                  - spinbutton [ref=e287]: "1"
+                - generic [ref=e288]:
+                  - generic [ref=e289]: "Shading:"
+                  - combobox [ref=e290]:
+                    - option "None" [selected]
+                    - option "Left tail"
+                    - option "Right tail"
+                    - option "Both tails"
+              - generic [ref=e291]:
+                - button "Create Chart" [ref=e292] [cursor=pointer]
+                - generic [ref=e293]: Plot marathon finishing times to compare Kathy and Clay.
+              - generic [ref=e294]: No chart saved yet. Use the wizard to add one.
+            - button "Submit Answer" [ref=e297] [cursor=pointer]
+          - generic [ref=e300]:
+            - generic [ref=e301]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e302]
+              - generic [ref=e303]: Loading...
+            - generic [ref=e305]: Answer the question to see peer responses
+        - generic [ref=e306]:
+          - generic [ref=e307]:
+            - generic [ref=e309]: Question 7
+            - generic [ref=e310]: "ID: U1-L10-Q07"
+            - generic [ref=e311]: For a certain online store, the distribution of number of purchases per hour is approximately normal with mean 1,200 purchases and standard deviation 200 purchases. For what proportion of hours will the number of purchases at the online store exceed 1,400?
+            - generic [ref=e312]:
+              - generic [ref=e314] [cursor=pointer]:
+                - radio "A. 68%" [ref=e315]
+                - generic [ref=e316]: A.
+                - generic [ref=e317]: 68%
+              - generic [ref=e319] [cursor=pointer]:
+                - radio "B. 32%" [ref=e320]
+                - generic [ref=e321]: B.
+                - generic [ref=e322]: 32%
+              - generic [ref=e324] [cursor=pointer]:
+                - radio "C. 16%" [ref=e325]
+                - generic [ref=e326]: C.
+                - generic [ref=e327]: 16%
+              - generic [ref=e329] [cursor=pointer]:
+                - radio "D. 5%" [ref=e330]
+                - generic [ref=e331]: D.
+                - generic [ref=e332]: 5%
+              - generic [ref=e334] [cursor=pointer]:
+                - radio "E. 2.5%" [ref=e335]
+                - generic [ref=e336]: E.
+                - generic [ref=e337]: 2.5%
+            - generic [ref=e338]:
+              - generic [ref=e339]:
+                - generic [ref=e340]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e341]
+              - button "Submit Answer" [ref=e343] [cursor=pointer]
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e348]
+              - generic [ref=e349]: Loading...
+            - generic [ref=e351]: Answer the question to see peer responses
+        - generic [ref=e352]:
+          - generic [ref=e353]:
+            - generic [ref=e355]: Question 8
+            - generic [ref=e356]: "ID: U1-L10-Q08"
+            - generic [ref=e357]: The distribution of lengths of salmon from a certain river is approximately normal with standard deviation 3.5 inches. If 10 percent of salmon are longer than 30 inches, which of the following is closest to the mean of the distribution?
+            - generic [ref=e358]:
+              - generic [ref=e360] [cursor=pointer]:
+                - radio "A. 26 inches" [ref=e361]
+                - generic [ref=e362]: A.
+                - generic [ref=e363]: 26 inches
+              - generic [ref=e365] [cursor=pointer]:
+                - radio "B. 28 inches" [ref=e366]
+                - generic [ref=e367]: B.
+                - generic [ref=e368]: 28 inches
+              - generic [ref=e370] [cursor=pointer]:
+                - radio "C. 30 inches" [ref=e371]
+                - generic [ref=e372]: C.
+                - generic [ref=e373]: 30 inches
+              - generic [ref=e375] [cursor=pointer]:
+                - radio "D. 33 inches" [ref=e376]
+                - generic [ref=e377]: D.
+                - generic [ref=e378]: 33 inches
+              - generic [ref=e380] [cursor=pointer]:
+                - radio "E. 34 inches" [ref=e381]
+                - generic [ref=e382]: E.
+                - generic [ref=e383]: 34 inches
+            - generic [ref=e384]:
+              - generic [ref=e385]:
+                - generic [ref=e386]: "Explain your reasoning (optional but enables retry):"
+                - textbox "Explain why you chose this answer..." [ref=e387]
+              - button "Submit Answer" [ref=e389] [cursor=pointer]
+          - generic [ref=e392]:
+            - generic [ref=e393]:
+              - heading "🤝 Peer Responses" [level=4] [ref=e394]
+              - generic [ref=e395]: Loading...
+            - generic [ref=e397]: Answer the question to see peer responses
+  - button "☰" [ref=e399] [cursor=pointer]:
+    - generic [ref=e400]: ☰
+  - text:           
+  - dialog "Chart Wizard · U1-L10-Q04" [ref=e402]:
+    - generic [ref=e403]:
+      - generic [ref=e404]: Chart Wizard · U1-L10-Q04
+      - button "Close chart wizard" [ref=e405] [cursor=pointer]: ×
+    - generic [ref=e406]:
+      - paragraph [ref=e407]: Use the frequency table to build a histogram of order totals.
+      - generic [ref=e408]:
+        - generic [ref=e409]: Interval
+        - textbox "Interval" [ref=e410]
+      - generic [ref=e411]:
+        - generic [ref=e412]: Frequency
+        - textbox "Frequency" [ref=e413]
+      - generic [ref=e414]:
+        - generic [ref=e415]: Chart title (optional)
+        - textbox [ref=e416]
+      - generic [ref=e417]:
+        - generic [ref=e418]: Description / notes (optional)
+        - textbox "Add context for reviewers..." [ref=e419]
+      - generic [ref=e420]:
+        - generic [ref=e421]: Series name
+        - textbox "Frequency" [ref=e422]
+      - generic [ref=e423]:
+        - generic [ref=e424]: Binning mode
+        - group "Histogram binning mode" [ref=e425]:
+          - generic [ref=e426]:
+            - radio "Use custom bins" [ref=e427]
+            - text: Use custom bins
+          - generic [ref=e428]:
+            - radio "Let the wizard choose bins" [checked] [ref=e429]
+            - text: Let the wizard choose bins
+      - generic [ref=e430]:
+        - generic [ref=e431]: Histogram bins
+        - table [ref=e432]:
+          - rowgroup [ref=e433]:
+            - row "Label Value" [ref=e434]:
+              - cell "Label" [ref=e435]
+              - cell "Value" [ref=e436]
+              - cell [ref=e437]
+          - rowgroup [ref=e438]:
+            - row "A 5 Remove" [ref=e439]:
+              - cell "A" [ref=e440]:
+                - textbox "Interval" [ref=e441]: A
+              - cell "5" [ref=e442]:
+                - textbox "Frequency" [active] [ref=e443]: "5"
+              - cell "Remove" [ref=e444]:
+                - button "Remove" [ref=e445]
+        - generic [ref=e446]:
+          - button "Add bin" [ref=e447]
+          - button "Parse CSV" [ref=e448]
+        - textbox "Paste interval,frequency rows" [ref=e449]
+    - generic [ref=e450]:
+      - button "Back" [ref=e452] [cursor=pointer]
+      - button "Next" [ref=e454] [cursor=pointer]
+```
