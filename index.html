@@ -3303,12 +3303,11 @@ function renderLessonSelector(unitInfo) {
                         // Render user's own saved chart
                         if (savedChart && question.requiresGraph) {
                             setTimeout(() => {
-                                // Prefer inline preview which reads the inline form (works for all types)
-                                if (typeof window.updateInlineChartPreview === 'function') {
-                                    window.updateInlineChartPreview(question.id);
-                                } else if (typeof window.renderChartWizardPreview === 'function') {
-                                    // Fallback to wizard preview if inline is unavailable
+                                // Prefer wizard preview; fall back to inline preview if needed
+                                if (typeof window.renderChartWizardPreview === 'function') {
                                     window.renderChartWizardPreview(question.id);
+                                } else if (typeof window.updateInlineChartPreview === 'function') {
+                                    window.updateInlineChartPreview(question.id);
                                 }
                             }, 100);
                         }
@@ -3500,122 +3499,20 @@ function renderLessonSelector(unitInfo) {
                     const chartType = Array.isArray(question.requiresGraph) ? question.requiresGraph[0] : question.requiresGraph;
                     const chartTypeLabel = chartType.charAt(0).toUpperCase() + chartType.slice(1);
 
-                    // Load saved chart data if exists
-                    let graphData = [];
-                    if (savedChart) {
-                        // Extract data from saved SIF format chart
-                        if (savedChart.data?.bins) {
-                            // Histogram format
-                            graphData = savedChart.data.bins.map(bin => ({
-                                label: bin.label,
-                                value: bin.value
-                            }));
-                        } else if (savedChart.categories && savedChart.series) {
-                            // Bar chart format
-                            graphData = savedChart.categories.map((cat, i) => ({
-                                label: cat,
-                                value: savedChart.series[0]?.values[i] || 0
-                            }));
-                        }
-                    }
-
-                    // Generate UI based on chart type
-                    let chartInputUI = '';
-
-                    if (chartType === 'histogram' || chartType === 'bar') {
-                        // Row-based input for histogram and bar charts
-                        chartInputUI = `
-                            <div id="graph-input-${question.id}" class="graph-input">
-                                ${graphData.length > 0 ?
-                                    graphData.map((row, i) => `
-                                        <div class="graph-row" data-index="${i}">
-                                            <input type="text" class="label" placeholder="${chartType === 'histogram' ? 'Range' : 'Category'}" value="${row.label}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                            <input type="number" class="value" placeholder="${chartType === 'histogram' ? 'Frequency' : 'Value'}" value="${row.value}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                            ${!isDisabled ? `<button type="button" class="remove-row" onclick="removeGraphRow('${question.id}', ${i})">Remove</button>` : ''}
-                                        </div>
-                                    `).join('') :
-                                    `<div class="graph-row" data-index="0">
-                                        <input type="text" class="label" placeholder="${chartType === 'histogram' ? 'Range' : 'Category'}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                        <input type="number" class="value" placeholder="${chartType === 'histogram' ? 'Frequency' : 'Value'}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                        ${!isDisabled ? '<button type="button" class="remove-row" onclick="removeGraphRow(\'' + question.id + '\', 0)">Remove</button>' : ''}
-                                    </div>`
-                                }
-                            </div>
-                            ${!isDisabled ? `<button type="button" onclick="addGraphRow('${question.id}')" class="add-bar-btn">Add ${chartType === 'histogram' ? 'Bar' : 'Category'}</button>` : ''}
-                        `;
-                    } else if (chartType === 'scatter') {
-                        // Scatter plot: X,Y coordinate pairs
-                        chartInputUI = `
-                            <div id="graph-input-${question.id}" class="graph-input scatter-input">
-                                <div class="input-header">
-                                    <span>X Value</span>
-                                    <span>Y Value</span>
-                                    <span></span>
-                                </div>
-                                ${savedChart?.points?.length > 0 ?
-                                    savedChart.points.map((point, i) => `
-                                        <div class="graph-row" data-index="${i}">
-                                            <input type="number" class="x-value" placeholder="X" value="${point.x}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                            <input type="number" class="y-value" placeholder="Y" value="${point.y}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                            ${!isDisabled ? `<button type="button" class="remove-row" onclick="removeGraphRow('${question.id}', ${i})">Remove</button>` : ''}
-                                        </div>
-                                    `).join('') :
-                                    `<div class="graph-row" data-index="0">
-                                        <input type="number" class="x-value" placeholder="X" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                        <input type="number" class="y-value" placeholder="Y" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                        ${!isDisabled ? '<button type="button" class="remove-row" onclick="removeGraphRow(\'' + question.id + '\', 0)">Remove</button>' : ''}
-                                    </div>`
-                                }
-                            </div>
-                            ${!isDisabled ? `<button type="button" onclick="addScatterPoint('${question.id}')" class="add-bar-btn">Add Point</button>` : ''}
-                        `;
-                    } else if (chartType === 'normal' || chartType === 'chisquare') {
-                        // Parameter-based charts
-                        chartInputUI = `
-                            <div id="graph-input-${question.id}" class="graph-input param-input">
-                                ${chartType === 'normal' ? `
-                                    <div class="param-row">
-                                        <label>Mean (μ):</label>
-                                        <input type="number" id="normal-mean-${question.id}" placeholder="0" value="${savedChart?.data?.mean || 0}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                    </div>
-                                    <div class="param-row">
-                                        <label>Standard Deviation (σ):</label>
-                                        <input type="number" id="normal-sd-${question.id}" placeholder="1" value="${savedChart?.data?.sd || 1}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                    </div>
-                                    <div class="param-row">
-                                        <label>Shading:</label>
-                                        <select id="normal-shade-${question.id}" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                            <option value="none" ${savedChart?.data?.shade === 'none' ? 'selected' : ''}>None</option>
-                                            <option value="left" ${savedChart?.data?.shade === 'left' ? 'selected' : ''}>Left tail</option>
-                                            <option value="right" ${savedChart?.data?.shade === 'right' ? 'selected' : ''}>Right tail</option>
-                                            <option value="both" ${savedChart?.data?.shade === 'both' ? 'selected' : ''}>Both tails</option>
-                                        </select>
-                                    </div>
-                                ` : `
-                                    <div class="param-row">
-                                        <label>Degrees of Freedom:</label>
-                                        <input type="number" id="chisquare-df-${question.id}" placeholder="1" value="${savedChart?.data?.dfList?.[0] || 1}" min="1" ${isDisabled ? 'disabled' : ''} onchange="updateInlineChartPreview('${question.id}')">
-                                    </div>
-                                `}
-                            </div>
-                        `;
-                    } else {
-                        // Fallback to text input for unsupported chart types
-                        chartInputUI = `<div class="chart-type-notice">Chart type "${chartType}" coming soon. Use the Chart Wizard button below.</div>`;
-                    }
-
+                    // Wizard-only UI: no inline inputs
                     html += `
                         <div class="answer-section">
                             <label><strong>Create your ${chartTypeLabel}:</strong></label>
-                            ${chartInputUI}
                             ${chartMetadata ? `
                                 <div class="chart-wizard-controls" style="margin-top: 16px;">
-                                    <button
-                                        type="button"
-                                        class="chart-wizard-button"
-                                        data-chart-button="${question.id}"
-                                        onclick="openChartWizard('${question.id}')"
-                                    >${chartButtonLabel}</button>
+                                    ${!savedChart ? `
+                                        <button
+                                            type="button"
+                                            class="chart-wizard-button"
+                                            data-chart-button="${question.id}"
+                                            onclick="openChartWizard('${question.id}')"
+                                        >Create Chart</button>
+                                    ` : ''}
                                     ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
                                 </div>
                             ` : ''}
@@ -3637,12 +3534,14 @@ function renderLessonSelector(unitInfo) {
                         </div>
                         ${chartMetadata ? `
                             <div class="chart-wizard-controls">
-                                <button
-                                    type="button"
-                                    class="chart-wizard-button"
-                                    data-chart-button="${question.id}"
-                                    onclick="openChartWizard('${question.id}')"
-                                >${chartButtonLabel}</button>
+                                ${!savedChart ? `
+                                    <button
+                                        type="button"
+                                        class="chart-wizard-button"
+                                        data-chart-button="${question.id}"
+                                        onclick="openChartWizard('${question.id}')"
+                                    >Create Chart</button>
+                                ` : ''}
                                 ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
                             </div>
                             <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
@@ -4166,75 +4065,24 @@ function renderLessonSelector(unitInfo) {
                 // Check if this is a graph-based FRQ
                 const question = EMBEDDED_CURRICULUM.find(q => q.id === questionId);
                 if (question && question.requiresGraph) {
-                    // Graph FRQ: Extract data from inline chart creator
-                    let chartType = question.requiresGraph;
-                    // Handle multi-type charts - use the first type
-                    if (Array.isArray(chartType)) {
-                        chartType = chartType[0];
-                    }
-                    console.log('📊 Submitting chart for question:', questionId, 'Chart type:', chartType);
-
-                    const chartData = window.extractInlineChartDataEnhanced ?
-                                    window.extractInlineChartDataEnhanced(questionId, chartType) :
-                                    extractInlineChartData(questionId, chartType);
-
-                    console.log('📊 Extracted chart data:', chartData);
-
-                    // Validate chart data based on type
-                    let isValidChart = false;
-                    let validationMessage = '';
-
-                    if (!chartData) {
-                        validationMessage = 'No chart data could be extracted';
-                        console.error('❌ Chart validation failed: No data extracted');
-                    } else if (!chartData.data && !chartData.categories && !chartData.points) {
-                        validationMessage = 'Chart data is missing required fields';
-                        console.error('❌ Chart validation failed: Missing data fields', chartData);
-                    } else {
-                        if (chartType === 'histogram' || chartType === 'bar') {
-                            const hasBins = chartData.data?.bins?.length > 0;
-                            const hasCategories = chartData.categories?.length > 0;
-                            isValidChart = hasBins || hasCategories;
-                            console.log(`📊 Histogram/Bar validation: hasBins=${hasBins}, hasCategories=${hasCategories}, valid=${isValidChart}`);
-                            if (!isValidChart) {
-                                validationMessage = 'Please add at least one data point to your chart';
-                            }
-                        } else if (chartType === 'scatter') {
-                            isValidChart = chartData.points?.length > 0;
-                            console.log(`📊 Scatter validation: points=${chartData.points?.length}, valid=${isValidChart}`);
-                            if (!isValidChart) {
-                                validationMessage = 'Please add at least one point to your scatter plot';
-                            }
-                        } else if (chartType === 'normal' || chartType === 'chisquare') {
-                            isValidChart = true; // Parameter-based charts are always valid
-                            console.log(`📊 ${chartType} validation: always valid`);
-                        } else {
-                            validationMessage = `Unknown chart type: ${chartType}`;
-                            console.error('❌ Unknown chart type:', chartType);
-                        }
-                    }
-
-                    if (!isValidChart) {
-                        console.error('❌ Chart validation failed:', validationMessage);
+                    // Graph FRQ (wizard-only): require a saved chart
+                    const savedChart = classData?.users?.[currentUsername]?.charts?.[questionId];
+                    if (!savedChart) {
                         if (errorSpan) {
-                            errorSpan.textContent = validationMessage || `Please add at least one data point to your ${chartType}.`;
+                            errorSpan.textContent = 'Please open the chart wizard to create and save your chart first.';
                             errorSpan.classList.add('show');
                         }
                         return;
                     }
-
-                    console.log('✅ Chart validation passed, saving data');
-
+                    console.log('📊 Submitting saved chart for question:', questionId);
                     // Store chart in SIF format
-                    value = JSON.stringify(chartData);
+                    value = JSON.stringify(savedChart);
+                    // Ensure charts collection is populated
+                    classData.users[currentUsername].charts[questionId] = savedChart;
 
-                    // Also store in charts collection for quick access
-                    classData.users[currentUsername].charts[questionId] = chartData;
-
-                    // Get any text reasoning from textarea if present
+                    // Optional: store any FRQ text reasoning if present
                     const textarea = document.getElementById(`frq-${questionId}`);
                     if (textarea && textarea.value.trim()) {
-                        // Store text reasoning separately
                         classData.users[currentUsername].reasons[questionId] = textarea.value.trim();
                     }
                 } else {
@@ -4394,8 +4242,8 @@ function renderLessonSelector(unitInfo) {
 
             // For FRQs, render/update the inline chart preview immediately after submission
             setTimeout(() => {
-                if (typeof window.updateInlineChartPreview === 'function') {
-                    window.updateInlineChartPreview(questionId);
+                if (typeof window.renderChartWizardPreview === 'function') {
+                    window.renderChartWizardPreview(questionId);
                 }
             }, 50);
 
