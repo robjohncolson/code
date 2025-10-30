@@ -14,7 +14,7 @@
     "test:ci": "playwright test --reporter=json"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0"
+    "@playwright/test": "^1.56.1"
   },
   "keywords": [
     "education",

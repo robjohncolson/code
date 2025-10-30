@@ -5133,13 +5133,38 @@ if (chartInstances[`dotplot-${questionId}`]) {
             
             if (contributorsDiv) {
                 let html = '<h4>Responses:</h4>';
-                responses.forEach(r => {
+                responses.forEach((r, index) => {
                     const userVotes = classData.users[currentUsername]?.votes?.[questionId]?.[r.username] || {};
+
+                    // Check if response is a chart (JSON with chartType)
+                    let isChartResponse = false;
+                    let chartData = null;
+                    try {
+                        if (r.response && typeof r.response === 'string' && r.response.trim().startsWith('{')) {
+                            const parsed = JSON.parse(r.response);
+                            if (parsed && (parsed.chartType || parsed.type)) {
+                                isChartResponse = true;
+                                chartData = parsed;
+                            }
+                        } else if (r.response && typeof r.response === 'object' && (r.response.chartType || r.response.type)) {
+                            isChartResponse = true;
+                            chartData = r.response;
+                        }
+                    } catch (e) {
+                        // Not a chart, will display as text
+                    }
+
+                    const canvasId = `peer-chart-${questionId}-${index}`;
+
                     html += `
                         <div class="contributor-item">
                             <strong>${r.username}:</strong>
                             <div style="margin-top: 5px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                                ${r.response}
+                                ${isChartResponse
+                                    ? `<div class="chart-container">
+                                         <canvas id="${canvasId}" style="max-height: 300px;"></canvas>
+                                       </div>`
+                                    : r.response}
                             </div>
                             ${r.reason ? `<div class="contributor-reason">${r.reason}</div>` : ''}
                             <div style="margin-top: 10px;">
@@ -5158,6 +5183,16 @@ if (chartInstances[`dotplot-${questionId}`]) {
                             </div>
                         </div>
                     `;
+
+                    // Store chart data for rendering after DOM update
+                    if (isChartResponse && chartData) {
+                        setTimeout(() => {
+                            const canvas = document.getElementById(canvasId);
+                            if (canvas && window.renderChartNow) {
+                                window.renderChartNow(chartData, canvasId);
+                            }
+                        }, 100);
+                    }
                 });
                 contributorsDiv.innerHTML = html;
             }
@@ -5320,78 +5355,75 @@ if (chartInstances[`dotplot-${questionId}`]) {
 
         // Get correct answer from curriculum data
         function getCorrectAnswer(questionId) {
-            // Find the question in the current questions array
-            const question = currentQuestions.find(q => q.id === questionId);
-            console.log(`DEBUG getCorrectAnswer: Question found:`, question);
+            // Find the question in EMBEDDED_CURRICULUM
+            const question = EMBEDDED_CURRICULUM.find(q => q.id === questionId);
+
+            if (!question) {
+                return null;
+            }
 
             // Check for answerKey field (most common)
-            if (question && question.answerKey) {
-                console.log(`DEBUG getCorrectAnswer: Answer key found: "${question.answerKey}"`);
+            if (question.answerKey) {
                 return question.answerKey;
             }
 
             // Check for correct_answer field
-            if (question && question.correct_answer) {
-                console.log(`DEBUG getCorrectAnswer: Correct answer found: "${question.correct_answer}"`);
+            if (question.correct_answer) {
                 return question.correct_answer;
             }
 
             // Check for answer field
-            if (question && question.answer) {
-                console.log(`DEBUG getCorrectAnswer: Answer field found: "${question.answer}"`);
+            if (question.answer) {
                 return question.answer;
             }
 
-            console.log(`DEBUG getCorrectAnswer: No correct answer found for question ${questionId}`);
+            // FRQ questions might not have a simple correct answer
+            // Return null without logging error for FRQs
+            if (question.type === 'free-response' || question.type === 'frq') {
+                return null;
+            }
+
             return null;
         }
 
         // Get official explanation from curriculum data
         function getOfficialExplanation(questionId) {
-            // Find the question in the current questions array
-            const question = currentQuestions.find(q => q.id === questionId);
-            console.log(`DEBUG getOfficialExplanation: Question found:`, question);
+            // Find the question in EMBEDDED_CURRICULUM
+            const question = EMBEDDED_CURRICULUM.find(q => q.id === questionId);
+
+            if (!question) {
+                return null;
+            }
 
             // Check for various possible explanation field names
-            if (question && question.explanation) {
-                console.log(`DEBUG getOfficialExplanation: Explanation found: "${question.explanation}"`);
+            if (question.explanation) {
                 return question.explanation;
             }
 
-            if (question && question.rationale) {
-                console.log(`DEBUG getOfficialExplanation: Rationale found: "${question.rationale}"`);
+            if (question.rationale) {
                 return question.rationale;
             }
 
-            if (question && question.solution) {
-                console.log(`DEBUG getOfficialExplanation: Solution found: "${question.solution}"`);
+            if (question.solution) {
                 return question.solution;
             }
 
-            if (question && question.reasoning) {
-                console.log(`DEBUG getOfficialExplanation: Reasoning found: "${question.reasoning}"`);
+            if (question.reasoning) {
                 return question.reasoning;
             }
 
             // Check if attachments has explanation
-            if (question && question.attachments && question.attachments.explanation) {
-                console.log(`DEBUG getOfficialExplanation: Attachments explanation found: "${question.attachments.explanation}"`);
+            if (question.attachments && question.attachments.explanation) {
                 return question.attachments.explanation;
             }
 
-            console.log(`DEBUG getOfficialExplanation: No explanation found for question ${questionId}`);
-            console.log(`DEBUG getOfficialExplanation: Available fields:`, Object.keys(question || {}));
             return null;
         }
 
         // Display College Board explanation below question (not in localStorage)
         function displayCollegeBoardExplanation(questionId) {
-            console.log(`DEBUG: displayCollegeBoardExplanation called for ${questionId}`);
-
             const correctAnswer = getCorrectAnswer(questionId);
             const officialExplanation = getOfficialExplanation(questionId);
-
-            console.log(`DEBUG: correctAnswer: ${correctAnswer}, officialExplanation: ${officialExplanation}`);
 
             if (correctAnswer) {
                 // Find or create College Board explanation section
