@@ -1,0 +1,268 @@
+---
+title: "Supabase Performance Playbook"
+author: "AP Stats App"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Overview
+
+This R Markdown playbook turns the exported Supabase CSV data into quick insights
+for teachers. It assumes you have exported:
+
+1. `answers_rows (1).csv` – the raw response log from Supabase.
+2. `student2username.csv` – the roster mapping anonymous usernames to real names.
+3. `data/curriculum.js` – copied from this project so we can build an answer key.
+4. (Optional) `master_peer_data.json` – richer context exported from the app’s
+   Sync menu.
+
+Place all files in the same directory as this R Markdown document before knitting.
+If you prefer to keep the files elsewhere, update the file paths in the next
+section accordingly.
+
+# Load Packages
+
+```{r packages}
+required_packages <- c(
+  "tidyverse",
+  "lubridate",
+  "janitor",
+  "jsonlite",
+  "glue",
+  "scales"
+)
+
+missing_packages <- required_packages[!required_packages %in% installed.packages()[, "Package"]]
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(jsonlite)
+library(glue)
+library(scales)
+```
+
+# Configure Data Sources
+
+Update the file names here if yours differ. The defaults assume the exported
+files are in the same folder as this playbook.
+
+```{r data-sources}
+answers_csv   <- "answers_rows (1).csv"
+roster_csv    <- "student2username.csv"
+curriculum_js <- "../data/curriculum.js"  # adjust if you keep the file elsewhere
+peer_json     <- "master_peer_data.json"  # optional; set to NULL to skip
+
+if (!file.exists(answers_csv)) {
+  stop(glue::glue("Cannot find `{answers_csv}`. Update `answers_csv` above."))
+}
+
+if (!file.exists(roster_csv)) {
+  stop(glue::glue("Cannot find `{roster_csv}`. Update `roster_csv` above."))
+}
+
+if (!file.exists(curriculum_js)) {
+  stop(glue::glue("Cannot find `{curriculum_js}`. Update `curriculum_js` above."))
+}
+
+if (!is.null(peer_json) && !file.exists(peer_json)) {
+  message(glue::glue("Optional file `{peer_json}` not found; continuing without peer metadata."))
+  peer_json <- NULL
+}
+```
+
+# Import & Clean Core Tables
+
+The following chunk loads the Supabase answer log and the student roster, cleans
+column names, converts timestamps, and merges them into a single data frame.
+
+```{r load-core-data}
+answers <- read_csv(answers_csv, show_col_types = FALSE) %>%
+  clean_names() %>%
+  mutate(
+    timestamp = ymd_hms(timestamp, tz = "UTC"),
+    answer_numeric = suppressWarnings(as.numeric(answer_value))
+  )
+
+roster <- read_csv(roster_csv, show_col_types = FALSE) %>%
+  clean_names()
+
+responses <- answers %>%
+  left_join(roster, by = "username") %>%
+  mutate(
+    student_name = coalesce(student_name, username),
+    date = as_date(timestamp)
+  )
+
+# Build answer key from curriculum.js to score multiple-choice responses
+curriculum_raw <- read_file(curriculum_js)
+curriculum_json <- curriculum_raw %>%
+  str_remove("^\\s*const\\s+EMBEDDED_CURRICULUM\\s*=\\s*") %>%
+  str_remove(";\\s*$")
+
+curriculum_tbl <- fromJSON(curriculum_json, simplifyDataFrame = TRUE) %>%
+  as_tibble() %>%
+  clean_names()
+
+answer_key <- curriculum_tbl %>%
+  transmute(
+    question_id = id,
+    correct_answer = na_if(answerkey, "")
+  )
+
+responses <- responses %>%
+  left_join(answer_key, by = "question_id") %>%
+  mutate(
+    is_correct = case_when(
+      !is.na(correct_answer) & !is.na(answer_value) ~
+        str_trim(str_to_lower(as.character(answer_value))) ==
+          str_trim(str_to_lower(as.character(correct_answer))),
+      TRUE ~ NA
+    )
+  )
+```
+
+# Optional: Load Peer Data Export
+
+If you exported `master_peer_data.json`, the next chunk parses it and merges
+additional attempt-level metadata (reasons, attempt counts, etc.).
+
+```{r load-peer-data, eval=(!is.null(peer_json) && file.exists(peer_json))}
+peer_data <- fromJSON(peer_json, simplifyVector = TRUE)
+
+peer_responses <- peer_data$answers %>%
+  as_tibble() %>%
+  clean_names() %>%
+  mutate(
+    timestamp = ymd_hms(timestamp, tz = "UTC")
+  )
+
+responses <- responses %>%
+  left_join(peer_responses, by = c("username", "question_id", "timestamp"), suffix = c("", "_peer"))
+```
+
+# Snapshot: Completion & Performance by Student
+
+This summary table shows, for each student, how many questions they attempted
+and the share answered correctly (when correctness is encoded in the data).
+
+```{r student-summary}
+student_summary <- responses %>%
+  group_by(student_name) %>%
+  summarise(
+    questions_attempted = n_distinct(question_id),
+    total_attempts = n(),
+    correct_attempts = sum(is_correct, na.rm = TRUE),
+    pct_correct = percent(correct_attempts / total_attempts, accuracy = 0.1)
+  ) %>%
+  arrange(desc(correct_attempts))
+
+student_summary
+```
+
+# Question Difficulty Overview
+
+Identify the trickiest questions by computing the percentage of students who
+answered each one correctly.
+
+```{r question-summary}
+question_summary <- responses %>%
+  group_by(question_id) %>%
+  summarise(
+    students_attempted = n_distinct(student_name),
+    pct_correct = mean(is_correct, na.rm = TRUE)
+  ) %>%
+  mutate(pct_correct = percent(pct_correct, accuracy = 0.1)) %>%
+  arrange(pct_correct)
+
+question_summary
+```
+
+Visualise the distribution with a bar chart.
+
+```{r question-bar-plot, fig.height=5}
+question_summary_plot <- responses %>%
+  group_by(question_id) %>%
+  summarise(pct_correct = mean(is_correct, na.rm = TRUE)) %>%
+  mutate(question_id = fct_reorder(question_id, pct_correct)) %>%
+  ggplot(aes(question_id, pct_correct)) +
+  geom_col(fill = "#2C7BB6") +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  coord_flip() +
+  labs(
+    title = "Question-Level Correctness",
+    x = "Question ID",
+    y = "% Correct"
+  ) +
+  theme_minimal(base_size = 12)
+
+question_summary_plot
+```
+
+# Heatmap: Student × Question Performance
+
+Create a heatmap to highlight which students are mastering which questions.
+
+```{r heatmap, fig.height=6, fig.width=9}
+heatmap_data <- responses %>%
+  filter(!is.na(is_correct)) %>%
+  mutate(is_correct = if_else(is_correct, "Correct", "Incorrect")) %>%
+  group_by(student_name, question_id) %>%
+  summarise(outcome = first(is_correct), .groups = "drop")
+
+if (nrow(heatmap_data) == 0) {
+  message("No correctness data available to plot the heatmap.")
+} else {
+  ggplot(heatmap_data, aes(question_id, student_name, fill = outcome)) +
+    geom_tile(color = "white") +
+    scale_fill_manual(values = c("Correct" = "#1B9E77", "Incorrect" = "#D95F02")) +
+    labs(
+      title = "Student Performance Heatmap",
+      x = "Question",
+      y = "Student",
+      fill = "Outcome"
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+```
+
+# Drill-Down: Focus on a Single Student
+
+Use the helper function below to generate a per-student report. Update the
+`target_student` variable to the name you want to inspect.
+
+```{r student-drilldown}
+target_student <- NULL  # e.g., "Alex Johnson"
+
+student_report <- function(student_name_input) {
+  responses %>%
+    filter(student_name == student_name_input) %>%
+    arrange(timestamp) %>%
+    select(student_name, question_id, answer_value, is_correct, timestamp)
+}
+
+if (!is.null(target_student)) {
+  student_report(target_student)
+} else {
+  message("Set `target_student` to a student's name to generate their report.")
+}
+```
+
+# Next Steps
+
+- Export plots or tables by clicking the **Knit** button (produces HTML by default).
+- Adapt the chunks above to add rubrics, question text, or richer metadata.
+- Combine with additional Supabase exports as needed.
+
+Happy teaching!
