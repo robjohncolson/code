@@ -1,15 +1,15 @@
 {
-  "timestamp": 1761792818028,
+  "timestamp": 1761795756928,
   "localStorage": {
-    "consensusUsername": "Test_User_1761792817759",
+    "consensusUsername": "Test_User_1761795756733",
     "quizTheme": "light",
-    "classData": "{\"users\":{\"Test_User_1761792817759\":{\"answers\":{},\"reasons\":{},\"timestamps\":{},\"attempts\":{},\"charts\":{},\"currentActivity\":{\"state\":\"idle\",\"questionId\":null,\"lastUpdate\":1761792817868}}}}",
-    "sessionStart_Test_User_1761792817759": "2025-10-30T02:53:37.868Z"
+    "classData": "{\"users\":{\"Test_User_1761795756733\":{\"answers\":{},\"reasons\":{},\"timestamps\":{},\"attempts\":{},\"charts\":{},\"currentActivity\":{\"state\":\"idle\",\"questionId\":null,\"lastUpdate\":1761795756823}}}}",
+    "sessionStart_Test_User_1761795756733": "2025-10-30T03:42:36.823Z"
   },
   "sessionStorage": {},
   "classData": {
     "users": {
-      "Test_User_1761792817759": {
+      "Test_User_1761795756733": {
         "answers": {},
         "reasons": {},
         "timestamps": {},
@@ -18,10 +18,10 @@
         "currentActivity": {
           "state": "idle",
           "questionId": null,
-          "lastUpdate": 1761792817868
+          "lastUpdate": 1761795756823
         }
       }
     }
   },
-  "username": "Test_User_1761792817759"
+  "username": "Test_User_1761795756733"
 }

@@ -3303,11 +3303,12 @@ function renderLessonSelector(unitInfo) {
                         // Render user's own saved chart
                         if (savedChart && question.requiresGraph) {
                             setTimeout(() => {
-                                if (typeof window.renderChartWizardPreview === 'function') {
-                                    window.renderChartWizardPreview(question.id);
-                                } else if (typeof window.updateInlineChartPreview === 'function') {
-                                    // Fallback to inline chart preview
+                                // Prefer inline preview which reads the inline form (works for all types)
+                                if (typeof window.updateInlineChartPreview === 'function') {
                                     window.updateInlineChartPreview(question.id);
+                                } else if (typeof window.renderChartWizardPreview === 'function') {
+                                    // Fallback to wizard preview if inline is unavailable
+                                    window.renderChartWizardPreview(question.id);
                                 }
                             }, 100);
                         }
@@ -3617,9 +3618,9 @@ function renderLessonSelector(unitInfo) {
                                     >${chartButtonLabel}</button>
                                     ${chartMetadata.prompt ? `<div class="chart-wizard-prompt">${chartMetadata.prompt}</div>` : ''}
                                 </div>
-                                <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
-                                <div id="peer-charts-${question.id}" class="peer-charts-container" style="display: none;"></div>
                             ` : ''}
+                            <div id="chart-preview-${question.id}" class="chart-preview-container" data-chart-preview="${question.id}"></div>
+                            ${chartMetadata ? `<div id="peer-charts-${question.id}" class="peer-charts-container" style="display: none;"></div>` : ''}
                         </div>
                     `;
                 } else {
@@ -3649,6 +3650,27 @@ function renderLessonSelector(unitInfo) {
                         ` : ''}
                     `;
                 }
+
+                // Add Submit button for ALL FRQs (both requiresGraph and regular)
+                html += `
+                    <div class="answer-section">
+                        <div>
+                            <button
+                                id="submit-${question.id}"
+                                class="submit-button"
+                                onclick="submitAnswer('${question.id}', '${question.type}')"
+                            >
+                                ${isAnswered ? 'Update Answer' : 'Submit Answer'}
+                            </button>
+
+                            <span id="error-${question.id}" class="error-msg"></span>
+                            <span id="success-${question.id}" class="success-msg"></span>
+                        </div>
+                    </div>
+
+                    <!-- FRQ Solution Container -->
+                    <div id="frq-solution-${question.id}" class="frq-solution-container" style="display:none"></div>
+                `;
             }
 
             // Add reasoning section in main column (ONLY for MCQs, not FRQs)
@@ -3696,28 +3718,8 @@ function renderLessonSelector(unitInfo) {
                             </div>
                         </div>
                 `;
-            } else {
-                // For FRQs, submit button is never disabled (unlimited retries)
-                html += `
-                        <div class="answer-section">
-                            <div>
-                                <button
-                                    id="submit-${question.id}"
-                                    class="submit-button"
-                                    onclick="submitAnswer('${question.id}', '${question.type}')"
-                                >
-                                    ${isAnswered ? 'Update Answer' : 'Submit Answer'}
-                                </button>
-
-                                <span id="error-${question.id}" class="error-msg"></span>
-                                <span id="success-${question.id}" class="success-msg"></span>
-                            </div>
-                        </div>
-
-                        <!-- FRQ Solution Container -->
-                        <div id="frq-solution-${question.id}" class="frq-solution-container" style="display:none"></div>
-                `;
             }
+            // Note: FRQ submit button is now handled above (lines 3653-3672) for all FRQs
 
             html += `
                     </div>
@@ -3758,8 +3760,6 @@ function renderLessonSelector(unitInfo) {
                         const userValue = userAnswer.value || userAnswer;
                         const isCorrect = (userValue.toString().toLowerCase().trim() === correctAnswer.toString().toLowerCase().trim());
                         const hasExplanation = (userReason && userReason.trim().length > 0);
-
-                        console.log(`DEBUG: On load - isCorrect: ${isCorrect}, hasExplanation: ${hasExplanation}`);
 
                         // Show College Board explanation if conditions are met
                         if (isCorrect && hasExplanation) {
@@ -3873,8 +3873,6 @@ function renderLessonSelector(unitInfo) {
                 const votedHelpful = userVote?.type === 'helpful';
                 const votedUnclear = userVote?.type === 'unclear';
                 const votedContradicts = userVote?.type === 'contradicts';
-
-                console.log(`DEBUG: Peer ${peer.username} - answer: ${peer.choice || peer.response}, isCorrect: ${isCorrect}, answerKeyRevealed: ${answerKeyRevealed}`);
 
                 html += `
                     <div class="peer-response-card ${isCorrect ? 'correct' : 'incorrect'} ${isCollegeBoard ? 'college-board-official' : ''}" data-consensus="${consensusLevel}">
@@ -4174,29 +4172,58 @@ function renderLessonSelector(unitInfo) {
                     if (Array.isArray(chartType)) {
                         chartType = chartType[0];
                     }
+                    console.log('📊 Submitting chart for question:', questionId, 'Chart type:', chartType);
+
                     const chartData = window.extractInlineChartDataEnhanced ?
                                     window.extractInlineChartDataEnhanced(questionId, chartType) :
                                     extractInlineChartData(questionId, chartType);
 
+                    console.log('📊 Extracted chart data:', chartData);
+
                     // Validate chart data based on type
                     let isValidChart = false;
-                    if (chartData) {
+                    let validationMessage = '';
+
+                    if (!chartData) {
+                        validationMessage = 'No chart data could be extracted';
+                        console.error('❌ Chart validation failed: No data extracted');
+                    } else if (!chartData.data && !chartData.categories && !chartData.points) {
+                        validationMessage = 'Chart data is missing required fields';
+                        console.error('❌ Chart validation failed: Missing data fields', chartData);
+                    } else {
                         if (chartType === 'histogram' || chartType === 'bar') {
-                            isValidChart = chartData.data?.bins?.length > 0 || chartData.categories?.length > 0;
+                            const hasBins = chartData.data?.bins?.length > 0;
+                            const hasCategories = chartData.categories?.length > 0;
+                            isValidChart = hasBins || hasCategories;
+                            console.log(`📊 Histogram/Bar validation: hasBins=${hasBins}, hasCategories=${hasCategories}, valid=${isValidChart}`);
+                            if (!isValidChart) {
+                                validationMessage = 'Please add at least one data point to your chart';
+                            }
                         } else if (chartType === 'scatter') {
                             isValidChart = chartData.points?.length > 0;
+                            console.log(`📊 Scatter validation: points=${chartData.points?.length}, valid=${isValidChart}`);
+                            if (!isValidChart) {
+                                validationMessage = 'Please add at least one point to your scatter plot';
+                            }
                         } else if (chartType === 'normal' || chartType === 'chisquare') {
                             isValidChart = true; // Parameter-based charts are always valid
+                            console.log(`📊 ${chartType} validation: always valid`);
+                        } else {
+                            validationMessage = `Unknown chart type: ${chartType}`;
+                            console.error('❌ Unknown chart type:', chartType);
                         }
                     }
 
                     if (!isValidChart) {
+                        console.error('❌ Chart validation failed:', validationMessage);
                         if (errorSpan) {
-                            errorSpan.textContent = `Please add at least one data point to your ${chartType}.`;
+                            errorSpan.textContent = validationMessage || `Please add at least one data point to your ${chartType}.`;
                             errorSpan.classList.add('show');
                         }
                         return;
                     }
+
+                    console.log('✅ Chart validation passed, saving data');
 
                     // Store chart in SIF format
                     value = JSON.stringify(chartData);
@@ -4365,6 +4392,13 @@ function renderLessonSelector(unitInfo) {
                 }, 3000);
             }
 
+            // For FRQs, render/update the inline chart preview immediately after submission
+            setTimeout(() => {
+                if (typeof window.updateInlineChartPreview === 'function') {
+                    window.updateInlineChartPreview(questionId);
+                }
+            }, 50);
+
             // Update header to show answered
             const header = qContainer.querySelector('.question-header');
             if (header && !header.querySelector('span[style*="color"]')) {
@@ -4421,18 +4455,14 @@ function renderLessonSelector(unitInfo) {
 
             // Trigger answer key display logic
             const correctAnswer = getCorrectAnswer(questionId);
-            console.log(`DEBUG: User answer: "${value}", Correct answer: "${correctAnswer}"`);
-
             let isCorrect = false;
             if (correctAnswer && value) {
                 isCorrect = (value.toString().toLowerCase().trim() === correctAnswer.toString().toLowerCase().trim());
             }
-            console.log(`DEBUG: Answer is ${isCorrect ? 'CORRECT' : 'INCORRECT'}`);
 
             // For FRQ, the answer IS the explanation, so hasExplanation is always true if there's an answer
             // For MCQ, check if reasoning was provided
             const hasExplanation = isFRQ ? (value && value.length > 0) : (reason && reason.length > 0);
-            console.log(`DEBUG: Has explanation: ${hasExplanation}`);
 
             displayAnswerKey(questionId, isCorrect, hasExplanation, attempts + 1);
         }
@@ -4472,27 +4502,44 @@ function renderLessonSelector(unitInfo) {
 
         // Extract data from inline chart creator
         window.extractInlineChartData = function(questionId, chartType) {
+            console.log('📊 Extracting chart data for:', questionId, 'Type:', chartType);
             const container = document.getElementById(`graph-input-${questionId}`);
-            if (!container) return null;
+            if (!container) {
+                console.error('❌ Container not found:', `graph-input-${questionId}`);
+                return null;
+            }
 
             const rows = container.querySelectorAll('.graph-row');
+            console.log('📋 Found', rows.length, 'rows');
             const data = {
                 labels: [],
                 values: []
             };
 
-            rows.forEach(row => {
-                const label = row.querySelector('.label').value.trim();
-                const value = parseFloat(row.querySelector('.value').value) || 0;
+            rows.forEach((row, idx) => {
+                const labelInput = row.querySelector('.label');
+                const valueInput = row.querySelector('.value');
+
+                if (!labelInput || !valueInput) {
+                    console.warn(`⚠️ Row ${idx} missing input fields`);
+                    return;
+                }
+
+                const label = labelInput.value.trim();
+                const value = parseFloat(valueInput.value) || 0;
+                console.log(`  Row ${idx}: label="${label}", value=${value}`);
+
                 if (label) {
                     data.labels.push(label);
                     data.values.push(value);
                 }
             });
 
+            console.log('📊 Extracted data:', data);
+
             // Return in chart wizard SIF format
             if (chartType === 'histogram') {
-                return {
+                const chartData = {
                     type: 'histogram',
                     xLabel: 'Category',
                     yLabel: 'Frequency',
@@ -4505,8 +4552,10 @@ function renderLessonSelector(unitInfo) {
                         seriesName: 'Frequency'
                     }
                 };
+                console.log('✅ Created histogram SIF:', chartData);
+                return chartData;
             } else if (chartType === 'bar') {
-                return {
+                const chartData = {
                     type: 'bar',
                     xLabel: 'Category',
                     yLabel: 'Value',
@@ -4518,8 +4567,11 @@ function renderLessonSelector(unitInfo) {
                         values: data.values
                     }]
                 };
+                console.log('✅ Created bar chart SIF:', chartData);
+                return chartData;
             }
 
+            console.warn('⚠️ Unknown chart type:', chartType);
             return null;
         };
 
@@ -4541,7 +4593,31 @@ function renderLessonSelector(unitInfo) {
             const chartData = window.extractInlineChartDataEnhanced ?
                             window.extractInlineChartDataEnhanced(questionId, chartType) :
                             extractInlineChartData(questionId, chartType);
-            if (!chartData || chartData.data?.bins?.length === 0) {
+            // Validate presence of data across chart types
+            const type = chartData?.type || chartType;
+            let hasData = false;
+            if (!chartData) {
+                hasData = false;
+            } else if (type === 'histogram') {
+                hasData = Array.isArray(chartData.data?.bins) && chartData.data.bins.length > 0;
+            } else if (type === 'bar') {
+                const hasCats = Array.isArray(chartData.categories) && chartData.categories.length > 0;
+                const firstSeries = Array.isArray(chartData.series) && chartData.series[0];
+                const hasVals = Array.isArray(firstSeries?.values) && firstSeries.values.length > 0;
+                hasData = hasCats && hasVals;
+            } else if (type === 'scatter' || type === 'bubble') {
+                hasData = Array.isArray(chartData.points) && chartData.points.length > 0;
+            } else if (type === 'normal') {
+                // Parameter charts can render with parameters only
+                hasData = true;
+            } else if (type === 'chisquare') {
+                hasData = Array.isArray(chartData.data?.dfList) && chartData.data.dfList.length > 0;
+            } else {
+                // Default to attempting render
+                hasData = true;
+            }
+
+            if (!hasData) {
                 previewContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Enter data to see chart preview</div>';
                 return;
             }
@@ -4557,7 +4633,7 @@ function renderLessonSelector(unitInfo) {
 
             // Render chart using chart wizard's converter
             setTimeout(() => {
-                if (typeof window.sifToChartConfig === 'function' && typeof window.charts?.renderChartNow === 'function') {
+                if (typeof window.sifToChartConfig === 'function' && typeof window.Chart === 'function') {
                     const chartConfig = window.sifToChartConfig(chartData);
                     if (chartConfig) {
                         try {
@@ -5467,23 +5543,15 @@ if (chartInstances[`dotplot-${questionId}`]) {
                         reasonTextarea.style.boxShadow = '0 0 0 0.2rem rgba(243, 156, 18, 0.25)';
                     }
 
-                    console.log(`DEBUG: College Board explanation displayed for ${questionId}`);
-
                     // Refresh peer responses to update correctness colors IMMEDIATELY
-                    console.log(`DEBUG: About to refresh peer responses for color update`);
                     const question = currentQuestions.find(q => q.id === questionId);
                     if (question) {
                         // Add a small delay to ensure DOM is fully updated
                         setTimeout(() => {
                             populatePeerResponses(questionId, question.type);
-                            console.log(`DEBUG: Peer responses refreshed for ${questionId} (after timeout)`);
                         }, 100);
-                    } else {
-                        console.log(`DEBUG: Question not found for refresh: ${questionId}`);
                     }
                 }
-            } else {
-                console.log(`DEBUG: Missing data - correctAnswer: ${correctAnswer}, explanation: ${officialExplanation}`);
             }
         }
 
