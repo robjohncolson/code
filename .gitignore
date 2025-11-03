@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+.venv/
+package-lock.json
+
+# Environment configs
+.env
+.env.local
+*.mcp.json
+.mcp.json
+
+# AI agent workspaces
+.claude/
+.gemini/
+.beads/
+gemini_ws/
+AGENTS.md
+AGENT_PROMPTS.md
+GEMINI_MCP_SETUP.md
+
+# Build outputs
+dist/
+build/
+.cache/
+
+# Test files and results
+test_*.js
+test-results/
+playwright-report/
+*.spec.js
+
+# Logs
+*.log
+*.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Automation scripts (development only)
+*-automat.sh
+create_beads.sh
+gemini.sh
+gemini_setup.sh
+claude-automat.sh
+codex-automat.sh
+
+# Beads CLI binaries
+bd.bat
+bd.exe
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+answers_rows*.csv
